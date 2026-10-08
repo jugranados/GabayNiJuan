@@ -22,7 +22,7 @@ Its purpose is to help voters understand the documented public record of politic
 - Zustand for lightweight local UI state
 - Zod for runtime validation
 - Supabase: Postgres, Auth for reviewers/admins, Storage where legally appropriate, Edge Functions only when needed
-- React Hook Form + Zod resolver, added when the first form ships ("Report an error")
+- Editorial web app (`admin/`): Vite, React, TypeScript, React Hook Form + Zod, Supabase Auth
 - Jest + React Native Testing Library
 
 See `docs/` and `AGENTS.md` before implementing features.
@@ -33,6 +33,7 @@ See `docs/` and `AGENTS.md` before implementing features.
 - **Directory:** alphabetical cards, name search, combinable filters (election, office, office level, participation status, organization), pagination. Never ranked.
 - **Profile:** header with documented current context, election participation with exact candidacy state, office history and affiliations as timelines, education, policy positions, sources.
 - **Evidence:** every attested record links to its claim, supporting and conflicting sources, and the original document.
+- **Report an error:** from a profile or a claim; sends a private request for editorial review that never changes the public record.
 - All people in this repository are **fictional** development data.
 
 See `docs/ARCHITECTURE.md` for the directory query design, filter model, pagination and the missing-data wording policy.
@@ -42,9 +43,10 @@ See `docs/ARCHITECTURE.md` for the directory query design, filter model, paginat
 | Path | Contents |
 |---|---|
 | `mobile/` | React Native / Expo app (Android + iOS) |
+| `admin/` | Editorial web app for reviewers, approvers and admins (`docs/EDITORIAL_WORKFLOW.md`) |
 | `supabase/` | Database migrations, RLS, audit triggers, fictional seed (see `supabase/README.md`) |
 | `docs/` | Product, data model, governance, and architecture decisions |
-| `.github/workflows/` | CI: mobile (typecheck, lint, tests, verification consistency, seed check, expo-doctor) and database (migrations, seed, RLS tests) |
+| `.github/workflows/` | CI: mobile (typecheck, lint, tests, verification consistency, seed check, expo-doctor), admin (typecheck, lint, tests, build), enum drift, and database (migrations, seed, RLS and workflow tests) |
 
 The original native Android (Kotlin/Compose) prototype is archived on the `archive/android-native` branch. It is a historical reference and is not part of this branch.
 
@@ -123,3 +125,15 @@ npm run seed:check         # supabase/seed.sql is exactly what the fixtures gene
 npm run verify             # typecheck + lint + test
 npm run lint:fix           # auto-fix lint and formatting
 ```
+
+## Editorial web app (`admin/`)
+
+```bash
+cd admin
+cp .env.example .env.local   # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (public key only)
+npm install
+npm run dev                  # http://localhost:5173
+npm run verify               # typecheck, lint, tests
+```
+
+Sign in with an account an administrator created. Setup, roles, workflow and security: `docs/EDITORIAL_WORKFLOW.md`.

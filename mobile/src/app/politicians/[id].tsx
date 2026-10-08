@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 import { ErrorView } from '@/components/states';
 import { Body, LoadingView, Screen } from '@/components/ui';
+import { formatPersonName } from '@/domain/models/person';
 import { PersonProfileView } from '@/features/politicians/components/PersonProfileView';
 import { usePersonProfile } from '@/features/politicians/hooks/queries';
 
@@ -22,6 +23,16 @@ export default function PoliticianDetailScreen() {
     <PersonProfileView
       profile={profile}
       onOpenClaim={(claimId) => router.push({ pathname: '/claims/[id]', params: { id: claimId } })}
+      onReportError={() =>
+        router.push({
+          pathname: '/report-error',
+          params: {
+            recordType: 'PERSON',
+            recordId: profile.person.id,
+            label: formatPersonName(profile.person),
+          },
+        })
+      }
     />
   );
 }

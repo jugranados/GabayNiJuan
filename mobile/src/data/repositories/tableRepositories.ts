@@ -43,6 +43,7 @@ import type { Person } from '@/domain/models';
 import type { PersonSummary } from '@/domain/models/personProfile';
 import type {
   ClaimRepository,
+  CorrectionRepository,
   ElectionRepository,
   PersonRepository,
   Repositories,
@@ -288,8 +289,18 @@ export function createClaimRepository(source: RowSource): ClaimRepository {
   };
 }
 
-export function createRepositories(source: RowSource, directory: DirectorySource): Repositories {
+/** Used when no correction backend is wired in: submitting fails loudly instead of pretending to succeed. */
+const correctionsUnavailable: CorrectionRepository = {
+  submit: () => Promise.reject(new Error('Corrections are not configured for this data source.')),
+};
+
+export function createRepositories(
+  source: RowSource,
+  directory: DirectorySource,
+  corrections: CorrectionRepository = correctionsUnavailable,
+): Repositories {
   return {
+    corrections,
     people: createPersonRepository(source, directory),
     elections: createElectionRepository(source),
     sources: createSourceRepository(source),

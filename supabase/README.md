@@ -20,6 +20,11 @@ Database for Gabay ni Juan: schema, Row Level Security, editorial workflow, audi
 | `20261008103749` | `claim_consistency_checks` | Verification-status vs. evidence rules enforced before publishing |
 | `20261008103810` | `restrict_public_access` | Column-level `SELECT` for anon (no editorial identity), anon locked out of audit/role tables, secure default for future tables |
 | `20261008132502` | `directory_search` | `search_directory()` for the voter directory (name search, filters, alphabetical offset paging; security invoker) and the indexes it needs |
+| `20261008145444` | `editorial_workflow_helpers` | `private.editorial_settings` (self-approval switch), transition table, helpers |
+| `20261008145456` | `editorial_workflow_triggers` | `version` column, ordered state machine, two-person rule, frozen review content, frozen evidence |
+| `20261008145512` | `editorial_rpcs_records` | `editorial_transition`, `editorial_update` (reason + optimistic concurrency) |
+| `20261008150050` | `editorial_evidence_and_queue` | `editorial_set_evidence`, `editorial_remove_evidence`, `claim_readiness`, `editorial_queue` view |
+| `20261008150100` | `corrections_and_staff` | `correction_requests`, `submit_correction`, `review_correction`, `staff_directory`, `set_staff_role`, `editorial_role_events`; role rows become RPC-only |
 
 Never edit an applied migration; add a new one. Change a migration and `mobile/src/data/schemas/rows.ts` in the same commit.
 
@@ -99,17 +104,17 @@ DRAFT -> SOURCE_ATTACHED -> REVIEWED -> APPROVED -> PUBLISHED -> RETRACTED
 
 Publication metadata lives **on each publishable table** (not in a shared publication table): `publication_status`, `published_at`, `created_by`, `reviewed_by`, `reviewed_at`, `approved_by`, `published_by`, `created_at`, `updated_at`. This is the simplest option that stays auditable. The data set is small and uniform, RLS stays a one-column test, public reads need no join, and the `revisions` log already records every transition.
 
-Not enforced yet: an ordered state machine (an approver may jump from `DRAFT` straight to `PUBLISHED`; the jump is visible in `revisions`) and a database-level editor ≠ approver rule. Both are Milestone 3 candidates.
+Since Milestone 3 the database enforces an ordered state machine and an editor ≠ approver rule for signed-in users (system writes such as seed are exempt and audited). Exact transitions and the development exception are in `docs/EDITORIAL_WORKFLOW.md`.
 
 ## Access model
 
 | Who | Can |
 |---|---|
-| anon (voters, app) | `SELECT` **only** non-identity columns of `PUBLISHED` rows; evidence only when both its claim and source are published. Cannot write. Cannot touch `revisions` or `editorial_roles`. A bare `select *` is refused (the app lists columns explicitly) |
+| anon (voters, app) | may call `submit_correction`. `SELECT` **only** non-identity columns of `PUBLISHED` rows; evidence only when both its claim and source are published. Cannot write. Cannot touch `revisions` or `editorial_roles`. A bare `select *` is refused (the app lists columns explicitly) |
 | signed-in, no role | same as anon for rows (no drafts); no writes |
 | `REVIEWER` | read everything, create and edit records, move records to `SOURCE_ATTACHED`/`REVIEWED`/`REJECTED` |
 | `APPROVER` | everything a reviewer can, plus `APPROVED`, `PUBLISHED`, `RETRACTED`, and changes to published rows (with a reason) |
-| `ADMIN` | everything an approver can, plus granting and revoking roles |
+| `ADMIN` | everything an approver can, plus granting and revoking roles (`set_staff_role`) |
 
 Nobody deletes rows through the API. Editorial identity columns (`created_by`, `reviewed_by`, `approved_by`, `published_by`) are set by triggers; clients cannot set or change them.
 
@@ -117,7 +122,7 @@ Nobody deletes rows through the API. Editorial identity columns (`created_by`, `
 
 ### Bootstrapping the first admin
 
-There is no admin UI yet (Milestone 3). Invite your user in Supabase Auth, then in the SQL editor:
+Create your user in Supabase Auth, then bootstrap the first admin once in the SQL editor (afterwards use the admin app's **Users / roles** page; `editorial_roles` can no longer be written through the API):
 
 ```sql
 insert into public.editorial_roles (user_id, role)

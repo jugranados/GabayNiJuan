@@ -54,6 +54,7 @@ export default function RootLayout() {
           <Stack.Screen name="politicians/index" options={{ title: 'Politicians' }} />
           <Stack.Screen name="politicians/[id]" options={{ title: 'Profile' }} />
           <Stack.Screen name="claims/[id]" options={{ title: 'Evidence' }} />
+          <Stack.Screen name="report-error" options={{ title: 'Report an error' }} />
           <Stack.Screen name="about" options={{ title: 'About the Data' }} />
         </Stack>
       </RepositoriesProvider>

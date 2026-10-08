@@ -3,9 +3,9 @@ name: CI
 on:
   push:
     branches: [main, development]
-    paths: ['mobile/**', 'supabase/**', '.github/workflows/mobile-ci.yml']
+    paths: ['mobile/**', 'admin/**', 'supabase/**', 'scripts/**', '.github/workflows/ci.yml']
   pull_request:
-    paths: ['mobile/**', 'supabase/**', '.github/workflows/mobile-ci.yml']
+    paths: ['mobile/**', 'admin/**', 'supabase/**', 'scripts/**', '.github/workflows/ci.yml']
 
 jobs:
   mobile:
@@ -30,6 +30,41 @@ jobs:
       # supabase/seed.sql must be exactly what the fixtures generate.
       - run: npm run seed:check
       - run: npx expo-doctor
+
+  admin:
+    name: Admin app typecheck, lint, tests, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://example.invalid
+          VITE_SUPABASE_ANON_KEY: public-anon-key-placeholder
+      # The browser bundle must never contain a service-role key.
+      - name: No service-role key in the admin bundle
+        run: "! grep -rIl -i 'service_role' dist"
+
+  drift:
+    name: Shared enums and workflow in sync (admin, mobile, database)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/check-enum-drift.mjs
 
   database:
     name: Migrations, seed, RLS and publication tests

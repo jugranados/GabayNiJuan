@@ -65,7 +65,7 @@ Exit criteria:
 Open items before this is called finished:
 - [ ] run the app on an Android emulator / iOS simulator and a physical device (checklist in the Milestone 2 hand-off)
 - [ ] first green CI run, including the `database` job (`supabase db reset`, SQL tests, idempotent seed)
-- [ ] "Report an error" entry point (MVP screen 9) is not built; it belongs with the correction workflow in Milestone 3
+- [x] "Report an error" entry point (built in Milestone 3)
 
 Deferred, deliberately:
 - location filter and a structured `Jurisdiction` model (see `docs/ARCHITECTURE.md`)
@@ -74,13 +74,28 @@ Deferred, deliberately:
 - photo storage and resolution (`photo_asset_id` is stored but no bucket exists yet)
 - office filter as a typeahead (the option list is fine for the fictional set, not for thousands of offices)
 
-## Milestone 3 — Editorial workflow
+## Milestone 3 — Editorial & correction workflow (implemented 2026-10-09; database migrations partly unrun, see below)
 
-- reviewer authentication
-- draft/publish workflow
-- revision history
-- correction submissions
-- admin/reviewer tooling
+- [x] separate `admin/` web app (Vite, React, TypeScript, TanStack Query, React Hook Form, Zod) using Supabase Auth with the public key only
+- [x] roles REVIEWER / APPROVER / ADMIN, enforced by PostgreSQL; role-aware UI
+- [x] dashboard, work queue (status / type / creator / date), editors for people, election participation, office terms, affiliations, education, policy positions, sources, claims, elections, offices, organizations
+- [x] evidence editor with verification readiness (database verdict from `claim_readiness`)
+- [x] ordered state machine, two-person rule (with documented dev exception), frozen review content
+- [x] mandatory change reasons through RPCs; retraction without deletion
+- [x] revision viewer with field-level diff
+- [x] optimistic concurrency (`version`)
+- [x] "Report an error" in the mobile app (person profile, claim detail) via `submit_correction`; private `correction_requests`; editorial correction queue
+- [x] admin role management with last-admin protection and an append-only role log
+- [x] CI: admin typecheck/lint/tests/build, enum drift, database job extended
+- [x] storage deferred and documented; shared package deferred and documented (`docs/EDITORIAL_WORKFLOW.md`)
+
+Open items before this is called finished:
+- [ ] run the **unapplied** migrations on the hosted project: `20261008150050_editorial_evidence_and_queue.sql`, `20261008150100_corrections_and_staff.sql` (first three Milestone 3 migrations are applied)
+- [ ] run `supabase/tests/rls_and_publication.test.sql` in full against a database with all migrations (never run as one script) and a first green CI run including `supabase db reset`
+- [ ] exercise the admin app end to end against a real editor account (create → review → approve → publish → correct → retract)
+- [ ] regenerate `mobile/src/data/supabase/database.types.ts` after the migrations are applied
+- [ ] enable MFA for editorial accounts before real data
+- [ ] carried forward: Android and iOS runs against Supabase; confirm hosted public sign-up is disabled and leaked-password protection is on
 
 ## Milestone 4 — Sensitive public records
 

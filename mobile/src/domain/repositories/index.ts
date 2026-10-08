@@ -12,6 +12,7 @@ import type {
   DirectoryQuery,
   Page,
 } from '@/domain/models/directory';
+import type { CorrectionSubmission } from '@/domain/models/correction';
 import type { ClaimDetail, EvidenceItem, PersonProfile } from '@/domain/models/personProfile';
 
 export interface PersonRepository {
@@ -43,9 +44,18 @@ export interface ClaimRepository {
   getClaimDetail(claimId: string): Promise<ClaimDetail | null>;
 }
 
+export interface CorrectionRepository {
+  /**
+   * Sends a correction request for editorial review. Write-only: voters cannot read requests
+   * back, and a request never changes published data.
+   */
+  submit(submission: CorrectionSubmission): Promise<void>;
+}
+
 export type Repositories = {
   people: PersonRepository;
   elections: ElectionRepository;
   sources: SourceRepository;
   claims: ClaimRepository;
+  corrections: CorrectionRepository;
 };

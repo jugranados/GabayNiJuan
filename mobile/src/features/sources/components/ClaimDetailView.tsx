@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
+import { ActionButton } from '@/components/states';
 import { colors, spacing } from '@/components/theme';
 import { Body, Card, Heading, Screen, Section } from '@/components/ui';
 import type { ClaimDetail, EvidenceItem } from '@/domain/models/personProfile';
@@ -13,6 +14,8 @@ type Props = {
   detail: ClaimDetail;
   /** Opens the profile of the person the claim is about. */
   onOpenSubject?: (personId: string) => void;
+  /** Opens the "Report an error" form for this claim. */
+  onReportError?: () => void;
 };
 
 function EvidenceCard({ item, relation }: { item: EvidenceItem; relation: string }) {
@@ -31,7 +34,7 @@ function EvidenceCard({ item, relation }: { item: EvidenceItem; relation: string
  * with supporting and conflicting sources kept apart. No score or aggregate
  * rating is shown.
  */
-export function ClaimDetailView({ detail, onOpenSubject }: Props) {
+export function ClaimDetailView({ detail, onOpenSubject, onReportError }: Props) {
   const { claim, evidence, subject } = detail;
   const period = formatDateRange(claim.effectiveFrom, claim.effectiveTo);
   const supporting = evidence.filter((item) => item.link.supports);
@@ -96,6 +99,14 @@ export function ClaimDetailView({ detail, onOpenSubject }: Props) {
           </>
         ) : null}
       </Section>
+
+      {onReportError ? (
+        <ActionButton
+          label="Report an error"
+          accessibilityHint="Tell reviewers that this claim or its evidence looks incorrect"
+          onPress={onReportError}
+        />
+      ) : null}
     </Screen>
   );
 }

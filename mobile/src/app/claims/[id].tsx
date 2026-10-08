@@ -24,6 +24,17 @@ export default function ClaimDetailScreen() {
       onOpenSubject={(personId) =>
         router.push({ pathname: '/politicians/[id]', params: { id: personId } })
       }
+      onReportError={() =>
+        router.push({
+          pathname: '/report-error',
+          params: {
+            recordType: 'CLAIM',
+            recordId: detail.claim.id,
+            claimId: detail.claim.id,
+            label: 'this claim',
+          },
+        })
+      }
     />
   );
 }

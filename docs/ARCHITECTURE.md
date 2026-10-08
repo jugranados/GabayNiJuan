@@ -239,12 +239,19 @@ Manages user roles and exceptional corrections.
 
 The mobile app must never contain privileged backend credentials.
 
+### Editorial web app (Milestone 3)
+
+`admin/` is a separate Vite + React + TypeScript app (TanStack Query, React Hook Form, Zod, Supabase JS). Editors sign in with Supabase Auth; the browser uses only the public anon key, so every action is decided by RLS, triggers and RPC checks in PostgreSQL. Reads go through the `editorial_queue` view and tables; writes go through `editorial_update`, `editorial_transition`, `editorial_set_evidence`, `editorial_remove_evidence`, `review_correction` and `set_staff_role` (reasons, optimistic concurrency, state machine). The mobile app gains exactly one write: `submit_correction`. Full rules: `docs/EDITORIAL_WORKFLOW.md`.
+
+Decision: no shared `packages/domain` workspace yet. Shared enums are duplicated and checked for drift in CI (`scripts/check-enum-drift.mjs`).
+
 ## Hosting
 
 A mobile app itself does not require traditional web hosting.
 
 For early stages:
 - Supabase hosts database/API/auth/storage.
+- The editorial web app (`admin/`) is a static build: Cloudflare Pages or Vercel free tier.
 - Expo/EAS handles development and mobile build services.
 - GitHub hosts source code.
 - Optional public project/privacy pages can use GitHub Pages or Cloudflare Pages.

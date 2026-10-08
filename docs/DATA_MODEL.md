@@ -374,3 +374,12 @@ type PersonRelationship = {
 The UI may show documented relationships and offices held by related people.
 
 Avoid automatically labeling a family as a "dynasty" unless a clearly defined, published methodology is adopted.
+
+## Editorial workflow additions (Milestone 3)
+
+- **`version integer`** on every publishable table (not readable by `anon`). Incremented by trigger when content or workflow columns change; used for optimistic concurrency.
+- **`correction_requests`** (private; staff read only): `id`, `record_type` (`correction_target_type`), `record_id`, `claim_id?`, `description` (10–2000 chars), `source_url?` (http/https), `contact_email?`, `status` (`correction_status`: SUBMITTED, UNDER_REVIEW, ACCEPTED, REJECTED, RESOLVED), `created_at`, `reviewed_at`, `reviewed_by`, `resolution_note`, `version`. Created only through `submit_correction()`; changed only through `review_correction()`.
+- **`editorial_role_events`** (admin read only, append-only): who changed whose role, from what to what, when.
+- **`private.editorial_settings`** (not exposed): `allow_self_approval` development switch.
+- **`public.editorial_queue`** view (staff only): one row per editable record with type, label, state, version and editor/reviewer/approver ids.
+- **Functions:** `editorial_transition`, `editorial_update`, `editorial_set_evidence`, `editorial_remove_evidence`, `claim_readiness`, `submit_correction`, `review_correction`, `staff_directory`, `set_staff_role`.

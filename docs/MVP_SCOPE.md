@@ -29,7 +29,7 @@ Must be completed before mass data entry.
 | 6. Political / office history | done (timeline) |
 | 7. Sources / evidence viewer | done (`/claims/[id]`) |
 | 8. About verification | done |
-| 9. Report an error | not started (Milestone 3) |
+| 9. Report an error | done in Milestone 3 (person profile and claim detail; reviewed in the admin app) |
 
 ## Phase 1 — Voter MVP
 
@@ -73,9 +73,9 @@ Must be completed before mass data entry.
 - crowdsourced direct publishing
 - AI chatbot making candidate recommendations
 
-## Admin MVP
+## Admin MVP (built in Milestone 3: `admin/`)
 
-A simple internal web/admin tool may be added after schema stability.
+A separate internal web tool; see `docs/EDITORIAL_WORKFLOW.md`.
 
 Minimum capabilities:
 - create draft person

@@ -2,6 +2,7 @@ import { devFixtureTables } from '@/data/fixtures/devFixtures';
 import { createMockRepositories } from '@/data/repositories/mockRepositories';
 import { createRepositories } from '@/data/repositories/tableRepositories';
 import { createPublicSupabaseClient } from '@/data/supabase/client';
+import { createSupabaseCorrectionRepository } from '@/data/supabase/supabaseCorrectionRepository';
 import { createSupabaseDirectorySource } from '@/data/supabase/supabaseDirectorySource';
 import { createSupabaseRowSource } from '@/data/supabase/supabaseRowSource';
 import type { Repositories } from '@/domain/repositories';
@@ -20,6 +21,7 @@ export function createAppRepositories(config: AppConfig): Repositories {
       return createRepositories(
         createSupabaseRowSource(client),
         createSupabaseDirectorySource(client),
+        createSupabaseCorrectionRepository(client),
       );
     }
   }

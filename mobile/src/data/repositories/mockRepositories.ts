@@ -2,6 +2,7 @@ import { devFixtureTables } from '@/data/fixtures/devFixtures';
 import type { FixtureTables } from '@/data/repositories/inMemoryRowSource';
 import { createInMemoryDirectorySource } from '@/data/repositories/inMemoryDirectorySource';
 import { createInMemoryRowSource } from '@/data/repositories/inMemoryRowSource';
+import { createInMemoryCorrectionRepository } from '@/data/repositories/inMemoryCorrectionRepository';
 import { createRepositories } from '@/data/repositories/tableRepositories';
 import type { Repositories } from '@/domain/repositories';
 
@@ -16,5 +17,6 @@ export function createMockRepositories(
   return createRepositories(
     createInMemoryRowSource(tables),
     createInMemoryDirectorySource(tables, now),
+    createInMemoryCorrectionRepository(),
   );
 }

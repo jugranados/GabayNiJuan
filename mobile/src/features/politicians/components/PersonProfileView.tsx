@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { MissingRecords } from '@/components/states';
+import { ActionButton, MissingRecords } from '@/components/states';
 import { Timeline, type TimelineEntry } from '@/components/Timeline';
 import { Card, FixtureBanner, Screen, Section } from '@/components/ui';
 import { toIsoDate } from '@/domain/currentRecords';
@@ -20,6 +20,8 @@ type Props = {
   profile: PersonProfile;
   /** Opens the source viewer for a claim. */
   onOpenClaim?: (claimId: string) => void;
+  /** Opens the "Report an error" form for this profile. */
+  onReportError?: () => void;
   /** Injectable for tests; defaults to today (UTC). */
   today?: IsoDate;
 };
@@ -41,7 +43,12 @@ function ProfileSection({
  * history, political affiliations, education, policy positions, sources. Legal
  * cases and asset disclosures are deliberately not shown (Milestone 4).
  */
-export function PersonProfileView({ profile, onOpenClaim, today = toIsoDate(new Date()) }: Props) {
+export function PersonProfileView({
+  profile,
+  onOpenClaim,
+  onReportError,
+  today = toIsoDate(new Date()),
+}: Props) {
   const participations = [...profile.electionParticipations].sort(
     (a, b) =>
       (a.record.election.electionDate < b.record.election.electionDate ? 1 : -1) ||
@@ -174,6 +181,14 @@ export function PersonProfileView({ profile, onOpenClaim, today = toIsoDate(new 
           </Card>
         ))}
       </ProfileSection>
+
+      {onReportError ? (
+        <ActionButton
+          label="Report an error"
+          accessibilityHint="Tell reviewers about information on this profile that looks incorrect"
+          onPress={onReportError}
+        />
+      ) : null}
     </Screen>
   );
 }

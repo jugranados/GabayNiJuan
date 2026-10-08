@@ -135,6 +135,8 @@ prefer separate editor and approver accounts before publication.
 
 For an early solo-maintained prototype, preserve the same workflow fields even if one person performs both roles.
 
+**Enforced since Milestone 3:** an approver cannot approve a record they created or submitted for review. A documented development switch (`private.editorial_settings.allow_self_approval`, default off) lets a solo administrator proceed; each use is stamped in the revision reason. See `docs/EDITORIAL_WORKFLOW.md`.
+
 ## Dates
 
 Store separately:
@@ -146,6 +148,8 @@ Store separately:
 "Last updated" alone is not enough.
 
 ## Corrections
+
+**Implemented in Milestone 3:** voters submit "Report an error" requests (private, reviewed by staff, never published automatically). Accepting a request does not change a record; the change goes through draft → review → approval → publish and leaves a revision. Retracted records are kept with their history. Published data can be changed only by an approver with a stated reason, and reviewed content is frozen until returned to draft. The sections below remain the long-term target.
 
 Every published profile should eventually offer:
 

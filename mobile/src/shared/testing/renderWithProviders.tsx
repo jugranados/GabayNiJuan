@@ -12,7 +12,10 @@ export function renderWithProviders(
   repositories: Repositories = createMockRepositories(),
 ) {
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { gcTime: Infinity },
+    },
   });
   return render(
     <QueryClientProvider client={client}>
