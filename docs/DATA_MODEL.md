@@ -94,6 +94,17 @@ type OfficeTerm = {
 
 Represents parties, party-list organizations, coalitions, and similar organizations.
 
+```ts
+type PoliticalOrganization = {
+  id: string;
+  name: string;
+  abbreviation?: string;
+  organizationType: "POLITICAL_PARTY" | "PARTY_LIST" | "COALITION" | "OTHER";
+};
+```
+
+No color, ideology, or "bloc" field. Those are not facts unless documented and sourced.
+
 ### `AffiliationRecord`
 
 ```ts
@@ -109,11 +120,31 @@ type AffiliationRecord = {
 
 ### `EducationRecord`
 
-Structured institution/program/credential/date fields.
+```ts
+type EducationRecord = {
+  id: string;
+  personId: string;
+  institution: string;
+  program?: string;
+  credential?: string;
+  startDate?: string;
+  endDate?: string;
+};
+```
 
 ### `AwardRecord`
 
 Must include issuer and source.
+
+```ts
+type AwardRecord = {
+  id: string;
+  personId: string;
+  title: string;
+  issuer: string; // required
+  awardedAt?: string;
+};
+```
 
 ### `PolicyPositionRecord`
 
@@ -198,11 +229,14 @@ type Source = {
     | "NEWS"
     | "ACADEMIC"
     | "OTHER";
+  documentIdentifier?: string; // e.g. resolution/docket number when there is no URL
   publishedAt?: string;
   retrievedAt: string;
   archivedUrl?: string;
 };
 ```
+
+A source must have a `url` (http/https only) or a `documentIdentifier`.
 
 ### `Claim`
 
@@ -212,6 +246,20 @@ A claim is a precise proposition displayed or used by the application.
 type Claim = {
   id: string;
   subjectPersonId?: string;
+  // The record this claim attests to, so evidence can be shown beside it.
+  subjectRecord?: {
+    type:
+      | "PERSON"
+      | "ELECTION_PARTICIPATION"
+      | "OFFICE_TERM"
+      | "AFFILIATION"
+      | "EDUCATION"
+      | "AWARD"
+      | "POLICY_POSITION"
+      | "LEGAL_CASE"
+      | "ASSET_DISCLOSURE";
+    id: string;
+  };
   claimType: string;
   statement: string;
   effectiveFrom?: string;
@@ -227,6 +275,8 @@ type Claim = {
   lastReviewedAt?: string;
 };
 ```
+
+`subjectRecord` (added in Milestone 0) links a claim to the record it supports. A record with no linked claim is displayed as "Unverified, no source attached", never as established fact.
 
 ### `ClaimEvidence`
 
@@ -254,7 +304,31 @@ Track:
 - timestamp
 - approval state
 
+```ts
+type Revision = {
+  id: string;
+  entityType: ClaimSubjectRecordType | "CLAIM" | "SOURCE" | "CLAIM_EVIDENCE";
+  entityId: string;
+  oldValue?: string; // JSON
+  newValue?: string; // JSON
+  editorId: string;
+  approverId?: string;
+  reason: string;
+  createdAt: string; // ISO timestamp with offset
+  approvalState: "CORRECTION_DRAFT" | "REVIEWED" | "APPROVED" | "REJECTED" | "PUBLISHED";
+};
+```
+
 Published political data should not change without traceability.
+
+## Implementation notes (Milestone 0)
+
+- Domain types live in `mobile/src/domain/models`. Enums are readonly tuples in `mobile/src/domain/enums`, shared with Zod.
+- Backend row contracts (snake_case) live in `mobile/src/data/schemas/rows.ts`. Provisional table names: `people`, `elections`, `offices`, `election_participations`, `office_terms`, `political_organizations`, `affiliation_records`, `education_records`, `award_records`, `policy_position_records`, `legal_case_records`, `asset_disclosure_records`, `sources`, `claims`, `claim_evidence`, `revisions`. Milestone 1 migrations should match these, or update the schemas in the same change.
+- Dates use `YYYY-MM-DD`. Impossible dates and reversed ranges (end before start) are rejected.
+- An asset disclosure amount requires a currency.
+- `PersonProfile` (read model) does not include legal cases or disclosures until Milestone 4. Their absence must never be shown as "none on record".
+- Never stored or derived: `hasCriminalRecord`, scores, ratings, rankings, endorsements, predictions, political color.
 
 ## Phase 2 relationship graph
 

@@ -67,56 +67,87 @@ Relational constraints and joins are useful here.
 
 ## Client architecture
 
-Use feature-first organization:
+The app lives in `mobile/` (Expo SDK 57, React Native 0.86, New Architecture). Keeping it in its own directory leaves room beside it for `supabase/` migrations and a possible admin web app, without nesting another repository.
+
+Feature-first organization (implemented in Milestone 0):
 
 ```text
-src/
-  app/
-  components/
+mobile/src/
+  app/                 Expo Router routes ONLY (every file is a screen)
+    _layout.tsx        composition root: config -> repositories -> providers
+    index.tsx          Home
+    politicians/       list + [id] detail
+    about.tsx          About / data verification
+  components/          generic UI primitives (no domain knowledge beyond errors)
   features/
-    politicians/
-    elections/
-    offices/
-    sources/
-    legal-cases/
-    disclosures/
-    affiliations/
+    politicians/       query hooks, profile view, directory UI state (Zustand)
+    elections/         candidacy-status wording
+    offices/           office-term wording
+    affiliations/      affiliation wording
+    sources/           VerificationBadge, ClaimCard, SourceItem, verification copy
+    legal-cases/       reserved (Milestone 4)
+    disclosures/       reserved (Milestone 4)
   domain/
-    models/
-    enums/
-    validation/
+    enums/             readonly tuples -> unions (shared with Zod)
+    models/            domain types + PersonProfile read model
+    repositories/      repository interfaces
+    validation/        Zod primitives, error types, verification consistency checks
   data/
-    supabase/
-    repositories/
-    mappers/
+    schemas/           Zod schemas for raw backend rows (snake_case) + parse helpers
+    mappers/           row -> domain mappers, profile assembler
+    repositories/      RowSource abstraction, repository implementations, composition
+    supabase/          public Supabase client + Supabase RowSource
+    fixtures/          FICTIONAL development data, in raw row shape
   shared/
-    hooks/
-    utils/
-    config/
-    types/
+    config/            validated env config
+    hooks/             repositories React context
+    utils/             date formatting
 ```
+
+Tests are colocated in `__tests__/` folders outside `src/app/`, because every file in `src/app/` is treated as a route.
 
 ## Data flow
 
 ```text
-Supabase Row
+RowSource (in-memory fixtures | Supabase)   -> unknown[]
    ↓
-Zod validation
+Zod row schema (data/schemas)               -> throws DataValidationError
    ↓
-Data mapper
+Mapper (data/mappers)                       -> domain model
    ↓
-Domain model
+Repository (data/repositories)              -> implements domain/repositories interface
    ↓
-Repository
+TanStack Query hook (features/*/hooks)
    ↓
-Query/use-case hook
+Read model (PersonProfile, Attested<T>)
    ↓
-View model / UI model
-   ↓
-Screen
+Screen (app/*)
 ```
 
-UI code should never assume an unvalidated backend payload is correct.
+UI code never assumes an unvalidated backend payload is correct. An ESLint `no-restricted-imports` rule stops `app/`, `components/` and `features/` from importing `@supabase/*`, `data/supabase`, `data/schemas` or `data/fixtures`.
+
+### Switching between mock and Supabase
+
+Repositories are written once against a minimal `RowSource` interface (`select` with `eq`/`in` filters, and `search`). The fixture source and the Supabase source both implement it. `createAppRepositories(config)` picks one based on `EXPO_PUBLIC_DATA_SOURCE`. Switching backends changes no repository, hook or UI code, and fixture data is validated exactly like production data.
+
+The profile read currently issues several small queries. If that becomes a bottleneck, add a Postgres view/RPC and a dedicated repository method. The domain interface stays the same.
+
+### Validation failure policy
+
+- No `z.coerce`. Wrong types and unknown enum values are rejected.
+- One invalid row fails the whole read. Silently dropping a row could hide a correction or a conflicting source.
+- A dangling reference (for example, a participation pointing to a missing office) raises `DataIntegrityError`.
+- The UI shows an explicit "Some records failed validation" state. TanStack Query does not retry data errors.
+
+### Config and secrets
+
+`shared/config/env.ts` validates `EXPO_PUBLIC_*` variables with Zod and refuses to start if the Supabase key is a service-role JWT or an `sb_secret_` key. The public Supabase client does not persist or refresh sessions, because voters do not sign in.
+
+### Library decisions (Milestone 0)
+
+- React Hook Form is deferred until the first form ("Report an error") so that no unused dependency ships.
+- `@react-native-async-storage/async-storage` is not installed, because there is no voter session to persist.
+- RNTL 14 uses `test-renderer` (not the deprecated `react-test-renderer`), and `render` is async.
 
 ## Backend access model
 

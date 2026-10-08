@@ -31,3 +31,14 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# macOS
+.DS_Store
+
+# Environment files (never commit secrets; see mobile/.env.example)
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/

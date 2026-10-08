@@ -31,6 +31,29 @@ Insufficient evidence.
 ### `OUTDATED`
 Previously supported but no longer sufficiently current for the context.
 
+## Verification consistency checks
+
+Implemented in `mobile/src/domain/validation/verification.ts`. These checks flag a claim for human review. They never change a status automatically.
+
+| Status | Requirement |
+|---|---|
+| any except `UNVERIFIED` | at least one attached source |
+| `PRIMARY_SOURCE` | at least one *supporting* tier-1 source (official government, court/tribunal, legislative record) |
+| `CORROBORATED` | supporting sources from at least two distinct publishers |
+| `DISPUTED` | at least one supporting and one contradicting source |
+| any except `DISPUTED`/`OUTDATED` | no contradicting source attached (a conflict must be marked `DISPUTED`) |
+
+Development fixtures are tested against these checks.
+
+## Display rules (Milestone 0)
+
+- Each claim shows its own verification badge. Pressing the badge explains the state in evidence terms.
+- All states share one neutral visual style, so no state is colored as "good" or "bad".
+- Contradicting sources are shown beside supporting ones, labeled "Conflicting source".
+- A record with no attached claim is shown as `UNVERIFIED` with "No source attached."
+- An empty profile section reads "No records have been added for this section yet." This states that records are missing, not anything about the person.
+- Records that fail validation are not displayed. The screen shows an explicit validation-failure state instead.
+
 ## Publication workflow
 
 ```text

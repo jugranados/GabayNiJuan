@@ -1,32 +1,43 @@
 # Roadmap
 
-## Milestone 0 — Reset architecture
+## Milestone 0 — Reset architecture ✅ (implemented 2026-10-07)
 
-- preserve native Android prototype branch
-- bootstrap React Native + Expo + TypeScript project
-- configure lint/format/test
-- configure environment variables
-- add Supabase client
-- create feature folder structure
-- establish CI
+- [x] preserve native Android prototype branch (`origin/develop`, untouched)
+- [x] bootstrap React Native + Expo + TypeScript project (`mobile/`, Expo SDK 57)
+- [x] configure lint/format/test (ESLint + Prettier + Jest + RNTL)
+- [x] configure environment variables (`.env.example`, validated config, service-role key guard)
+- [x] add Supabase client (public, session-less; Supabase RowSource)
+- [x] create feature folder structure
+- [x] establish CI (`.github/workflows/mobile-ci.yml`)
+- [x] domain models, Zod row schemas, mappers, repository interfaces
+- [x] fictional in-memory fixtures served through the same validation pipeline
+- [x] app shell: Home, Politicians, Politician Detail, About / Data Verification
+- [x] `VerificationBadge` with an explanation for each state
 
 Exit criteria:
-- Android and iOS projects run
-- automated type-check/test command exists
-- no political data is hard-coded in UI
+- [x] Android and iOS bundles build (`expo export` for both platforms; `expo-doctor` clean)
+- [ ] Android and iOS run on an emulator/simulator: needs a manual check on a machine with Android Studio/Xcode, or Expo Go
+- [x] automated type-check/test command exists (`npm run verify`)
+- [x] no political data is hard-coded in UI (UI reads repositories; fixtures are fictional)
 
 ## Milestone 1 — Data trust foundation
 
 - create Supabase project
 - implement schema
-- implement RLS
-- seed non-controversial development fixtures
-- implement Source/Claim/Evidence models
-- implement verification status UI
+  - tables matching the provisional row contracts in `mobile/src/data/schemas/rows.ts`
+  - publication workflow fields (`publication_status`, editor/approver, timestamps)
+  - `revisions` audit table with triggers
+- implement RLS (anon: read `PUBLISHED` rows only; no anon writes)
+- seed non-controversial development fixtures (port `mobile/src/data/fixtures`, still fictional)
+- generate Supabase types for the data layer only, and keep them out of domain/UI
+- implement Source/Claim/Evidence models end to end against Supabase
+- implement verification status UI (source viewer screen per claim)
+- run verification consistency checks in CI against seed data
 
 Exit criteria:
 - every displayed fixture claim can open evidence metadata
 - UI never consumes raw database rows directly
+- the app runs with `EXPO_PUBLIC_DATA_SOURCE=supabase` against the dev project
 
 ## Milestone 2 — Politician directory MVP
 
