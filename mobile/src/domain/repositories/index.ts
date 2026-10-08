@@ -7,16 +7,24 @@
  */
 import type { Election, ElectionParticipation, Person, Source } from '@/domain/models';
 import type {
-  ClaimDetail,
-  EvidenceItem,
-  PersonProfile,
-  PersonSummary,
-} from '@/domain/models/personProfile';
+  DirectoryEntry,
+  DirectoryFilterOptions,
+  DirectoryQuery,
+  Page,
+} from '@/domain/models/directory';
+import type { ClaimDetail, EvidenceItem, PersonProfile } from '@/domain/models/personProfile';
 
 export interface PersonRepository {
-  getPeople(): Promise<PersonSummary[]>;
+  /**
+   * Browse and search. Always ordered alphabetically by name (then id), so the
+   * same query returns the same order on every backend. Filters combine with
+   * AND; a person matches the participation filters when ONE participation
+   * satisfies all of them. Never ranks or scores.
+   */
+  searchDirectory(query: DirectoryQuery): Promise<Page<DirectoryEntry>>;
+  /** Reference lists that populate the filter UI. */
+  getDirectoryFilterOptions(): Promise<DirectoryFilterOptions>;
   getPersonById(id: string): Promise<Person | null>;
-  searchPeople(query: string): Promise<PersonSummary[]>;
   getPersonProfile(id: string): Promise<PersonProfile | null>;
 }
 

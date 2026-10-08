@@ -12,11 +12,16 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { devFixtureTables } from '@/data/fixtures/devFixtures';
-import { createInMemoryRowSource } from '@/data/repositories/inMemoryRowSource';
+import { createMockRepositories } from '@/data/repositories/mockRepositories';
 import { createRepositories } from '@/data/repositories/tableRepositories';
 import { createPublicSupabaseClient } from '@/data/supabase/client';
+import { createSupabaseDirectorySource } from '@/data/supabase/supabaseDirectorySource';
 import { createSupabaseRowSource } from '@/data/supabase/supabaseRowSource';
+import type {
+  DirectoryEntry,
+  DirectoryFilterOptions,
+  DirectoryFilters,
+} from '@/domain/models/directory';
 import { formatPersonName } from '@/domain/models/person';
 import type { ClaimWithEvidence, PersonProfile } from '@/domain/models/personProfile';
 import type { Repositories } from '@/domain/repositories';
@@ -80,8 +85,11 @@ function profileView(profile: PersonProfile) {
   };
 }
 
+// Real network calls (a profile is several requests): allow more than Jest's 5s default.
+jest.setTimeout(60_000);
+
 describe('Supabase (anon key) against the fictional seed', () => {
-  const mock = createRepositories(createInMemoryRowSource(devFixtureTables));
+  const mock = createMockRepositories();
   let client: SupabaseClient;
   let remote: Repositories;
 
@@ -90,20 +98,23 @@ describe('Supabase (anon key) against the fictional seed', () => {
       throw new Error('Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.');
     }
     client = createPublicSupabaseClient(url, anonKey);
-    remote = createRepositories(createSupabaseRowSource(client));
+    remote = createRepositories(
+      createSupabaseRowSource(client),
+      createSupabaseDirectorySource(client),
+    );
   });
 
-  it('lists the same people as the fixtures', async () => {
-    const [remotePeople, mockPeople] = await Promise.all([
-      remote.people.getPeople(),
-      mock.people.getPeople(),
-    ]);
+  const listAll = async (repos: Repositories) =>
+    (await repos.people.searchDirectory({ page: { limit: 50 } })).items;
+
+  it('lists the same people as the fixtures, in the same order', async () => {
+    const [remotePeople, mockPeople] = await Promise.all([listAll(remote), listAll(mock)]);
     expect(remotePeople.map((p) => p.displayName)).toEqual(mockPeople.map((p) => p.displayName));
   });
 
   it('returns profiles identical in content to the fixtures (claims, evidence, sources)', async () => {
-    const mockPeople = await mock.people.getPeople();
-    const remotePeople = await remote.people.getPeople();
+    const mockPeople = await listAll(mock);
+    const remotePeople = await listAll(remote);
     for (const mockPerson of mockPeople) {
       const remotePerson = remotePeople.find((p) => p.displayName === mockPerson.displayName);
       expect(remotePerson).toBeDefined();
@@ -116,7 +127,7 @@ describe('Supabase (anon key) against the fictional seed', () => {
   });
 
   it('serves a claim detail with supporting and contradicting evidence', async () => {
-    const remotePeople = await remote.people.getPeople();
+    const remotePeople = await listAll(remote);
     const maria = remotePeople.find((p) => p.displayName.includes('Makabayan'))!;
     const profile = await remote.people.getPersonProfile(maria.id);
     const disputed = profile!.officeTerms[0]!.claims[0]!;
@@ -126,10 +137,143 @@ describe('Supabase (anon key) against the fictional seed', () => {
     expect(detail?.subject?.displayName).toContain('Makabayan');
   });
 
-  it('searches by name', async () => {
-    expect((await remote.people.searchPeople('makab')).map((p) => p.displayName)).toEqual([
-      'Maria Luntian Makabayan',
-    ]);
+  describe('directory: mock and Supabase behave identically', () => {
+    // Ids differ between backends (slugs vs UUIDs), so filters are translated by NAME.
+    let mockOptions: DirectoryFilterOptions;
+    let remoteOptions: DirectoryFilterOptions;
+
+    beforeAll(async () => {
+      [mockOptions, remoteOptions] = await Promise.all([
+        mock.people.getDirectoryFilterOptions(),
+        remote.people.getDirectoryFilterOptions(),
+      ]);
+    });
+
+    const translate = (filters: DirectoryFilters): DirectoryFilters => {
+      const byName = <T extends { id: string; name: string }>(from: T[], to: T[], id?: string) =>
+        id === undefined
+          ? undefined
+          : to.find((t) => t.name === from.find((f) => f.id === id)?.name)?.id;
+      return {
+        ...filters,
+        electionId: byName(mockOptions.elections, remoteOptions.elections, filters.electionId),
+        officeId: byName(mockOptions.offices, remoteOptions.offices, filters.officeId),
+        organizationId: byName(
+          mockOptions.organizations,
+          remoteOptions.organizations,
+          filters.organizationId,
+        ),
+      };
+    };
+
+    /** Card content without ids, for comparison across backends. */
+    const view = (entry: DirectoryEntry) => ({
+      name: entry.displayName,
+      participations: entry.participations,
+      affiliation: entry.affiliation,
+    });
+
+    const compare = async (
+      query: { query?: string; filters?: DirectoryFilters },
+      limit = 50,
+      offset = 0,
+    ) => {
+      const page = { limit, offset };
+      const [m, r] = await Promise.all([
+        mock.people.searchDirectory({ ...query, page }),
+        remote.people.searchDirectory({
+          ...query,
+          filters: query.filters ? translate(query.filters) : undefined,
+          page,
+        }),
+      ]);
+      expect(r.items.map(view)).toEqual(m.items.map(view));
+      expect(r.total).toBe(m.total);
+      expect(r.nextOffset).toBe(m.nextOffset);
+      return m;
+    };
+
+    it('lists reference data for the filter UI identically', async () => {
+      const names = (o: DirectoryFilterOptions) => ({
+        elections: o.elections.map((e) => [e.name, e.electionDate]),
+        offices: o.offices.map((x) => [x.name, x.level, x.jurisdictionId]),
+        organizations: o.organizations.map((x) => [x.name, x.abbreviation]),
+      });
+      expect(names(remoteOptions)).toEqual(names(mockOptions));
+    });
+
+    it.each(['gawa', 'dela cruz juan', '  MAKAB ', 'jr', 'ejemplo', 'g', 'zzzzzz'])(
+      'search %j',
+      async (query) => {
+        await compare({ query });
+      },
+    );
+
+    it.each(['NATIONAL', 'PROVINCIAL', 'CITY', 'MUNICIPAL', 'DISTRICT', 'BARANGAY'] as const)(
+      'office level %s',
+      async (officeLevel) => {
+        await compare({ filters: { officeLevel } });
+      },
+    );
+
+    it.each([
+      'POTENTIAL_ASPIRANT',
+      'PUBLICLY_DECLARED_ASPIRANT',
+      'FILED_COC',
+      'OFFICIAL_CANDIDATE',
+      'WITHDRAWN',
+      'DISQUALIFIED',
+      'ELECTED',
+      'NOT_ELECTED',
+    ] as const)('participation status %s', async (participationStatus) => {
+      const m = await compare({ filters: { participationStatus } });
+      expect(m.total).toBeGreaterThan(0);
+    });
+
+    it('every election, office and organization filter', async () => {
+      for (const election of mockOptions.elections) {
+        await compare({ filters: { electionId: election.id } });
+      }
+      for (const office of mockOptions.offices) {
+        await compare({ filters: { officeId: office.id } });
+      }
+      for (const organization of mockOptions.organizations) {
+        await compare({ filters: { organizationId: organization.id } });
+      }
+    });
+
+    it('jurisdiction filter (opaque id)', async () => {
+      await compare({ filters: { jurisdictionId: 'jurisdiction-halimbawa-district-1' } });
+    });
+
+    it('combined filters and search', async () => {
+      const pambansa = mockOptions.elections.find((e) => e.id === 'election-pambansa-2028')!.id;
+      const pagasa = mockOptions.organizations.find((o) => o.id === 'org-partido-pag-asa')!.id;
+      await compare({
+        filters: { electionId: pambansa, participationStatus: 'POTENTIAL_ASPIRANT' },
+      });
+      await compare({ filters: { officeLevel: 'NATIONAL', organizationId: pagasa } });
+      await compare({ query: 'gawa', filters: { participationStatus: 'DISQUALIFIED' } });
+      await compare({
+        filters: { officeLevel: 'PROVINCIAL', participationStatus: 'POTENTIAL_ASPIRANT' },
+      });
+    });
+
+    it('pagination returns the same pages and totals', async () => {
+      for (const offset of [0, 3, 6, 9, 12]) {
+        await compare({}, 3, offset);
+      }
+    });
+
+    it('current affiliation shown on cards follows the same date and evidence rules', async () => {
+      const entries = await listAll(remote);
+      const byName = Object.fromEntries(
+        entries.map((e) => [e.displayName, e.affiliation?.organizationName]),
+      );
+      expect(byName['Elena Bukid Kathang-Isip']).toBeUndefined(); // ended
+      expect(byName['Tomas Ilog Ejemplo']).toBeUndefined(); // OUTDATED claim
+      expect(byName['Ramon Bayani Gawa-Gawa']).toBe('Alyansang Bagong-Umaga (fictional)');
+    });
   });
 
   describe('anonymous access is read-only and limited', () => {

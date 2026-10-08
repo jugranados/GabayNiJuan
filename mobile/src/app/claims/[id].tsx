@@ -1,15 +1,16 @@
 import { router, useLocalSearchParams } from 'expo-router';
 
-import { Body, ErrorView, LoadingView, Screen } from '@/components/ui';
+import { ErrorView } from '@/components/states';
+import { Body, LoadingView, Screen } from '@/components/ui';
 import { ClaimDetailView } from '@/features/sources/components/ClaimDetailView';
 import { useClaimDetail } from '@/features/sources/hooks/queries';
 
 export default function ClaimDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: detail, error, isPending } = useClaimDetail(id);
+  const { data: detail, error, isPending, refetch } = useClaimDetail(id);
 
   if (isPending) return <LoadingView />;
-  if (error) return <ErrorView error={error} />;
+  if (error) return <ErrorView error={error} onRetry={() => void refetch()} />;
   if (!detail) {
     return (
       <Screen>

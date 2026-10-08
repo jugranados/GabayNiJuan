@@ -81,7 +81,7 @@ mobile/src/
     about.tsx          About / data verification
   components/          generic UI primitives (no domain knowledge beyond errors)
   features/
-    politicians/       query hooks, profile view, directory UI state (Zustand)
+    politicians/       directory (cards, search, filters), Home, profile header/view, query hooks, UI state (Zustand)
     elections/         candidacy-status wording
     offices/           office-term wording
     affiliations/      affiliation wording
@@ -148,6 +148,62 @@ The backend schema lives in `supabase/migrations/` (see `supabase/README.md`). `
 Generated types do not replace Zod. They describe what the database *should* return; Zod checks what actually arrived.
 
 The database also enforces the editorial rules (RLS, column-level grants, publish gate, verification-consistency checks, audit trail), so the mobile app is never the only line of defence.
+
+### Directory query architecture
+
+```text
+DirectoryView / HomeView (UI, router-free)
+   ↓ useDirectory (TanStack useInfiniteQuery)        features/politicians/hooks
+PersonRepository.searchDirectory(DirectoryQuery)     domain/repositories
+   ↓ normalizeDirectoryQuery  (trim, min length, clamp paging, drop empty filters)
+DirectorySource.search(params) -> unknown            data/repositories
+   ├─ in-memory: computed in TypeScript from fixtures   (mock)
+   └─ Supabase:  rpc('search_directory', …)             (database does the work)
+   ↓ Zod (directoryPageRowSchema)  →  mapper  →  Page<DirectoryEntry>
+```
+
+- **One query, not one method per filter.** `DirectoryQuery = { query?, filters?, sort?, page? }`. `sort` has a single value, `NAME_ASC`; there is deliberately no relevance, popularity or other ranking sort, and none may be added.
+- **Ordering is deterministic and the same everywhere:** lowercase last name, lowercase first name, id, compared by code point (`collate "C"` in SQL). Accented letters sort after `z`. This is stable and neutral; locale-aware ordering is a later refinement.
+- **Search:** the text is trimmed and whitespace-collapsed; below two characters it is ignored (the UI says so). Every word must appear, case-insensitively, in `first middle last suffix preferred`.
+- **Filters combine with AND.** All participation filters (election, office, office level, status, jurisdiction) must be satisfied by one and the same participation; the organization filter matches any dated affiliation record with that organization (including ended ones).
+- **Directory cards are a lightweight read model** (`DirectoryEntry`): name, photo id, participations (office, election, status) and at most one affiliation. No claims, no sources, no counts. The profile loads separately.
+- **Why a database function and not client-side filtering:** a national dataset has thousands of people, so the app must never download everyone to filter them, and sending long `id in (…)` lists to the API breaks on URL length. `search_directory` is `SECURITY INVOKER`, so Row Level Security and the anon column grants still apply: it can only ever see published rows and non-identity columns.
+- **Two implementations, one behavior.** The SQL function and `inMemoryDirectorySource.ts` follow the same written rules. `npm run test:integration` runs the same queries (search, every filter, combinations, paging) against both and requires identical results. `schemaDrift.ts` also checks at compile time that the arguments the app sends are exactly the function's parameters.
+
+#### Pagination decision
+
+Offset pagination (`limit`/`offset`, 20 per page, maximum 50) with an exact `total`, returned as `Page<T> = { items, total, nextOffset? }`. It is the simplest thing that is adequate for a directory of thousands, supports "N results", and needs no cursor state. The UI uses `useInfiniteQuery` with `onEndReached` plus a visible "Show more" button. Cursor (keyset) pagination can replace it behind the same `Page<T>` contract if rows start being inserted frequently while people scroll.
+
+#### Filter model
+
+`DirectoryFilters` (domain) holds the supported fields; `features/politicians/filterConfig.ts` lists which ones the UI shows (`FILTER_DEFINITIONS`) and how to label their values. Adding a documented, structured field means one entry there plus one column in the query. Prohibited by product rule: any filter that ranks or judges a person ("best", "most trusted", "clean record", "most experienced", "most popular", "least controversial"). A test asserts the filter sheet contains none.
+
+#### Jurisdiction decision
+
+`Office.jurisdictionId` stays an opaque string. A structured `Jurisdiction` model (region → province → city/municipality → district → barangay) is **not** needed for this MVP, because the directory can already be narrowed by election, office and office level, and an office's name states its place. A location filter needs human-readable jurisdiction names and a hierarchy; building that now would mean modelling Philippine administrative geography before there is data to use it. The query and `search_directory` already accept `jurisdictionId` so the filter can be added without changing the contract. When it is built, it needs: a `jurisdictions` table (id, name, level, parent id) with publication metadata, a foreign key from `offices`, and a source policy for the geographic codes.
+
+### Profile information hierarchy
+
+```text
+PersonProfileHeader   photo, name, current documented context, evidence counts
+Personal Details      (only when identity claims exist)
+Election Participation   ElectionParticipationCard × n   (newest election first)
+Public Office History    Timeline (most recent first)
+Political Affiliations   Timeline (most recent first)
+Education
+Policy Positions
+Sources
+```
+
+- **"Current" is derived, never guessed** (`domain/profileContext.ts`, `domain/currentRecords.ts`). The header headlines an office or affiliation only if its start date is known and not in the future, its end date is absent or not in the past, **and** it has a claim that is `PRIMARY_SOURCE`, `CORROBORATED`, `SELF_DECLARED` or `REPORTED`. Anything else stays in its own section, with its badge, but is not headlined. The same rule decides the one affiliation shown on a directory card, in SQL and in TypeScript.
+- **Timelines never say "present".** A record with a start but no end date shows "From 2022" and the note "No end date recorded". A missing end is not proof that something is ongoing.
+- **Verification belongs to claims, never to a person.** The header shows counts ("12 claims from 9 sources") as information and says they are not a rating. There is no person-level score, percentage or "verified" label.
+- **Evidence is never more than one tap away.** Every attested record shows its claims with their `VerificationBadge` and a "View evidence and sources" link to `/claims/[id]` (claim → evidence → original source). A record with no claim shows "Unverified · No source attached."
+- Legal cases and asset disclosures are intentionally absent (Milestone 4).
+
+### Missing-data wording policy
+
+Absence in our database is not absence in the world. Every empty profile section shows the single sentence **"No records have been added for this section yet."** (`MISSING_RECORDS_MESSAGE`, one shared component). The app never shows "no political experience", "no cases", "no issues", "no controversies", "no corruption" or "no education", and never "clean record". An empty search says "No politicians match this search" and adds that a missing name does not mean a person has no public record. Tests assert these strings do not appear.
 
 ### Public read path
 

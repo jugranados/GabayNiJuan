@@ -1,10 +1,12 @@
 import { devFixtureTables } from '@/data/fixtures/devFixtures';
 import { createInMemoryRowSource } from '@/data/repositories/inMemoryRowSource';
+import { createInMemoryDirectorySource } from '@/data/repositories/inMemoryDirectorySource';
+import { createMockRepositories } from '@/data/repositories/mockRepositories';
 import { createRepositories } from '@/data/repositories/tableRepositories';
 import type { PersonProfile } from '@/domain/models/personProfile';
 import { DataIntegrityError, DataValidationError } from '@/domain/validation/errors';
 
-const repos = createRepositories(createInMemoryRowSource(devFixtureTables));
+const repos = createMockRepositories();
 
 async function profileOf(id: string): Promise<PersonProfile> {
   const profile = await repos.people.getPersonProfile(id);
@@ -13,20 +15,21 @@ async function profileOf(id: string): Promise<PersonProfile> {
 }
 
 describe('mock repositories over fictional fixtures', () => {
-  it('lists people alphabetically by last name (no ranking)', async () => {
-    const people = await repos.people.getPeople();
-    expect(people.map((p) => p.displayName)).toEqual([
+  it('lists every fictional person alphabetically through the directory query', async () => {
+    const page = await repos.people.searchDirectory({ page: { limit: 50 } });
+    expect(page.total).toBe(10);
+    expect(page.items.map((p) => p.displayName)).toEqual([
       'Juan Dela Cruz',
+      'Luz Tala Ejemplo',
+      'Tomas Ilog Ejemplo',
+      'Dante Bundok Gawa-Gawa',
+      'Ramon Bayani Gawa-Gawa',
+      'Carlo Dagat Haka-haka',
+      'Elena Bukid Kathang-Isip',
       'Maria Luntian Makabayan',
+      'Ana Liwanag Pangarap',
       'Pedro Santos Jr.',
     ]);
-  });
-
-  it('searches names case-insensitively and ignores single-character queries', async () => {
-    expect((await repos.people.searchPeople('makab')).map((p) => p.id)).toEqual([
-      'person-maria-makabayan',
-    ]);
-    expect(await repos.people.searchPeople('m')).toEqual([]);
   });
 
   it('returns null for an unknown person', async () => {
@@ -64,12 +67,12 @@ describe('mock repositories over fictional fixtures', () => {
   });
 
   it('rejects invalid fixture data instead of displaying it', async () => {
+    const tables = { people: [{ id: 'p-x', first_name: 'Juan', last_name: '' }] };
     const broken = createRepositories(
-      createInMemoryRowSource({
-        people: [{ id: 'p-x', first_name: 'Juan', last_name: '' }],
-      }),
+      createInMemoryRowSource(tables),
+      createInMemoryDirectorySource(tables),
     );
-    await expect(broken.people.getPeople()).rejects.toBeInstanceOf(DataValidationError);
+    await expect(broken.people.searchDirectory({})).rejects.toBeInstanceOf(DataValidationError);
   });
 });
 
@@ -95,14 +98,12 @@ describe('claim repository over fictional fixtures', () => {
   });
 
   it('fails explicitly when evidence points to a missing source', async () => {
-    const broken = createRepositories(
-      createInMemoryRowSource({
-        ...devFixtureTables,
-        claim_evidence: [
-          { claim_id: 'claim-maria-filed-coc', source_id: 'src-missing', supports: true },
-        ],
-      }),
-    );
+    const broken = createMockRepositories({
+      ...devFixtureTables,
+      claim_evidence: [
+        { claim_id: 'claim-maria-filed-coc', source_id: 'src-missing', supports: true },
+      ],
+    });
     await expect(broken.claims.getClaimDetail('claim-maria-filed-coc')).rejects.toBeInstanceOf(
       DataIntegrityError,
     );

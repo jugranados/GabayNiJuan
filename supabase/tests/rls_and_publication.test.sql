@@ -111,6 +111,17 @@ begin
     pg_temp.scalar_as('anon', null, format('select count(*) from public.people where id = %L', p_draft)) = '0',
     'anon cannot read a draft by id');
 
+  -- Milestone 2: the directory function runs as the caller, so it inherits RLS.
+  perform pg_temp.check(
+    not (select prosecdef from pg_proc where proname = 'search_directory' and pronamespace = 'public'::regnamespace),
+    'search_directory is SECURITY INVOKER');
+  perform pg_temp.check(
+    pg_temp.scalar_as('anon', null, $q$select (public.search_directory('rlstest') ->> 'total')$q$) = '1',
+    'search_directory (anon) counts only the PUBLISHED person, not drafts, rejected or retracted');
+  perform pg_temp.check(
+    pg_temp.scalar_as('anon', null, $q$select (public.search_directory('rlstest') -> 'items' -> 0 ->> 'first_name')$q$) = 'Published',
+    'search_directory (anon) returns the published person');
+
   ---------------------------------------------------------------------------
   -- 2. Anonymous cannot write, and cannot see editorial data
   ---------------------------------------------------------------------------
@@ -280,6 +291,9 @@ begin
   perform pg_temp.check(
     pg_temp.scalar_as('anon', null, format('select count(*) from public.people where id = %L', p_work)) = '1',
     'anon sees the person once published');
+  perform pg_temp.check(
+    pg_temp.scalar_as('anon', null, $q$select (public.search_directory('rlstest') ->> 'total')$q$) = '2',
+    'search_directory (anon) includes a person once an approver publishes them');
   perform pg_temp.expect_error(format('delete from public.people where id = %L', p_work),
     'permission denied', 'even an approver cannot delete through the API', approver, 'authenticated');
   perform pg_temp.expect_error(format($q$insert into public.editorial_roles (user_id, role) values (%L, 'ADMIN')$q$, reviewer),

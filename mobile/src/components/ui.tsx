@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { colors, spacing } from '@/components/theme';
-import { DataIntegrityError, DataValidationError } from '@/domain/validation/errors';
 
 export function Screen({ children }: { children: ReactNode }) {
   return (
@@ -43,27 +42,6 @@ export function LoadingView() {
   return (
     <View style={styles.centered}>
       <ActivityIndicator accessibilityLabel="Loading" />
-    </View>
-  );
-}
-
-/**
- * Shows load failures explicitly. Validation failures are named as such so
- * that invalid political data is never mistaken for "no data".
- */
-export function ErrorView({ error }: { error: unknown }) {
-  const isDataProblem = error instanceof DataValidationError || error instanceof DataIntegrityError;
-  return (
-    <View style={styles.centered} accessibilityRole="alert">
-      <Text style={styles.sectionTitle}>
-        {isDataProblem ? 'Some records failed validation' : 'Could not load information'}
-      </Text>
-      <Body muted>
-        {isDataProblem
-          ? 'This information is not shown because it did not pass data checks. It will be reviewed.'
-          : 'Please try again later.'}
-      </Body>
-      {__DEV__ && error instanceof Error ? <Body muted>{error.message}</Body> : null}
     </View>
   );
 }

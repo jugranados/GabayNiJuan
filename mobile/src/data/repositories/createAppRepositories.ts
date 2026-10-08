@@ -1,24 +1,26 @@
 import { devFixtureTables } from '@/data/fixtures/devFixtures';
-import { createInMemoryRowSource } from '@/data/repositories/inMemoryRowSource';
+import { createMockRepositories } from '@/data/repositories/mockRepositories';
 import { createRepositories } from '@/data/repositories/tableRepositories';
 import { createPublicSupabaseClient } from '@/data/supabase/client';
+import { createSupabaseDirectorySource } from '@/data/supabase/supabaseDirectorySource';
 import { createSupabaseRowSource } from '@/data/supabase/supabaseRowSource';
 import type { Repositories } from '@/domain/repositories';
 import type { AppConfig } from '@/shared/config/env';
 
 /**
  * Composition root for data access. Switching between fictional fixtures and
- * Supabase changes only the RowSource; repositories and UI are unchanged.
+ * Supabase swaps the RowSource and DirectorySource; repositories and UI are unchanged.
  */
 export function createAppRepositories(config: AppConfig): Repositories {
   switch (config.dataSource) {
     case 'mock':
-      return createRepositories(createInMemoryRowSource(devFixtureTables));
-    case 'supabase':
+      return createMockRepositories(devFixtureTables);
+    case 'supabase': {
+      const client = createPublicSupabaseClient(config.supabaseUrl, config.supabaseAnonKey);
       return createRepositories(
-        createSupabaseRowSource(
-          createPublicSupabaseClient(config.supabaseUrl, config.supabaseAnonKey),
-        ),
+        createSupabaseRowSource(client),
+        createSupabaseDirectorySource(client),
       );
+    }
   }
 }

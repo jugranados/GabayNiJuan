@@ -48,7 +48,7 @@
     "seed:generate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-seed.mjs",
     "test:consistency": "jest consistency",
     "test:integration": "jest -c jest.integration.config.js",
-    "seed:check": "npm run seed:generate && git diff --exit-code -- ../supabase/seed.sql"
+    "seed:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-seed.mjs --check"
   },
   "private": true,
   "engines": {

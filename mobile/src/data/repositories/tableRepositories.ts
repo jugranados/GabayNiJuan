@@ -2,7 +2,12 @@
  * Repository implementations over any RowSource. Every row is validated with
  * Zod and mapped to a domain model before it leaves this module.
  */
+import type { DirectorySource } from '@/data/repositories/directorySource';
+import { directoryPageRowSchema } from '@/data/schemas/directory';
+import { normalizeDirectoryQuery } from '@/domain/directory';
+import type { DirectoryFilterOptions } from '@/domain/models/directory';
 import {
+  toDirectoryEntry,
   toAffiliationRecord,
   toClaim,
   toClaimEvidence,
@@ -44,14 +49,8 @@ import type {
   SourceRepository,
 } from '@/domain/repositories';
 
-const MIN_SEARCH_LENGTH = 2;
-
 function toSummary(person: Person): PersonSummary {
   return { id: person.id, displayName: formatPersonName(person) };
-}
-
-function byName(a: Person, b: Person): number {
-  return a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName);
 }
 
 function unique(values: readonly string[]): string[] {
@@ -63,33 +62,63 @@ async function findOne<T>(rows: Promise<unknown[]>, parse: (row: unknown) => T):
   return first === undefined ? null : parse(first);
 }
 
-export function createPersonRepository(source: RowSource): PersonRepository {
-  const parsePeople = (rows: unknown[]) =>
-    parseRows(personRowSchema, 'person', rows).map(toPerson).sort(byName);
+const byCodePoint = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
+export function createPersonRepository(
+  source: RowSource,
+  directory: DirectorySource,
+): PersonRepository {
   const getPersonById = (id: string) =>
     findOne(source.select('people', { eq: { id } }), (row) =>
       toPerson(parseRow(personRowSchema, 'person', row)),
     );
 
   return {
-    async getPeople() {
-      return parsePeople(await source.select('people')).map(toSummary);
+    async searchDirectory(input) {
+      const params = normalizeDirectoryQuery(input);
+      const page = parseRow(
+        directoryPageRowSchema,
+        'directory page',
+        await directory.search(params),
+      );
+      const items = page.items.map(toDirectoryEntry);
+      const end = params.offset + items.length;
+      return {
+        items,
+        total: page.total,
+        nextOffset: items.length > 0 && end < page.total ? end : undefined,
+      };
+    },
+
+    async getDirectoryFilterOptions(): Promise<DirectoryFilterOptions> {
+      const [electionRows, officeRows, organizationRows] = await Promise.all([
+        source.select('elections'),
+        source.select('offices'),
+        source.select('political_organizations'),
+      ]);
+      return {
+        elections: parseRows(electionRowSchema, 'election', electionRows)
+          .map(toElection)
+          .map(({ id, name, electionDate }) => ({ id, name, electionDate }))
+          .sort(
+            (a, b) => byCodePoint(b.electionDate, a.electionDate) || byCodePoint(a.name, b.name),
+          ),
+        offices: parseRows(officeRowSchema, 'office', officeRows)
+          .map(toOffice)
+          .map(({ id, name, level, jurisdictionId }) => ({ id, name, level, jurisdictionId }))
+          .sort((a, b) => byCodePoint(a.name, b.name) || byCodePoint(a.id, b.id)),
+        organizations: parseRows(
+          politicalOrganizationRowSchema,
+          'political organization',
+          organizationRows,
+        )
+          .map(toPoliticalOrganization)
+          .map(({ id, name, abbreviation }) => ({ id, name, abbreviation }))
+          .sort((a, b) => byCodePoint(a.name, b.name) || byCodePoint(a.id, b.id)),
+      };
     },
 
     getPersonById,
-
-    async searchPeople(query: string) {
-      if (query.trim().length < MIN_SEARCH_LENGTH) {
-        return [];
-      }
-      const rows = await source.search(
-        'people',
-        ['first_name', 'middle_name', 'last_name', 'preferred_name'],
-        query,
-      );
-      return parsePeople(rows).map(toSummary);
-    },
 
     async getPersonProfile(id: string) {
       const person = await getPersonById(id);
@@ -259,9 +288,9 @@ export function createClaimRepository(source: RowSource): ClaimRepository {
   };
 }
 
-export function createRepositories(source: RowSource): Repositories {
+export function createRepositories(source: RowSource, directory: DirectorySource): Repositories {
   return {
-    people: createPersonRepository(source),
+    people: createPersonRepository(source, directory),
     elections: createElectionRepository(source),
     sources: createSourceRepository(source),
     claims: createClaimRepository(source),

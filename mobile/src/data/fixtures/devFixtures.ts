@@ -9,6 +9,20 @@
  * same Zod validation and mappers as Supabase data will.
  */
 import type { FixtureTables } from '@/data/repositories/inMemoryRowSource';
+import {
+  extraAffiliations,
+  extraClaimEvidence,
+  extraClaims,
+  extraEducation,
+  extraElections,
+  extraOfficeTerms,
+  extraOffices,
+  extraOrganizations,
+  extraParticipations,
+  extraPeople,
+  extraPolicyPositions,
+  extraSources,
+} from './devFixturesExtra.ts'; // relative + .ts: the seed script runs this file under plain Node
 
 const REVIEWED = '2026-10-01';
 const RETRIEVED = '2026-09-30';
@@ -549,16 +563,16 @@ const claim_evidence = [
 ];
 
 export const devFixtureTables: FixtureTables = {
-  people,
-  elections,
-  offices,
-  political_organizations,
-  election_participations,
-  office_terms,
-  affiliation_records,
-  education_records,
-  policy_position_records,
-  sources,
-  claims,
-  claim_evidence,
+  people: [...people, ...extraPeople],
+  elections: [...elections, ...extraElections],
+  offices: [...offices, ...extraOffices],
+  political_organizations: [...political_organizations, ...extraOrganizations],
+  election_participations: [...election_participations, ...extraParticipations],
+  office_terms: [...office_terms, ...extraOfficeTerms],
+  affiliation_records: [...affiliation_records, ...extraAffiliations],
+  education_records: [...education_records, ...extraEducation],
+  policy_position_records: [...policy_position_records, ...extraPolicyPositions],
+  sources: [...sources, ...extraSources],
+  claims: [...claims, ...extraClaims],
+  claim_evidence: [...claim_evidence, ...extraClaimEvidence],
 };

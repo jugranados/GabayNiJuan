@@ -1,11 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import { devFixtureTables } from '@/data/fixtures/devFixtures';
-import { createInMemoryRowSource } from '@/data/repositories/inMemoryRowSource';
-import { createRepositories } from '@/data/repositories/tableRepositories';
+import { createMockRepositories } from '@/data/repositories/mockRepositories';
 import { ClaimDetailView } from '@/features/sources/components/ClaimDetailView';
 
-const repos = createRepositories(createInMemoryRowSource(devFixtureTables));
+const repos = createMockRepositories();
 
 async function detailOf(claimId: string) {
   const detail = await repos.claims.getClaimDetail(claimId);

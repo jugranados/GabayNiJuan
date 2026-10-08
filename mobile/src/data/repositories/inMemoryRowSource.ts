@@ -21,15 +21,5 @@ export function createInMemoryRowSource(tables: FixtureTables): RowSource {
         return eqMatches && inMatches;
       });
     },
-
-    async search(table: TableName, columns: readonly string[], term: string) {
-      const needle = term.trim().toLowerCase();
-      return rowsOf(table).filter((row) =>
-        columns.some((column) => {
-          const value = columnValue(row, column);
-          return typeof value === 'string' && value.toLowerCase().includes(needle);
-        }),
-      );
-    },
   };
 }

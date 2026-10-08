@@ -48,11 +48,13 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/rls_and_publication.test.sql
-      - name: Seed demonstrates every verification status through anon
+      - name: Seed is idempotent (re-running it adds nothing and changes nothing)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
+      - name: Seed and directory work through the anon role
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -At <<'SQL'
           set role anon;
-          select 'people=' || count(*) from public.people;
           do $$
           begin
             if (select count(distinct verification_status) from public.claims) <> 7 then
@@ -60,6 +62,12 @@ jobs:
             end if;
             if not exists (select 1 from public.claim_evidence where not supports) then
               raise exception 'seed must include contradicting evidence';
+            end if;
+            if (public.search_directory() ->> 'total')::int <> (select count(*) from public.people) then
+              raise exception 'directory total must equal the number of published people';
+            end if;
+            if (public.search_directory(null, null, null, 'NATIONAL') ->> 'total')::int < 1 then
+              raise exception 'directory filters must work';
             end if;
           end
           $$;

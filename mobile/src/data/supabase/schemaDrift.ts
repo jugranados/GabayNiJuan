@@ -13,6 +13,7 @@ import type * as rows from '@/data/schemas/rows';
 import type * as enums from '@/domain/enums';
 
 import type { Database } from './database.types';
+import type { SearchDirectoryArgs } from './supabaseDirectorySource';
 
 type Tables = Database['public']['Tables'];
 type DbRow<T extends keyof Tables> = Tables[T]['Row'];
@@ -86,3 +87,8 @@ export type EnumContracts = [
   Assert<SameUnion<DbEnum<'publication_status'>, enums.PublicationStatus>>,
   Assert<SameUnion<DbEnum<'revision_entity_type'>, enums.RevisionEntityType>>,
 ];
+
+type RpcArgs = Database['public']['Functions']['search_directory']['Args'];
+
+/** The arguments the app sends must be exactly the parameters the database function declares. */
+export type RpcContracts = [Assert<SameUnion<keyof RpcArgs, keyof SearchDirectoryArgs>>];

@@ -56,6 +56,9 @@ Development fixtures are tested against these checks.
 - Tapping "View evidence and sources" opens the claim's source viewer: status and its meaning, dates, and every source with publisher, type, published and retrieved dates, whether it supports or conflicts, and a link to the original. Supporting and conflicting sources are listed separately.
 - If evidence loaded for a claim is inconsistent with its status, the viewer says the record is under review rather than hiding the problem.
 - No score, rating or aggregate "trust" figure is shown anywhere.
+- "Current" office or affiliation is shown in a profile header or directory card only when derived from dated records that also have standing evidence (see `docs/ARCHITECTURE.md`, "Profile information hierarchy"). A record whose only evidence is `UNVERIFIED`, `DISPUTED` or `OUTDATED` is never headlined as current.
+- Missing data always reads "No records have been added for this section yet." It must never be rewritten as a negative finding ("no cases", "clean record").
+- Candidacy states are written out and never merged: potential aspirant, declared aspirant, filed certificate of candidacy and official candidate are different things, and each states what it does not mean.
 
 ## Database enforcement (Milestone 1)
 

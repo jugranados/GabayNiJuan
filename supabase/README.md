@@ -19,6 +19,7 @@ Database for Gabay ni Juan: schema, Row Level Security, editorial workflow, audi
 | `20261008103658` | `publication_lifecycle` | `REJECTED` state, `reviewed_by/reviewed_at/published_by`, tamper-proof editorial identity |
 | `20261008103749` | `claim_consistency_checks` | Verification-status vs. evidence rules enforced before publishing |
 | `20261008103810` | `restrict_public_access` | Column-level `SELECT` for anon (no editorial identity), anon locked out of audit/role tables, secure default for future tables |
+| `20261008132502` | `directory_search` | `search_directory()` for the voter directory (name search, filters, alphabetical offset paging; security invoker) and the indexes it needs |
 
 Never edit an applied migration; add a new one. Change a migration and `mobile/src/data/schemas/rows.ts` in the same commit.
 
@@ -43,6 +44,12 @@ supabase db push                       # applies pending files in migrations/
 
 or use the Supabase MCP server's `apply_migration` tool. Then rename the local file to the version the server recorded (`list_migrations`).
 
+### Directory function
+
+`public.search_directory(p_query, p_election_id, p_office_id, p_office_level, p_participation_status, p_organization_id, p_jurisdiction_id, p_limit, p_offset)` returns `{ total, items[] }` as JSON. It is `SECURITY INVOKER`: Row Level Security and the anon column grants apply exactly as for a direct query, so the public can only ever see published rows. Execute is granted to `anon` and `authenticated` only. The rules it implements (token name search, one-participation-satisfies-all-filters, alphabetical order by code point, which affiliation counts as current) are written in the migration header and mirrored in `mobile/src/data/repositories/inMemoryDirectorySource.ts`; `npm run test:integration` proves they agree.
+
+Indexes added: `offices(level)`, `offices(jurisdiction_id)`, `election_participations(status)` and an expression index on the directory ordering. Foreign-key indexes for participations, affiliations and claim subjects already existed.
+
 ### Seed (fictional)
 
 ```bash
@@ -50,7 +57,7 @@ cd mobile && npm run seed:generate     # regenerate supabase/seed.sql from the a
 cd mobile && npm run seed:check        # fails if seed.sql is out of date (runs in CI)
 ```
 
-`seed.sql` refuses to run if the database already holds published people that are not fixtures. Published rows cannot be deleted by design, so seeding a hosted project is not undoable except by resetting the database. Use a local stack or a throwaway project.
+`seed.sql` is idempotent (`on conflict do nothing`, publish steps only touch unpublished rows), so it can be re-run to add new fixtures without touching existing ones. It refuses to run if the database already holds published people that are not fixtures. Published rows cannot be deleted by design, so seeding a hosted project is not undoable except by resetting the database. Use a local stack or a throwaway project.
 
 ### Generating TypeScript types
 
@@ -106,7 +113,7 @@ Not enforced yet: an ordered state machine (an approver may jump from `DRAFT` st
 
 Nobody deletes rows through the API. Editorial identity columns (`created_by`, `reviewed_by`, `approved_by`, `published_by`) are set by triggers; clients cannot set or change them.
 
-> **Keep public sign-up disabled** on the hosted project (Auth settings). Column-level hiding of editorial identity applies to `anon` only. A self-registered `authenticated` user without a role sees no extra rows but could read those columns on published rows. `config.toml` disables sign-up locally.
+> **Keep public sign-up disabled** and turn on **leaked-password protection** (Auth settings) on the hosted project; the security advisor flags the latter. Column-level hiding of editorial identity applies to `anon` only. A self-registered `authenticated` user without a role sees no extra rows but could read those columns on published rows. `config.toml` disables sign-up locally.
 
 ### Bootstrapping the first admin
 

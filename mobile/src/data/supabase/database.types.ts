@@ -1023,7 +1023,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_directory: {
+        Args: {
+          p_election_id?: string
+          p_jurisdiction_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_office_id?: string
+          p_office_level?: Database["public"]["Enums"]["office_level"]
+          p_organization_id?: string
+          p_participation_status?: Database["public"]["Enums"]["election_participation_status"]
+          p_query?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       affiliation_type:

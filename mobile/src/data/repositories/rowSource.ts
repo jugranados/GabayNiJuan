@@ -38,6 +38,4 @@ export type RowQuery = {
 
 export interface RowSource {
   select(table: TableName, query?: RowQuery): Promise<unknown[]>;
-  /** Case-insensitive substring match on any of the given text columns. */
-  search(table: TableName, columns: readonly string[], term: string): Promise<unknown[]>;
 }

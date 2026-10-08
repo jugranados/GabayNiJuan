@@ -2,7 +2,8 @@
 -- Do not edit by hand. Regenerate with: cd mobile && npm run seed:generate
 --
 -- FICTIONAL development data only. Every person, office, organization,
--- election, and source is invented. For local / branch databases ONLY.
+-- election, and source is invented. For local / development databases ONLY.
+-- Safe to re-run: existing rows are skipped and only new fixtures are added.
 -- Never run this against a database that holds real records.
 
 begin;
@@ -11,7 +12,7 @@ do $$
 begin
   if exists (
     select 1 from public.people
-    where publication_status = 'PUBLISHED' and id not in ('b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'e6ca32cd-32d2-c781-77cc-44b210dd8800', '31e19420-0b2d-b664-3d82-06ba7244cd75', '72b46115-8272-a0fb-b624-405b85bab363', 'c7509707-5e67-cff6-7f1b-151f9f80e461', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', 'bf09d0bd-1ea9-dd58-07c8-d22780b505ea', 'f1aff1c0-a639-5b95-2ff8-4a77415f5f86', '0c003678-fc19-ec36-63b0-b88d423a9b6a', '9a2cb0cc-19d4-8070-5d9a-7d9ef21704f3', 'd97206b8-e62a-37fa-5c51-43f2d5271455', '0a4f6dc9-cf6d-69a6-9b2e-4496ba8cc870', 'ab7757ea-7a0d-1f46-8ed5-160be25b3f2f', '03fe12cd-7725-528e-9eb3-9eb12b16fc44', 'bb6796d8-5b70-b44b-08b3-8e86edc3828b', '170907f1-9bbb-94ba-58b5-1a7ddfaee707', 'b94631ce-d95f-0613-6085-d500eea47c3b', '72ffa883-7aad-d15c-b2d7-7831f1bb50a6', '532a36fe-2c83-7ab1-ff10-2c34bcbd4681', '4fe41ec6-dccd-2972-22af-4b4650b3fb73', '37bbb0ec-169b-749b-9fe4-c810d7334190', '3d1d41c0-da14-8f80-68b0-f9d812c92d55', '7e467592-ea97-6b78-7141-5317e5a1f502', '83972b7b-e575-e101-5f24-6d64d1fd1478', '7b8d9d22-f18f-b610-7e54-6f252dae3f5b', '90b2bc18-2984-023f-f3a1-5a2d9fbaad3c', 'd414e2c1-fa44-57c6-0c32-625b3c473157', '72471dd2-a0fc-af32-6bb6-7069f84ea52c', '7b3dfc1a-2348-247e-63f5-c89f407eb3a6', '68263b64-db22-9d2f-8529-756e600b7ea3', 'ea83bf1b-2265-726d-d2ec-9ef5a2530759', '760c1701-af27-0093-717c-7ab8741f6094', '1e88e201-08dd-7033-ae73-13e6f25c7f1c', 'a76df69a-1b75-7db6-b79f-b4446f72e766', '77319ab0-b8a5-1c8b-c8fb-d080caeeb07c', '70faf7b3-e082-30b3-db60-d094b05834e8', '9ce3a595-52e9-f996-4ac5-78051f598753', 'b0e56e60-769c-eb74-d2e2-a25cfae861ca', 'bcb51c2b-588e-98b6-7b5b-1ed5745ce170', 'b5f2a4d8-9407-cfe7-ef0a-b21d7120607e', 'bf6f9cf3-b621-6090-85e3-2be3c4c80a39', 'eab2eb62-04d8-94b3-f118-f81d67d91e41')
+    where publication_status = 'PUBLISHED' and id not in ('b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'e6ca32cd-32d2-c781-77cc-44b210dd8800', '31e19420-0b2d-b664-3d82-06ba7244cd75', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'c9208cda-6786-502c-b501-e0477095f589', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', '7b15cc11-798a-fa9c-d185-53177dcbf806', '5fdbd4f7-cc17-2ef7-c0f2-fa20800957a8', '8381ba3f-3fed-4e0b-e0a5-3e71d62f248e', 'adc1ef62-61c6-4d6e-0c1f-02725f84e433', '72b46115-8272-a0fb-b624-405b85bab363', '834551e9-b01b-aaad-629d-7ab177914203', '584bd485-2ef2-dbb9-057d-770162cfc69d', 'c7509707-5e67-cff6-7f1b-151f9f80e461', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', 'bf09d0bd-1ea9-dd58-07c8-d22780b505ea', '9b99c763-f2e5-5794-74df-9c9d0fe0a4c4', '870edec1-a6ff-83e6-7dd1-3a6762dafcf6', '264f583d-9eca-b73e-82e1-82220f17ff9d', '4394d94e-bc97-fd81-09c7-3675f7df104d', '257ef4a4-cd9b-def2-0c7b-0646e75ed4a1', 'f1aff1c0-a639-5b95-2ff8-4a77415f5f86', '0c003678-fc19-ec36-63b0-b88d423a9b6a', '48fb733b-0de1-0a96-4d98-003bd81d6820', '20186740-f38e-9df4-7b97-108b7e22b3b9', '9a2cb0cc-19d4-8070-5d9a-7d9ef21704f3', 'd97206b8-e62a-37fa-5c51-43f2d5271455', '0a4f6dc9-cf6d-69a6-9b2e-4496ba8cc870', 'ab7757ea-7a0d-1f46-8ed5-160be25b3f2f', '03fe12cd-7725-528e-9eb3-9eb12b16fc44', 'bb6796d8-5b70-b44b-08b3-8e86edc3828b', '170907f1-9bbb-94ba-58b5-1a7ddfaee707', 'b94631ce-d95f-0613-6085-d500eea47c3b', '72ffa883-7aad-d15c-b2d7-7831f1bb50a6', '532a36fe-2c83-7ab1-ff10-2c34bcbd4681', '60fdf159-dfa3-ebaf-151d-35b99bb293c8', '527920cc-0cc5-e4d0-802a-8a55bc495758', 'b12a5a46-4168-3473-aabe-e69503574292', 'a419a463-bc1c-18ab-7ddb-bb0f75d039e3', 'd2242bd7-bc56-050c-eb30-b08660cccca0', '4ba47b2d-8206-7a34-281d-95272b700d2c', '6dbbac5e-31a4-f579-7bc2-b172757046fe', '5286f093-8721-14ec-fb1c-1911a1a05f44', '7c8f1b25-d38a-f62e-2090-dd2522c01394', '4823e6f6-7d22-b500-cd56-798e8ecb881f', 'f67e82c3-20cf-2a0b-cda5-7a5af3009f75', 'c9d14745-e7e1-b97f-fab9-7387794f4b2f', '527a230b-75a9-e421-7199-8cf6c88a1efd', 'ea243ea0-4b85-9b61-cd46-2039482a539d', '4ea52350-0e26-7fe1-193b-77a4d272a8d8', '6f24e64d-6252-8754-7f4c-b0f4967ff360', 'c2caa3dc-d3fd-1b0b-8273-7e3febb00c69', 'a09a4048-1751-dbec-1e2d-9a37b83bf9f8', 'dd5a8481-5f51-0f79-4762-b37cf22a279d', 'af4b061a-3e61-1ae6-72b2-07ebd01e6b14', '67263827-5243-c579-2fdd-2f921ebb592e', '4fe41ec6-dccd-2972-22af-4b4650b3fb73', '37bbb0ec-169b-749b-9fe4-c810d7334190', '3d1d41c0-da14-8f80-68b0-f9d812c92d55', 'adcc4a53-203d-acf0-9d2c-a1864b038137', '392830a1-4396-1d67-fffb-52e828b399a8', '09dff228-61bf-21af-5fbf-3857f894e5f1', '740292f2-6658-51bb-8e50-5e0cfe6c94e3', '174080e0-bdbf-cac1-688e-fd9a2c868050', 'c8f69fef-e050-6e77-e249-3eb02c247cba', '37e722ef-b726-32a5-aec4-7f1ab254b7e1', '7e467592-ea97-6b78-7141-5317e5a1f502', '83972b7b-e575-e101-5f24-6d64d1fd1478', '7b8d9d22-f18f-b610-7e54-6f252dae3f5b', '32cdc391-c9b4-18c1-f8dc-0a92a396faf8', '51d0d7bf-647f-24b9-61e3-7da829e3a8c8', '6725db7f-ca04-d223-3bd3-42be790674e8', '535feb82-dbcd-d9c3-7f5c-8db8ecf94128', 'c26a2b99-fccd-aba2-b29a-3fb23a1f6736', 'f527fe4f-a7d2-ae2e-bf7a-75e0652102a7', '90b2bc18-2984-023f-f3a1-5a2d9fbaad3c', 'd414e2c1-fa44-57c6-0c32-625b3c473157', '9c650710-3e8c-298f-4cea-c9c4025616cd', 'ea48afd8-e153-e3cd-2f3c-9f7b0414fe6f', 'b5449cf6-f28b-8c10-bbc6-491e2b60d131', 'c14af17a-56ab-d4b8-477c-682c7ab62c43', '31428138-5440-3b8f-c5b6-54f143fabe85', '8c6b9458-cd9b-0adb-482b-42081ee0637b', 'c18a9134-841c-06e3-c304-d4d421913c73', '72471dd2-a0fc-af32-6bb6-7069f84ea52c', '8a322e89-a190-84ca-9ebb-e0608b0189aa', '853c08aa-2bd8-9ddc-e89b-63a54e12e586', '7b3dfc1a-2348-247e-63f5-c89f407eb3a6', '68263b64-db22-9d2f-8529-756e600b7ea3', '746eceb3-31a9-8430-beef-8bf36e38bb74', 'fa6efd6d-718e-d4fa-fd5e-a1c19bf7ec52', '8a8ac609-14ce-33b6-8b51-fbda71fe9a72', 'ea83bf1b-2265-726d-d2ec-9ef5a2530759', '760c1701-af27-0093-717c-7ab8741f6094', '1e88e201-08dd-7033-ae73-13e6f25c7f1c', 'a76df69a-1b75-7db6-b79f-b4446f72e766', '77319ab0-b8a5-1c8b-c8fb-d080caeeb07c', '70faf7b3-e082-30b3-db60-d094b05834e8', '9ce3a595-52e9-f996-4ac5-78051f598753', 'b0e56e60-769c-eb74-d2e2-a25cfae861ca', 'bcb51c2b-588e-98b6-7b5b-1ed5745ce170', 'b5f2a4d8-9407-cfe7-ef0a-b21d7120607e', 'bf6f9cf3-b621-6090-85e3-2be3c4c80a39', 'eab2eb62-04d8-94b3-f118-f81d67d91e41', '645afa9b-71af-4283-49e0-29393f9ae71f', '10457414-7b07-d474-4909-b77115c81228', '046acd9a-889f-09ca-fe9a-ca081fb6659c', '9c07ea8e-fe7b-88b9-aef6-b426226396f8', 'c332d0ce-3d8e-2fed-1a61-a6f4b091774a', '5f6af7fd-8906-2d8e-42f5-4ec6bf919fe0', '922efa0b-e94f-7d6f-20fb-d22d7d43c4b7', 'dbc6bbd5-c85a-0e4a-571a-0213977d15ab', '76f98045-4862-16ca-d1cb-48a7fc17d23d', 'dc1579aa-8fd2-f372-3645-621651b6b7a1', '60ca425e-54a6-8adc-f87e-81bfad34bb90', '42ebb15b-5439-89b2-85e2-cc2b527c185a', '2558fc49-0acf-5ae7-5aff-67c960ae45a8', '55ebc747-1f27-fe95-9ae9-01a19ffa4b2b', '7781d665-4c1d-537d-6f91-ba9b63085066', 'df235ede-2272-eb1d-d1a0-8f7f60c14af2', '644f59b6-4f24-dc89-7f3d-7070443479f1', 'b05a7a94-7986-7ec3-7b4e-843ca2676ffc', '622d5d83-e86a-8cb8-79f7-f7f8dd7087de', 'e3ed5d5b-28e9-f381-43a2-9ea4327fcc15', '0f633b45-9ef0-abf0-87d7-f578d67843c6', '057c5819-0393-2922-ff32-2ecf73b3ec7f', '165115c6-df24-f5e1-0c6f-07d6aca375c1', 'f5c0b131-2af3-b1f2-108f-eb26f05b78eb', '48a8ffa7-7bed-dc89-0650-3e41c1c592dc')
   ) then
     raise exception 'Refusing to seed: this database already holds non-fixture published people';
   end if;
@@ -24,22 +25,42 @@ select set_config('gnj.change_reason', 'Development seed: fictional fixtures', t
 insert into public.people (id, first_name, middle_name, last_name, suffix, preferred_name, birth_date, photo_asset_id) values
   ('b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'Juan', null, 'Dela Cruz', null, null, '1980-06-12', null),
   ('e6ca32cd-32d2-c781-77cc-44b210dd8800', 'Maria', 'Luntian', 'Makabayan', null, null, null, null),
-  ('31e19420-0b2d-b664-3d82-06ba7244cd75', 'Pedro', null, 'Santos', 'Jr.', null, null, null);
+  ('31e19420-0b2d-b664-3d82-06ba7244cd75', 'Pedro', null, 'Santos', 'Jr.', null, null, null),
+  ('ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'Ana', 'Liwanag', 'Pangarap', null, null, null, null),
+  ('c9208cda-6786-502c-b501-e0477095f589', 'Ramon', 'Bayani', 'Gawa-Gawa', null, null, null, null),
+  ('8c234880-2f10-a5cc-8b9c-0044491a9a7d', 'Luz', 'Tala', 'Ejemplo', null, null, null, null),
+  ('7b15cc11-798a-fa9c-d185-53177dcbf806', 'Carlo', 'Dagat', 'Haka-haka', null, null, null, null),
+  ('5fdbd4f7-cc17-2ef7-c0f2-fa20800957a8', 'Elena', 'Bukid', 'Kathang-Isip', null, null, null, null),
+  ('8381ba3f-3fed-4e0b-e0a5-3e71d62f248e', 'Tomas', 'Ilog', 'Ejemplo', null, null, null, null),
+  ('adc1ef62-61c6-4d6e-0c1f-02725f84e433', 'Dante', 'Bundok', 'Gawa-Gawa', null, null, null, null)
+on conflict (id) do nothing;
 
 -- elections
 insert into public.elections (id, name, election_date, country_code, status) values
-  ('72b46115-8272-a0fb-b624-405b85bab363', 'Halimbawa City Local Election 2027 (fictional)', '2027-05-10', 'PH', 'UPCOMING');
+  ('72b46115-8272-a0fb-b624-405b85bab363', 'Halimbawa City Local Election 2027 (fictional)', '2027-05-10', 'PH', 'UPCOMING'),
+  ('834551e9-b01b-aaad-629d-7ab177914203', 'National and District Election 2028 (fictional)', '2028-05-08', 'PH', 'UPCOMING'),
+  ('584bd485-2ef2-dbb9-057d-770162cfc69d', 'Halimbawa Provincial and Municipal Election 2022 (fictional)', '2022-05-09', 'PH', 'COMPLETED')
+on conflict (id) do nothing;
 
 -- offices
 insert into public.offices (id, name, level, jurisdiction_id) values
   ('c7509707-5e67-cff6-7f1b-151f9f80e461', 'Mayor, City of Halimbawa (fictional)', 'CITY', 'jurisdiction-halimbawa-city'),
   ('7ecc43e5-ad70-0e46-bed1-11b1033bca02', 'City Councilor, City of Halimbawa (fictional)', 'CITY', 'jurisdiction-halimbawa-city'),
-  ('bf09d0bd-1ea9-dd58-07c8-d22780b505ea', 'Punong Barangay, Barangay Uno, Halimbawa (fictional)', 'BARANGAY', 'jurisdiction-barangay-uno');
+  ('bf09d0bd-1ea9-dd58-07c8-d22780b505ea', 'Punong Barangay, Barangay Uno, Halimbawa (fictional)', 'BARANGAY', 'jurisdiction-barangay-uno'),
+  ('9b99c763-f2e5-5794-74df-9c9d0fe0a4c4', 'Senator (fictional seat)', 'NATIONAL', 'jurisdiction-philippines-fictional'),
+  ('870edec1-a6ff-83e6-7dd1-3a6762dafcf6', 'Governor, Province of Kathang-Isip (fictional)', 'PROVINCIAL', 'jurisdiction-kathang-isip-province'),
+  ('264f583d-9eca-b73e-82e1-82220f17ff9d', 'District Representative, Halimbawa 1st District (fictional)', 'DISTRICT', 'jurisdiction-halimbawa-district-1'),
+  ('4394d94e-bc97-fd81-09c7-3675f7df104d', 'Municipal Mayor, Bayan ng Ejemplo (fictional)', 'MUNICIPAL', 'jurisdiction-bayan-ejemplo'),
+  ('257ef4a4-cd9b-def2-0c7b-0646e75ed4a1', 'Punong Barangay, Barangay Dos, Halimbawa (fictional)', 'BARANGAY', 'jurisdiction-barangay-dos')
+on conflict (id) do nothing;
 
 -- political_organizations
 insert into public.political_organizations (id, name, abbreviation, organization_type) values
   ('f1aff1c0-a639-5b95-2ff8-4a77415f5f86', 'Partido Halimbawa (fictional)', 'PHal', 'POLITICAL_PARTY'),
-  ('0c003678-fc19-ec36-63b0-b88d423a9b6a', 'Samahang Kathang-Isip (fictional)', 'SKI', 'OTHER');
+  ('0c003678-fc19-ec36-63b0-b88d423a9b6a', 'Samahang Kathang-Isip (fictional)', 'SKI', 'OTHER'),
+  ('48fb733b-0de1-0a96-4d98-003bd81d6820', 'Partido Pag-asa ng Bayan (fictional)', 'PPB', 'POLITICAL_PARTY'),
+  ('20186740-f38e-9df4-7b97-108b7e22b3b9', 'Alyansang Bagong-Umaga (fictional)', 'ABU', 'COALITION')
+on conflict (id) do nothing;
 
 -- sources
 insert into public.sources (id, title, publisher, url, document_identifier, source_type, published_at, retrieved_at, archived_url) values
@@ -52,33 +73,85 @@ insert into public.sources (id, title, publisher, url, document_identifier, sour
   ('170907f1-9bbb-94ba-58b5-1a7ddfaee707', 'New city council sworn in (fictional)', 'Balitang Kathang-Isip (fictional newspaper)', 'https://example.org/gabay-ni-juan-fixtures/balitang-kathang-isip/council-sworn-in', null, 'NEWS', '2022-07-02', '2026-09-30', null),
   ('b94631ce-d95f-0613-6085-d500eea47c3b', 'Maria Makabayan for Mayor: Platform (fictional)', 'Maria Makabayan campaign (fictional)', 'https://example.org/gabay-ni-juan-fixtures/campaigns/maria-makabayan/platform', null, 'OFFICIAL_CANDIDATE', '2026-08-20', '2026-09-30', null),
   ('72ffa883-7aad-d15c-b2d7-7831f1bb50a6', 'About Juan Dela Cruz (fictional campaign page)', 'Juan Dela Cruz campaign (fictional)', 'https://example.org/gabay-ni-juan-fixtures/campaigns/juan-dela-cruz/about', null, 'OFFICIAL_CANDIDATE', '2026-09-02', '2026-09-30', null),
-  ('532a36fe-2c83-7ab1-ff10-2c34bcbd4681', 'Samahang Kathang-Isip membership roster, 2019 (fictional)', 'Samahang Kathang-Isip (fictional)', null, 'SKI-ROSTER-2019 (fictional)', 'OTHER', '2019-03-01', '2026-09-30', null);
+  ('532a36fe-2c83-7ab1-ff10-2c34bcbd4681', 'Samahang Kathang-Isip membership roster, 2019 (fictional)', 'Samahang Kathang-Isip (fictional)', null, 'SKI-ROSTER-2019 (fictional)', 'OTHER', '2019-03-01', '2026-09-30', null),
+  ('60fdf159-dfa3-ebaf-151d-35b99bb293c8', 'Ana Pangarap announces Senate run (fictional campaign page)', 'Ana Pangarap campaign (fictional)', 'https://example.org/gabay-ni-juan-fixtures/campaigns/ana-pangarap/announcement', null, 'OFFICIAL_CANDIDATE', '2026-09-25', '2026-09-30', null),
+  ('527920cc-0cc5-e4d0-802a-8a55bc495758', 'About Ana Pangarap (fictional campaign page)', 'Ana Pangarap campaign (fictional)', 'https://example.org/gabay-ni-juan-fixtures/campaigns/ana-pangarap/about', null, 'OFFICIAL_CANDIDATE', '2026-09-25', '2026-09-30', null),
+  ('b12a5a46-4168-3473-aabe-e69503574292', 'Roster of Elected City Officials 2019–2022 (fictional)', 'Halimbawa City Secretary''s Office (fictional)', 'https://example.org/gabay-ni-juan-fixtures/city-secretary/roster-2019', null, 'OFFICIAL_GOVERNMENT', '2019-07-04', '2026-09-30', null),
+  ('a419a463-bc1c-18ab-7ddb-bb0f75d039e3', 'New councilors take their oath (fictional)', 'Pahayagang Halimbawa (fictional newspaper)', 'https://example.org/gabay-ni-juan-fixtures/pahayagang-halimbawa/councilors-oath-2019', null, 'NEWS', '2019-07-01', '2026-09-30', null),
+  ('d2242bd7-bc56-050c-eb30-b08660cccca0', 'Proclamation of Winners, Province of Kathang-Isip 2022 (fictional)', 'Provincial Board of Canvassers (fictional)', 'https://example.org/gabay-ni-juan-fixtures/provincial-canvass/proclamation-2022', 'PBOC-2022-001 (fictional)', 'OFFICIAL_GOVERNMENT', '2022-05-12', '2026-09-30', null),
+  ('4ba47b2d-8206-7a34-281d-95272b700d2c', 'Roster of Elected City Officials 2013–2016 (fictional)', 'Halimbawa City Secretary''s Office (fictional)', 'https://example.org/gabay-ni-juan-fixtures/city-secretary/roster-2013', null, 'OFFICIAL_GOVERNMENT', '2013-07-03', '2026-09-30', null),
+  ('6dbbac5e-31a4-f579-7bc2-b172757046fe', 'Mayor Gawa-Gawa wraps up third term (fictional)', 'Balitang Kathang-Isip (fictional newspaper)', 'https://example.org/gabay-ni-juan-fixtures/balitang-kathang-isip/gawa-gawa-third-term', null, 'NEWS', '2022-06-29', '2026-09-30', null),
+  ('5286f093-8721-14ec-fb1c-1911a1a05f44', 'Gawa-Gawa leaves party for coalition (fictional)', 'Balitang Kathang-Isip (fictional newspaper)', 'https://example.org/gabay-ni-juan-fixtures/balitang-kathang-isip/gawa-gawa-coalition', null, 'NEWS', '2019-03-02', '2026-09-30', null),
+  ('7c8f1b25-d38a-f62e-2090-dd2522c01394', 'Ramon Gawa-Gawa: about (fictional campaign page)', 'Ramon Gawa-Gawa office (fictional)', 'https://example.org/gabay-ni-juan-fixtures/campaigns/ramon-gawa-gawa/about', null, 'OFFICIAL_CANDIDATE', '2026-08-14', '2026-09-30', null),
+  ('4823e6f6-7d22-b500-cd56-798e8ecb881f', 'Certificate of Candidacy for District Representative: Luz T. Ejemplo (fictional)', 'Halimbawa District Election Office (fictional)', 'https://example.org/gabay-ni-juan-fixtures/district-election-office/coc/luz-ejemplo', 'HDEO-COC-2028-0007 (fictional)', 'OFFICIAL_GOVERNMENT', '2026-10-01', '2026-09-30', null),
+  ('f67e82c3-20cf-2a0b-cda5-7a5af3009f75', 'Barangay Dos Officials, 2016–2022 (fictional)', 'Barangay Dos Secretariat (fictional)', 'https://example.org/gabay-ni-juan-fixtures/barangay-dos/officials-2016', null, 'OFFICIAL_GOVERNMENT', '2016-07-05', '2026-09-30', null),
+  ('c9d14745-e7e1-b97f-fab9-7387794f4b2f', 'About Luz Ejemplo (fictional campaign page)', 'Luz Ejemplo campaign (fictional)', 'https://example.org/gabay-ni-juan-fixtures/campaigns/luz-ejemplo/about', null, 'OFFICIAL_CANDIDATE', '2026-10-01', '2026-09-30', null),
+  ('527a230b-75a9-e421-7199-8cf6c88a1efd', 'Notice of Withdrawal of Candidacy: Carlo D. Haka-haka (fictional)', 'National Election Office (fictional)', 'https://example.org/gabay-ni-juan-fixtures/national-election-office/withdrawals/carlo-haka-haka', 'NEO-WDR-2028-0003 (fictional)', 'OFFICIAL_GOVERNMENT', '2026-09-30', '2026-09-30', null),
+  ('ea243ea0-4b85-9b61-cd46-2039482a539d', 'Haka-haka on schools: "we need more classrooms" (fictional)', 'Pahayagang Halimbawa (fictional newspaper)', 'https://example.org/gabay-ni-juan-fixtures/pahayagang-halimbawa/haka-haka-schools', null, 'NEWS', '2026-09-10', '2026-09-30', null),
+  ('4ea52350-0e26-7fe1-193b-77a4d272a8d8', 'Elena Kathang-Isip eyed for Senate bid, allies say (fictional)', 'Balitang Kathang-Isip (fictional newspaper)', 'https://example.org/gabay-ni-juan-fixtures/balitang-kathang-isip/kathang-isip-senate', null, 'NEWS', '2026-09-28', '2026-09-30', null),
+  ('6f24e64d-6252-8754-7f4c-b0f4967ff360', 'Roster of Elected City Officials 2016–2019 (fictional)', 'Halimbawa City Secretary''s Office (fictional)', 'https://example.org/gabay-ni-juan-fixtures/city-secretary/roster-2016', null, 'OFFICIAL_GOVERNMENT', '2016-07-04', '2026-09-30', null),
+  ('c2caa3dc-d3fd-1b0b-8273-7e3febb00c69', 'Partido Pag-asa ng Bayan membership notice (fictional)', 'Partido Pag-asa ng Bayan (fictional)', 'https://example.org/gabay-ni-juan-fixtures/ppb/membership-notice-elena', null, 'OFFICIAL_CANDIDATE', '2010-06-02', '2026-09-30', null),
+  ('a09a4048-1751-dbec-1e2d-9a37b83bf9f8', 'Official Canvass of Votes, Bayan ng Ejemplo 2022 (fictional)', 'Municipal Board of Canvassers (fictional)', 'https://example.org/gabay-ni-juan-fixtures/municipal-canvass/ejemplo-2022', 'MBOC-2022-014 (fictional)', 'OFFICIAL_GOVERNMENT', '2022-05-12', '2026-09-30', null),
+  ('dd5a8481-5f51-0f79-4762-b37cf22a279d', 'Alyansang Bagong-Umaga member roster, 2021 (fictional)', 'Alyansang Bagong-Umaga (fictional)', null, 'ABU-ROSTER-2021 (fictional)', 'OTHER', '2021-02-01', '2026-09-30', null),
+  ('af4b061a-3e61-1ae6-72b2-07ebd01e6b14', 'Resolution on Qualification, Halimbawa City 2027 (fictional)', 'Halimbawa City Election Office (fictional)', 'https://example.org/gabay-ni-juan-fixtures/election-office/resolutions/qualification-2027', 'HCEO-RES-2027-0012 (fictional)', 'OFFICIAL_GOVERNMENT', '2026-09-18', '2026-09-30', null),
+  ('67263827-5243-c579-2fdd-2f921ebb592e', 'Dante Gawa-Gawa seeks mayoral post (fictional)', 'Pahayagang Halimbawa (fictional newspaper)', 'https://example.org/gabay-ni-juan-fixtures/pahayagang-halimbawa/gawa-gawa-mayoral', null, 'NEWS', '2026-08-30', '2026-09-30', null)
+on conflict (id) do nothing;
 
 -- election_participations
 insert into public.election_participations (id, person_id, election_id, office_id, ballot_number, status, effective_from, effective_to) values
   ('4fe41ec6-dccd-2972-22af-4b4650b3fb73', 'e6ca32cd-32d2-c781-77cc-44b210dd8800', '72b46115-8272-a0fb-b624-405b85bab363', 'c7509707-5e67-cff6-7f1b-151f9f80e461', null, 'FILED_COC', '2026-08-15', null),
   ('37bbb0ec-169b-749b-9fe4-c810d7334190', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', '72b46115-8272-a0fb-b624-405b85bab363', 'c7509707-5e67-cff6-7f1b-151f9f80e461', '2', 'OFFICIAL_CANDIDATE', '2026-09-15', null),
-  ('3d1d41c0-da14-8f80-68b0-f9d812c92d55', '31e19420-0b2d-b664-3d82-06ba7244cd75', '72b46115-8272-a0fb-b624-405b85bab363', 'c7509707-5e67-cff6-7f1b-151f9f80e461', null, 'POTENTIAL_ASPIRANT', '2026-09-20', null);
+  ('3d1d41c0-da14-8f80-68b0-f9d812c92d55', '31e19420-0b2d-b664-3d82-06ba7244cd75', '72b46115-8272-a0fb-b624-405b85bab363', 'c7509707-5e67-cff6-7f1b-151f9f80e461', null, 'POTENTIAL_ASPIRANT', '2026-09-20', null),
+  ('adcc4a53-203d-acf0-9d2c-a1864b038137', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', '834551e9-b01b-aaad-629d-7ab177914203', '9b99c763-f2e5-5794-74df-9c9d0fe0a4c4', null, 'PUBLICLY_DECLARED_ASPIRANT', '2026-09-25', null),
+  ('392830a1-4396-1d67-fffb-52e828b399a8', 'c9208cda-6786-502c-b501-e0477095f589', '584bd485-2ef2-dbb9-057d-770162cfc69d', '870edec1-a6ff-83e6-7dd1-3a6762dafcf6', null, 'ELECTED', '2022-05-12', null),
+  ('09dff228-61bf-21af-5fbf-3857f894e5f1', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', '834551e9-b01b-aaad-629d-7ab177914203', '264f583d-9eca-b73e-82e1-82220f17ff9d', null, 'FILED_COC', '2026-10-01', null),
+  ('740292f2-6658-51bb-8e50-5e0cfe6c94e3', '7b15cc11-798a-fa9c-d185-53177dcbf806', '834551e9-b01b-aaad-629d-7ab177914203', '9b99c763-f2e5-5794-74df-9c9d0fe0a4c4', null, 'WITHDRAWN', '2026-09-30', null),
+  ('174080e0-bdbf-cac1-688e-fd9a2c868050', '5fdbd4f7-cc17-2ef7-c0f2-fa20800957a8', '834551e9-b01b-aaad-629d-7ab177914203', '9b99c763-f2e5-5794-74df-9c9d0fe0a4c4', null, 'POTENTIAL_ASPIRANT', '2026-09-28', null),
+  ('c8f69fef-e050-6e77-e249-3eb02c247cba', '8381ba3f-3fed-4e0b-e0a5-3e71d62f248e', '584bd485-2ef2-dbb9-057d-770162cfc69d', '4394d94e-bc97-fd81-09c7-3675f7df104d', null, 'NOT_ELECTED', '2022-05-12', null),
+  ('37e722ef-b726-32a5-aec4-7f1ab254b7e1', 'adc1ef62-61c6-4d6e-0c1f-02725f84e433', '72b46115-8272-a0fb-b624-405b85bab363', 'c7509707-5e67-cff6-7f1b-151f9f80e461', null, 'DISQUALIFIED', '2026-09-18', null)
+on conflict (id) do nothing;
 
 -- office_terms
 insert into public.office_terms (id, person_id, office_id, start_date, end_date, status) values
   ('7e467592-ea97-6b78-7141-5317e5a1f502', 'e6ca32cd-32d2-c781-77cc-44b210dd8800', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', '2022-06-30', '2025-06-30', 'ELECTED'),
   ('83972b7b-e575-e101-5f24-6d64d1fd1478', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'bf09d0bd-1ea9-dd58-07c8-d22780b505ea', '2018-06-30', '2023-11-30', 'ELECTED'),
-  ('7b8d9d22-f18f-b610-7e54-6f252dae3f5b', '31e19420-0b2d-b664-3d82-06ba7244cd75', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', '2022-06-30', null, 'ELECTED');
+  ('7b8d9d22-f18f-b610-7e54-6f252dae3f5b', '31e19420-0b2d-b664-3d82-06ba7244cd75', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', '2022-06-30', null, 'ELECTED'),
+  ('32cdc391-c9b4-18c1-f8dc-0a92a396faf8', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', '2019-06-30', '2022-06-30', 'ELECTED'),
+  ('51d0d7bf-647f-24b9-61e3-7da829e3a8c8', 'c9208cda-6786-502c-b501-e0477095f589', 'c7509707-5e67-cff6-7f1b-151f9f80e461', '2013-06-30', '2022-06-30', 'ELECTED'),
+  ('6725db7f-ca04-d223-3bd3-42be790674e8', 'c9208cda-6786-502c-b501-e0477095f589', '870edec1-a6ff-83e6-7dd1-3a6762dafcf6', '2022-06-30', null, 'ELECTED'),
+  ('535feb82-dbcd-d9c3-7f5c-8db8ecf94128', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', '257ef4a4-cd9b-def2-0c7b-0646e75ed4a1', '2016-06-30', '2022-11-30', 'ELECTED'),
+  ('c26a2b99-fccd-aba2-b29a-3fb23a1f6736', '5fdbd4f7-cc17-2ef7-c0f2-fa20800957a8', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', '2016-06-30', '2025-06-30', 'ELECTED'),
+  ('f527fe4f-a7d2-ae2e-bf7a-75e0652102a7', 'adc1ef62-61c6-4d6e-0c1f-02725f84e433', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', '2013-06-30', '2022-06-30', 'ELECTED')
+on conflict (id) do nothing;
 
 -- affiliation_records
 insert into public.affiliation_records (id, person_id, organization_id, affiliation_type, start_date, end_date) values
   ('90b2bc18-2984-023f-f3a1-5a2d9fbaad3c', 'e6ca32cd-32d2-c781-77cc-44b210dd8800', 'f1aff1c0-a639-5b95-2ff8-4a77415f5f86', 'CANDIDATE', '2026-08-15', null),
-  ('d414e2c1-fa44-57c6-0c32-625b3c473157', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', '0c003678-fc19-ec36-63b0-b88d423a9b6a', 'MEMBER', '2016-01-10', null);
+  ('d414e2c1-fa44-57c6-0c32-625b3c473157', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', '0c003678-fc19-ec36-63b0-b88d423a9b6a', 'MEMBER', '2016-01-10', null),
+  ('9c650710-3e8c-298f-4cea-c9c4025616cd', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', '48fb733b-0de1-0a96-4d98-003bd81d6820', 'MEMBER', '2015-03-01', null),
+  ('ea48afd8-e153-e3cd-2f3c-9f7b0414fe6f', 'c9208cda-6786-502c-b501-e0477095f589', 'f1aff1c0-a639-5b95-2ff8-4a77415f5f86', 'MEMBER', '2012-01-15', '2019-02-28'),
+  ('b5449cf6-f28b-8c10-bbc6-491e2b60d131', 'c9208cda-6786-502c-b501-e0477095f589', '20186740-f38e-9df4-7b97-108b7e22b3b9', 'MEMBER', '2019-03-01', null),
+  ('c14af17a-56ab-d4b8-477c-682c7ab62c43', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', 'f1aff1c0-a639-5b95-2ff8-4a77415f5f86', 'CANDIDATE', '2026-10-01', null),
+  ('31428138-5440-3b8f-c5b6-54f143fabe85', '5fdbd4f7-cc17-2ef7-c0f2-fa20800957a8', '48fb733b-0de1-0a96-4d98-003bd81d6820', 'MEMBER', '2010-06-01', '2026-06-30'),
+  ('8c6b9458-cd9b-0adb-482b-42081ee0637b', '8381ba3f-3fed-4e0b-e0a5-3e71d62f248e', '20186740-f38e-9df4-7b97-108b7e22b3b9', 'MEMBER', '2020-01-01', null),
+  ('c18a9134-841c-06e3-c304-d4d421913c73', 'adc1ef62-61c6-4d6e-0c1f-02725f84e433', 'f1aff1c0-a639-5b95-2ff8-4a77415f5f86', 'MEMBER', '2018-05-01', null)
+on conflict (id) do nothing;
 
 -- education_records
 insert into public.education_records (id, person_id, institution, program, credential, start_date, end_date) values
-  ('72471dd2-a0fc-af32-6bb6-7069f84ea52c', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'Pamantasan ng Halimbawa (fictional)', 'Civil Engineering', 'Bachelor of Science', null, '2002-04-15');
+  ('72471dd2-a0fc-af32-6bb6-7069f84ea52c', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'Pamantasan ng Halimbawa (fictional)', 'Civil Engineering', 'Bachelor of Science', null, '2002-04-15'),
+  ('8a322e89-a190-84ca-9ebb-e0608b0189aa', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'Pamantasan ng Kathang-Isip (fictional)', 'Public Administration', 'Bachelor of Arts', null, '2010-04-20'),
+  ('853c08aa-2bd8-9ddc-e89b-63a54e12e586', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', 'Pamantasan ng Halimbawa (fictional)', 'Nursing', 'Bachelor of Science', null, '2009-04-18')
+on conflict (id) do nothing;
 
 -- policy_position_records
 insert into public.policy_position_records (id, person_id, topic, position_text, attribution_type, stated_at) values
   ('7b3dfc1a-2348-247e-63f5-c89f407eb3a6', 'e6ca32cd-32d2-c781-77cc-44b210dd8800', 'Public transport', 'Proposes dedicated bus lanes on Halimbawa Avenue.', 'OFFICIAL_PLATFORM', '2026-08-20'),
-  ('68263b64-db22-9d2f-8529-756e600b7ea3', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'Flood control', 'Stated that drainage upgrades in low-lying barangays would be a priority.', 'SPEECH', '2026-09-02');
+  ('68263b64-db22-9d2f-8529-756e600b7ea3', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'Flood control', 'Stated that drainage upgrades in low-lying barangays would be a priority.', 'SPEECH', '2026-09-02'),
+  ('746eceb3-31a9-8430-beef-8bf36e38bb74', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'Public health', 'Proposes a community clinic in every barangay.', 'OFFICIAL_PLATFORM', '2026-09-25'),
+  ('fa6efd6d-718e-d4fa-fd5e-a1c19bf7ec52', 'c9208cda-6786-502c-b501-e0477095f589', 'Infrastructure', 'Stated that farm-to-market road repairs would be funded first.', 'SPEECH', '2026-08-14'),
+  ('8a8ac609-14ce-33b6-8b51-fbda71fe9a72', '7b15cc11-798a-fa9c-d185-53177dcbf806', 'Education', 'Said in an interview that more classrooms are needed.', 'INTERVIEW', '2026-09-10')
+on conflict (id) do nothing;
 
 -- claims
 insert into public.claims (id, subject_person_id, subject_record_type, subject_record_id, claim_type, statement, effective_from, effective_to, verification_status, last_reviewed_at) values
@@ -93,7 +166,33 @@ insert into public.claims (id, subject_person_id, subject_record_type, subject_r
   ('bcb51c2b-588e-98b6-7b5b-1ed5745ce170', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'EDUCATION', '72471dd2-a0fc-af32-6bb6-7069f84ea52c', 'EDUCATION', 'States he completed a BS in Civil Engineering at Pamantasan ng Halimbawa in 2002.', null, null, 'SELF_DECLARED', '2026-10-01'),
   ('b5f2a4d8-9407-cfe7-ef0a-b21d7120607e', 'b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'POLICY_POSITION', '68263b64-db22-9d2f-8529-756e600b7ea3', 'POLICY_POSITION', 'In a 2 September 2026 speech, he stated that drainage upgrades in low-lying barangays would be a priority.', '2026-09-02', null, 'SELF_DECLARED', '2026-10-01'),
   ('bf6f9cf3-b621-6090-85e3-2be3c4c80a39', '31e19420-0b2d-b664-3d82-06ba7244cd75', 'ELECTION_PARTICIPATION', '3d1d41c0-da14-8f80-68b0-f9d812c92d55', 'CANDIDACY_STATUS', 'Reported as considering a run for Mayor. No certificate of candidacy has been located.', '2026-09-20', null, 'REPORTED', '2026-10-01'),
-  ('eab2eb62-04d8-94b3-f118-f81d67d91e41', '31e19420-0b2d-b664-3d82-06ba7244cd75', 'OFFICE_TERM', '7b8d9d22-f18f-b610-7e54-6f252dae3f5b', 'OFFICE_TERM', 'Described as a City Councilor since 30 June 2022. No document has been attached yet.', '2022-06-30', null, 'UNVERIFIED', '2026-10-01');
+  ('eab2eb62-04d8-94b3-f118-f81d67d91e41', '31e19420-0b2d-b664-3d82-06ba7244cd75', 'OFFICE_TERM', '7b8d9d22-f18f-b610-7e54-6f252dae3f5b', 'OFFICE_TERM', 'Described as a City Councilor since 30 June 2022. No document has been attached yet.', '2022-06-30', null, 'UNVERIFIED', '2026-10-01'),
+  ('645afa9b-71af-4283-49e0-29393f9ae71f', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'ELECTION_PARTICIPATION', 'adcc4a53-203d-acf0-9d2c-a1864b038137', 'CANDIDACY_STATUS', 'Publicly stated on 25 September 2026 that she intends to run for Senator in 2028. No certificate of candidacy has been filed or located.', '2026-09-25', null, 'SELF_DECLARED', '2026-10-01'),
+  ('10457414-7b07-d474-4909-b77115c81228', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'OFFICE_TERM', '32cdc391-c9b4-18c1-f8dc-0a92a396faf8', 'OFFICE_TERM', 'Served as City Councilor from 30 June 2019 to 30 June 2022.', '2019-06-30', '2022-06-30', 'CORROBORATED', '2026-10-01'),
+  ('046acd9a-889f-09ca-fe9a-ca081fb6659c', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'AFFILIATION', '9c650710-3e8c-298f-4cea-c9c4025616cd', 'AFFILIATION', 'States she has been a member of Partido Pag-asa ng Bayan since 1 March 2015.', '2015-03-01', null, 'SELF_DECLARED', '2026-10-01'),
+  ('9c07ea8e-fe7b-88b9-aef6-b426226396f8', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'EDUCATION', '8a322e89-a190-84ca-9ebb-e0608b0189aa', 'EDUCATION', 'States she completed a BA in Public Administration at Pamantasan ng Kathang-Isip in 2010.', null, null, 'SELF_DECLARED', '2026-10-01'),
+  ('c332d0ce-3d8e-2fed-1a61-a6f4b091774a', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'POLICY_POSITION', '746eceb3-31a9-8430-beef-8bf36e38bb74', 'POLICY_POSITION', 'Her announcement proposes a community clinic in every barangay.', '2026-09-25', null, 'SELF_DECLARED', '2026-10-01'),
+  ('5f6af7fd-8906-2d8e-42f5-4ec6bf919fe0', 'c9208cda-6786-502c-b501-e0477095f589', 'ELECTION_PARTICIPATION', '392830a1-4396-1d67-fffb-52e828b399a8', 'CANDIDACY_STATUS', 'Proclaimed winner of the 2022 election for Governor of the Province of Kathang-Isip on 12 May 2022.', '2022-05-12', null, 'PRIMARY_SOURCE', '2026-10-01'),
+  ('922efa0b-e94f-7d6f-20fb-d22d7d43c4b7', 'c9208cda-6786-502c-b501-e0477095f589', 'OFFICE_TERM', '51d0d7bf-647f-24b9-61e3-7da829e3a8c8', 'OFFICE_TERM', 'Served as Mayor of the City of Halimbawa from 30 June 2013 to 30 June 2022.', '2013-06-30', '2022-06-30', 'CORROBORATED', '2026-10-01'),
+  ('dbc6bbd5-c85a-0e4a-571a-0213977d15ab', 'c9208cda-6786-502c-b501-e0477095f589', 'OFFICE_TERM', '6725db7f-ca04-d223-3bd3-42be790674e8', 'OFFICE_TERM', 'Took office as Governor of the Province of Kathang-Isip on 30 June 2022. No end date has been recorded.', '2022-06-30', null, 'PRIMARY_SOURCE', '2026-10-01'),
+  ('76f98045-4862-16ca-d1cb-48a7fc17d23d', 'c9208cda-6786-502c-b501-e0477095f589', 'AFFILIATION', 'ea48afd8-e153-e3cd-2f3c-9f7b0414fe6f', 'AFFILIATION', 'Reported as a member of Partido Halimbawa from 15 January 2012 until he left on 28 February 2019.', '2012-01-15', '2019-02-28', 'REPORTED', '2026-10-01'),
+  ('dc1579aa-8fd2-f372-3645-621651b6b7a1', 'c9208cda-6786-502c-b501-e0477095f589', 'AFFILIATION', 'b5449cf6-f28b-8c10-bbc6-491e2b60d131', 'AFFILIATION', 'States he has been a member of Alyansang Bagong-Umaga since 1 March 2019.', '2019-03-01', null, 'SELF_DECLARED', '2026-10-01'),
+  ('60ca425e-54a6-8adc-f87e-81bfad34bb90', 'c9208cda-6786-502c-b501-e0477095f589', 'POLICY_POSITION', 'fa6efd6d-718e-d4fa-fd5e-a1c19bf7ec52', 'POLICY_POSITION', 'In a 14 August 2026 speech, he stated that farm-to-market road repairs would be funded first.', '2026-08-14', null, 'SELF_DECLARED', '2026-10-01'),
+  ('42ebb15b-5439-89b2-85e2-cc2b527c185a', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', 'ELECTION_PARTICIPATION', '09dff228-61bf-21af-5fbf-3857f894e5f1', 'CANDIDACY_STATUS', 'Filed a certificate of candidacy for District Representative, Halimbawa 1st District, on 1 October 2026.', '2026-10-01', null, 'PRIMARY_SOURCE', '2026-10-01'),
+  ('2558fc49-0acf-5ae7-5aff-67c960ae45a8', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', 'OFFICE_TERM', '535feb82-dbcd-d9c3-7f5c-8db8ecf94128', 'OFFICE_TERM', 'Served as Punong Barangay of Barangay Dos from 30 June 2016 to 30 November 2022.', '2016-06-30', '2022-11-30', 'PRIMARY_SOURCE', '2026-10-01'),
+  ('55ebc747-1f27-fe95-9ae9-01a19ffa4b2b', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', 'AFFILIATION', 'c14af17a-56ab-d4b8-477c-682c7ab62c43', 'AFFILIATION', 'Partido Halimbawa is named as her party on her certificate of candidacy.', '2026-10-01', null, 'PRIMARY_SOURCE', '2026-10-01'),
+  ('7781d665-4c1d-537d-6f91-ba9b63085066', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', 'EDUCATION', '853c08aa-2bd8-9ddc-e89b-63a54e12e586', 'EDUCATION', 'States she completed a BS in Nursing at Pamantasan ng Halimbawa in 2009.', null, null, 'SELF_DECLARED', '2026-10-01'),
+  ('df235ede-2272-eb1d-d1a0-8f7f60c14af2', '7b15cc11-798a-fa9c-d185-53177dcbf806', 'ELECTION_PARTICIPATION', '740292f2-6658-51bb-8e50-5e0cfe6c94e3', 'CANDIDACY_STATUS', 'A notice dated 30 September 2026 records the withdrawal of his candidacy for Senator in the 2028 election.', '2026-09-30', null, 'PRIMARY_SOURCE', '2026-10-01'),
+  ('644f59b6-4f24-dc89-7f3d-7070443479f1', '7b15cc11-798a-fa9c-d185-53177dcbf806', 'POLICY_POSITION', '8a8ac609-14ce-33b6-8b51-fbda71fe9a72', 'POLICY_POSITION', 'Quoted in an interview published 10 September 2026 saying more classrooms are needed.', '2026-09-10', null, 'REPORTED', '2026-10-01'),
+  ('b05a7a94-7986-7ec3-7b4e-843ca2676ffc', '5fdbd4f7-cc17-2ef7-c0f2-fa20800957a8', 'ELECTION_PARTICIPATION', '174080e0-bdbf-cac1-688e-fd9a2c868050', 'CANDIDACY_STATUS', 'Reported, citing allies, as a possible Senate aspirant for 2028. She has made no public statement and no certificate of candidacy has been located.', '2026-09-28', null, 'REPORTED', '2026-10-01'),
+  ('622d5d83-e86a-8cb8-79f7-f7f8dd7087de', '5fdbd4f7-cc17-2ef7-c0f2-fa20800957a8', 'OFFICE_TERM', 'c26a2b99-fccd-aba2-b29a-3fb23a1f6736', 'OFFICE_TERM', 'Served as City Councilor from 30 June 2016 to 30 June 2025.', '2016-06-30', '2025-06-30', 'PRIMARY_SOURCE', '2026-10-01'),
+  ('e3ed5d5b-28e9-f381-43a2-9ea4327fcc15', '5fdbd4f7-cc17-2ef7-c0f2-fa20800957a8', 'AFFILIATION', '31428138-5440-3b8f-c5b6-54f143fabe85', 'AFFILIATION', 'Partido Pag-asa ng Bayan lists her as a member from 1 June 2010; the record was marked ended on 30 June 2026.', '2010-06-01', '2026-06-30', 'SELF_DECLARED', '2026-10-01'),
+  ('0f633b45-9ef0-abf0-87d7-f578d67843c6', '8381ba3f-3fed-4e0b-e0a5-3e71d62f248e', 'ELECTION_PARTICIPATION', 'c8f69fef-e050-6e77-e249-3eb02c247cba', 'CANDIDACY_STATUS', 'The official canvass of 12 May 2022 lists him as not elected for Municipal Mayor of Bayan ng Ejemplo.', '2022-05-12', null, 'PRIMARY_SOURCE', '2026-10-01'),
+  ('057c5819-0393-2922-ff32-2ecf73b3ec7f', '8381ba3f-3fed-4e0b-e0a5-3e71d62f248e', 'AFFILIATION', '8c6b9458-cd9b-0adb-482b-42081ee0637b', 'AFFILIATION', 'Listed as a member of Alyansang Bagong-Umaga in a 2021 roster. No later roster has been located.', '2020-01-01', null, 'OUTDATED', '2026-10-01'),
+  ('165115c6-df24-f5e1-0c6f-07d6aca375c1', 'adc1ef62-61c6-4d6e-0c1f-02725f84e433', 'ELECTION_PARTICIPATION', '37e722ef-b726-32a5-aec4-7f1ab254b7e1', 'CANDIDACY_STATUS', 'A resolution dated 18 September 2026 lists him as disqualified for Mayor of the City of Halimbawa. This record does not summarise the resolution.', '2026-09-18', null, 'PRIMARY_SOURCE', '2026-10-01'),
+  ('f5c0b131-2af3-b1f2-108f-eb26f05b78eb', 'adc1ef62-61c6-4d6e-0c1f-02725f84e433', 'OFFICE_TERM', 'f527fe4f-a7d2-ae2e-bf7a-75e0652102a7', 'OFFICE_TERM', 'Described as a City Councilor from 30 June 2013 to 30 June 2022. No document has been attached yet.', '2013-06-30', '2022-06-30', 'UNVERIFIED', '2026-10-01'),
+  ('48a8ffa7-7bed-dc89-0650-3e41c1c592dc', 'adc1ef62-61c6-4d6e-0c1f-02725f84e433', 'AFFILIATION', 'c18a9134-841c-06e3-c304-d4d421913c73', 'AFFILIATION', 'Reported as a member of Partido Halimbawa since 1 May 2018.', '2018-05-01', null, 'REPORTED', '2026-10-01')
+on conflict (id) do nothing;
 
 -- claim_evidence
 insert into public.claim_evidence (claim_id, source_id, supports, note) values
@@ -109,19 +208,46 @@ insert into public.claim_evidence (claim_id, source_id, supports, note) values
   ('b0e56e60-769c-eb74-d2e2-a25cfae861ca', '532a36fe-2c83-7ab1-ff10-2c34bcbd4681', true, 'Roster dated 2019; current membership is not documented.'),
   ('bcb51c2b-588e-98b6-7b5b-1ed5745ce170', '72ffa883-7aad-d15c-b2d7-7831f1bb50a6', true, null),
   ('b5f2a4d8-9407-cfe7-ef0a-b21d7120607e', '72ffa883-7aad-d15c-b2d7-7831f1bb50a6', true, 'Speech transcript published on the campaign page.'),
-  ('bf6f9cf3-b621-6090-85e3-2be3c4c80a39', 'bb6796d8-5b70-b44b-08b3-8e86edc3828b', true, 'Based on unnamed sources; no filing found.');
+  ('bf6f9cf3-b621-6090-85e3-2be3c4c80a39', 'bb6796d8-5b70-b44b-08b3-8e86edc3828b', true, 'Based on unnamed sources; no filing found.'),
+  ('645afa9b-71af-4283-49e0-29393f9ae71f', '60fdf159-dfa3-ebaf-151d-35b99bb293c8', true, null),
+  ('10457414-7b07-d474-4909-b77115c81228', 'b12a5a46-4168-3473-aabe-e69503574292', true, null),
+  ('10457414-7b07-d474-4909-b77115c81228', 'a419a463-bc1c-18ab-7ddb-bb0f75d039e3', true, 'Reports the oath-taking of 1 July 2019.'),
+  ('046acd9a-889f-09ca-fe9a-ca081fb6659c', '527920cc-0cc5-e4d0-802a-8a55bc495758', true, null),
+  ('9c07ea8e-fe7b-88b9-aef6-b426226396f8', '527920cc-0cc5-e4d0-802a-8a55bc495758', true, null),
+  ('c332d0ce-3d8e-2fed-1a61-a6f4b091774a', '60fdf159-dfa3-ebaf-151d-35b99bb293c8', true, null),
+  ('5f6af7fd-8906-2d8e-42f5-4ec6bf919fe0', 'd2242bd7-bc56-050c-eb30-b08660cccca0', true, null),
+  ('922efa0b-e94f-7d6f-20fb-d22d7d43c4b7', '4ba47b2d-8206-7a34-281d-95272b700d2c', true, null),
+  ('922efa0b-e94f-7d6f-20fb-d22d7d43c4b7', '6dbbac5e-31a4-f579-7bc2-b172757046fe', true, 'Reports the end of the third term in June 2022.'),
+  ('dbc6bbd5-c85a-0e4a-571a-0213977d15ab', 'd2242bd7-bc56-050c-eb30-b08660cccca0', true, null),
+  ('76f98045-4862-16ca-d1cb-48a7fc17d23d', '5286f093-8721-14ec-fb1c-1911a1a05f44', true, null),
+  ('dc1579aa-8fd2-f372-3645-621651b6b7a1', '7c8f1b25-d38a-f62e-2090-dd2522c01394', true, null),
+  ('60ca425e-54a6-8adc-f87e-81bfad34bb90', '7c8f1b25-d38a-f62e-2090-dd2522c01394', true, 'Speech transcript published on the office page.'),
+  ('42ebb15b-5439-89b2-85e2-cc2b527c185a', '4823e6f6-7d22-b500-cd56-798e8ecb881f', true, null),
+  ('2558fc49-0acf-5ae7-5aff-67c960ae45a8', 'f67e82c3-20cf-2a0b-cda5-7a5af3009f75', true, null),
+  ('55ebc747-1f27-fe95-9ae9-01a19ffa4b2b', '4823e6f6-7d22-b500-cd56-798e8ecb881f', true, 'Party field of the certificate.'),
+  ('7781d665-4c1d-537d-6f91-ba9b63085066', 'c9d14745-e7e1-b97f-fab9-7387794f4b2f', true, null),
+  ('df235ede-2272-eb1d-d1a0-8f7f60c14af2', '527a230b-75a9-e421-7199-8cf6c88a1efd', true, null),
+  ('644f59b6-4f24-dc89-7f3d-7070443479f1', 'ea243ea0-4b85-9b61-cd46-2039482a539d', true, null),
+  ('b05a7a94-7986-7ec3-7b4e-843ca2676ffc', '4ea52350-0e26-7fe1-193b-77a4d272a8d8', true, 'Based on unnamed allies; no filing found.'),
+  ('622d5d83-e86a-8cb8-79f7-f7f8dd7087de', '6f24e64d-6252-8754-7f4c-b0f4967ff360', true, null),
+  ('e3ed5d5b-28e9-f381-43a2-9ea4327fcc15', 'c2caa3dc-d3fd-1b0b-8273-7e3febb00c69', true, null),
+  ('0f633b45-9ef0-abf0-87d7-f578d67843c6', 'a09a4048-1751-dbec-1e2d-9a37b83bf9f8', true, null),
+  ('057c5819-0393-2922-ff32-2ecf73b3ec7f', 'dd5a8481-5f51-0f79-4762-b37cf22a279d', true, 'Roster dated 2021; current membership is not documented.'),
+  ('165115c6-df24-f5e1-0c6f-07d6aca375c1', 'af4b061a-3e61-1ae6-72b2-07ebd01e6b14', true, null),
+  ('48a8ffa7-7bed-dc89-0650-3e41c1c592dc', '67263827-5243-c579-2fdd-2f921ebb592e', true, null)
+on conflict (claim_id, source_id) do nothing;
 
 -- Publish in dependency order (triggers enforce this order).
-update public.people set publication_status = 'PUBLISHED' where id in ('b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'e6ca32cd-32d2-c781-77cc-44b210dd8800', '31e19420-0b2d-b664-3d82-06ba7244cd75');
-update public.elections set publication_status = 'PUBLISHED' where id in ('72b46115-8272-a0fb-b624-405b85bab363');
-update public.offices set publication_status = 'PUBLISHED' where id in ('c7509707-5e67-cff6-7f1b-151f9f80e461', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', 'bf09d0bd-1ea9-dd58-07c8-d22780b505ea');
-update public.political_organizations set publication_status = 'PUBLISHED' where id in ('f1aff1c0-a639-5b95-2ff8-4a77415f5f86', '0c003678-fc19-ec36-63b0-b88d423a9b6a');
-update public.sources set publication_status = 'PUBLISHED' where id in ('9a2cb0cc-19d4-8070-5d9a-7d9ef21704f3', 'd97206b8-e62a-37fa-5c51-43f2d5271455', '0a4f6dc9-cf6d-69a6-9b2e-4496ba8cc870', 'ab7757ea-7a0d-1f46-8ed5-160be25b3f2f', '03fe12cd-7725-528e-9eb3-9eb12b16fc44', 'bb6796d8-5b70-b44b-08b3-8e86edc3828b', '170907f1-9bbb-94ba-58b5-1a7ddfaee707', 'b94631ce-d95f-0613-6085-d500eea47c3b', '72ffa883-7aad-d15c-b2d7-7831f1bb50a6', '532a36fe-2c83-7ab1-ff10-2c34bcbd4681');
-update public.election_participations set publication_status = 'PUBLISHED' where id in ('4fe41ec6-dccd-2972-22af-4b4650b3fb73', '37bbb0ec-169b-749b-9fe4-c810d7334190', '3d1d41c0-da14-8f80-68b0-f9d812c92d55');
-update public.office_terms set publication_status = 'PUBLISHED' where id in ('7e467592-ea97-6b78-7141-5317e5a1f502', '83972b7b-e575-e101-5f24-6d64d1fd1478', '7b8d9d22-f18f-b610-7e54-6f252dae3f5b');
-update public.affiliation_records set publication_status = 'PUBLISHED' where id in ('90b2bc18-2984-023f-f3a1-5a2d9fbaad3c', 'd414e2c1-fa44-57c6-0c32-625b3c473157');
-update public.education_records set publication_status = 'PUBLISHED' where id in ('72471dd2-a0fc-af32-6bb6-7069f84ea52c');
-update public.policy_position_records set publication_status = 'PUBLISHED' where id in ('7b3dfc1a-2348-247e-63f5-c89f407eb3a6', '68263b64-db22-9d2f-8529-756e600b7ea3');
-update public.claims set publication_status = 'PUBLISHED' where id in ('ea83bf1b-2265-726d-d2ec-9ef5a2530759', '760c1701-af27-0093-717c-7ab8741f6094', '1e88e201-08dd-7033-ae73-13e6f25c7f1c', 'a76df69a-1b75-7db6-b79f-b4446f72e766', '77319ab0-b8a5-1c8b-c8fb-d080caeeb07c', '70faf7b3-e082-30b3-db60-d094b05834e8', '9ce3a595-52e9-f996-4ac5-78051f598753', 'b0e56e60-769c-eb74-d2e2-a25cfae861ca', 'bcb51c2b-588e-98b6-7b5b-1ed5745ce170', 'b5f2a4d8-9407-cfe7-ef0a-b21d7120607e', 'bf6f9cf3-b621-6090-85e3-2be3c4c80a39', 'eab2eb62-04d8-94b3-f118-f81d67d91e41');
+update public.people set publication_status = 'PUBLISHED' where id in ('b199c7a8-0b7b-6503-6c07-698bc72d87f3', 'e6ca32cd-32d2-c781-77cc-44b210dd8800', '31e19420-0b2d-b664-3d82-06ba7244cd75', 'ebf16011-ef6a-65f2-e511-3fe3a933ac05', 'c9208cda-6786-502c-b501-e0477095f589', '8c234880-2f10-a5cc-8b9c-0044491a9a7d', '7b15cc11-798a-fa9c-d185-53177dcbf806', '5fdbd4f7-cc17-2ef7-c0f2-fa20800957a8', '8381ba3f-3fed-4e0b-e0a5-3e71d62f248e', 'adc1ef62-61c6-4d6e-0c1f-02725f84e433') and publication_status <> 'PUBLISHED';
+update public.elections set publication_status = 'PUBLISHED' where id in ('72b46115-8272-a0fb-b624-405b85bab363', '834551e9-b01b-aaad-629d-7ab177914203', '584bd485-2ef2-dbb9-057d-770162cfc69d') and publication_status <> 'PUBLISHED';
+update public.offices set publication_status = 'PUBLISHED' where id in ('c7509707-5e67-cff6-7f1b-151f9f80e461', '7ecc43e5-ad70-0e46-bed1-11b1033bca02', 'bf09d0bd-1ea9-dd58-07c8-d22780b505ea', '9b99c763-f2e5-5794-74df-9c9d0fe0a4c4', '870edec1-a6ff-83e6-7dd1-3a6762dafcf6', '264f583d-9eca-b73e-82e1-82220f17ff9d', '4394d94e-bc97-fd81-09c7-3675f7df104d', '257ef4a4-cd9b-def2-0c7b-0646e75ed4a1') and publication_status <> 'PUBLISHED';
+update public.political_organizations set publication_status = 'PUBLISHED' where id in ('f1aff1c0-a639-5b95-2ff8-4a77415f5f86', '0c003678-fc19-ec36-63b0-b88d423a9b6a', '48fb733b-0de1-0a96-4d98-003bd81d6820', '20186740-f38e-9df4-7b97-108b7e22b3b9') and publication_status <> 'PUBLISHED';
+update public.sources set publication_status = 'PUBLISHED' where id in ('9a2cb0cc-19d4-8070-5d9a-7d9ef21704f3', 'd97206b8-e62a-37fa-5c51-43f2d5271455', '0a4f6dc9-cf6d-69a6-9b2e-4496ba8cc870', 'ab7757ea-7a0d-1f46-8ed5-160be25b3f2f', '03fe12cd-7725-528e-9eb3-9eb12b16fc44', 'bb6796d8-5b70-b44b-08b3-8e86edc3828b', '170907f1-9bbb-94ba-58b5-1a7ddfaee707', 'b94631ce-d95f-0613-6085-d500eea47c3b', '72ffa883-7aad-d15c-b2d7-7831f1bb50a6', '532a36fe-2c83-7ab1-ff10-2c34bcbd4681', '60fdf159-dfa3-ebaf-151d-35b99bb293c8', '527920cc-0cc5-e4d0-802a-8a55bc495758', 'b12a5a46-4168-3473-aabe-e69503574292', 'a419a463-bc1c-18ab-7ddb-bb0f75d039e3', 'd2242bd7-bc56-050c-eb30-b08660cccca0', '4ba47b2d-8206-7a34-281d-95272b700d2c', '6dbbac5e-31a4-f579-7bc2-b172757046fe', '5286f093-8721-14ec-fb1c-1911a1a05f44', '7c8f1b25-d38a-f62e-2090-dd2522c01394', '4823e6f6-7d22-b500-cd56-798e8ecb881f', 'f67e82c3-20cf-2a0b-cda5-7a5af3009f75', 'c9d14745-e7e1-b97f-fab9-7387794f4b2f', '527a230b-75a9-e421-7199-8cf6c88a1efd', 'ea243ea0-4b85-9b61-cd46-2039482a539d', '4ea52350-0e26-7fe1-193b-77a4d272a8d8', '6f24e64d-6252-8754-7f4c-b0f4967ff360', 'c2caa3dc-d3fd-1b0b-8273-7e3febb00c69', 'a09a4048-1751-dbec-1e2d-9a37b83bf9f8', 'dd5a8481-5f51-0f79-4762-b37cf22a279d', 'af4b061a-3e61-1ae6-72b2-07ebd01e6b14', '67263827-5243-c579-2fdd-2f921ebb592e') and publication_status <> 'PUBLISHED';
+update public.election_participations set publication_status = 'PUBLISHED' where id in ('4fe41ec6-dccd-2972-22af-4b4650b3fb73', '37bbb0ec-169b-749b-9fe4-c810d7334190', '3d1d41c0-da14-8f80-68b0-f9d812c92d55', 'adcc4a53-203d-acf0-9d2c-a1864b038137', '392830a1-4396-1d67-fffb-52e828b399a8', '09dff228-61bf-21af-5fbf-3857f894e5f1', '740292f2-6658-51bb-8e50-5e0cfe6c94e3', '174080e0-bdbf-cac1-688e-fd9a2c868050', 'c8f69fef-e050-6e77-e249-3eb02c247cba', '37e722ef-b726-32a5-aec4-7f1ab254b7e1') and publication_status <> 'PUBLISHED';
+update public.office_terms set publication_status = 'PUBLISHED' where id in ('7e467592-ea97-6b78-7141-5317e5a1f502', '83972b7b-e575-e101-5f24-6d64d1fd1478', '7b8d9d22-f18f-b610-7e54-6f252dae3f5b', '32cdc391-c9b4-18c1-f8dc-0a92a396faf8', '51d0d7bf-647f-24b9-61e3-7da829e3a8c8', '6725db7f-ca04-d223-3bd3-42be790674e8', '535feb82-dbcd-d9c3-7f5c-8db8ecf94128', 'c26a2b99-fccd-aba2-b29a-3fb23a1f6736', 'f527fe4f-a7d2-ae2e-bf7a-75e0652102a7') and publication_status <> 'PUBLISHED';
+update public.affiliation_records set publication_status = 'PUBLISHED' where id in ('90b2bc18-2984-023f-f3a1-5a2d9fbaad3c', 'd414e2c1-fa44-57c6-0c32-625b3c473157', '9c650710-3e8c-298f-4cea-c9c4025616cd', 'ea48afd8-e153-e3cd-2f3c-9f7b0414fe6f', 'b5449cf6-f28b-8c10-bbc6-491e2b60d131', 'c14af17a-56ab-d4b8-477c-682c7ab62c43', '31428138-5440-3b8f-c5b6-54f143fabe85', '8c6b9458-cd9b-0adb-482b-42081ee0637b', 'c18a9134-841c-06e3-c304-d4d421913c73') and publication_status <> 'PUBLISHED';
+update public.education_records set publication_status = 'PUBLISHED' where id in ('72471dd2-a0fc-af32-6bb6-7069f84ea52c', '8a322e89-a190-84ca-9ebb-e0608b0189aa', '853c08aa-2bd8-9ddc-e89b-63a54e12e586') and publication_status <> 'PUBLISHED';
+update public.policy_position_records set publication_status = 'PUBLISHED' where id in ('7b3dfc1a-2348-247e-63f5-c89f407eb3a6', '68263b64-db22-9d2f-8529-756e600b7ea3', '746eceb3-31a9-8430-beef-8bf36e38bb74', 'fa6efd6d-718e-d4fa-fd5e-a1c19bf7ec52', '8a8ac609-14ce-33b6-8b51-fbda71fe9a72') and publication_status <> 'PUBLISHED';
+update public.claims set publication_status = 'PUBLISHED' where id in ('ea83bf1b-2265-726d-d2ec-9ef5a2530759', '760c1701-af27-0093-717c-7ab8741f6094', '1e88e201-08dd-7033-ae73-13e6f25c7f1c', 'a76df69a-1b75-7db6-b79f-b4446f72e766', '77319ab0-b8a5-1c8b-c8fb-d080caeeb07c', '70faf7b3-e082-30b3-db60-d094b05834e8', '9ce3a595-52e9-f996-4ac5-78051f598753', 'b0e56e60-769c-eb74-d2e2-a25cfae861ca', 'bcb51c2b-588e-98b6-7b5b-1ed5745ce170', 'b5f2a4d8-9407-cfe7-ef0a-b21d7120607e', 'bf6f9cf3-b621-6090-85e3-2be3c4c80a39', 'eab2eb62-04d8-94b3-f118-f81d67d91e41', '645afa9b-71af-4283-49e0-29393f9ae71f', '10457414-7b07-d474-4909-b77115c81228', '046acd9a-889f-09ca-fe9a-ca081fb6659c', '9c07ea8e-fe7b-88b9-aef6-b426226396f8', 'c332d0ce-3d8e-2fed-1a61-a6f4b091774a', '5f6af7fd-8906-2d8e-42f5-4ec6bf919fe0', '922efa0b-e94f-7d6f-20fb-d22d7d43c4b7', 'dbc6bbd5-c85a-0e4a-571a-0213977d15ab', '76f98045-4862-16ca-d1cb-48a7fc17d23d', 'dc1579aa-8fd2-f372-3645-621651b6b7a1', '60ca425e-54a6-8adc-f87e-81bfad34bb90', '42ebb15b-5439-89b2-85e2-cc2b527c185a', '2558fc49-0acf-5ae7-5aff-67c960ae45a8', '55ebc747-1f27-fe95-9ae9-01a19ffa4b2b', '7781d665-4c1d-537d-6f91-ba9b63085066', 'df235ede-2272-eb1d-d1a0-8f7f60c14af2', '644f59b6-4f24-dc89-7f3d-7070443479f1', 'b05a7a94-7986-7ec3-7b4e-843ca2676ffc', '622d5d83-e86a-8cb8-79f7-f7f8dd7087de', 'e3ed5d5b-28e9-f381-43a2-9ea4327fcc15', '0f633b45-9ef0-abf0-87d7-f578d67843c6', '057c5819-0393-2922-ff32-2ecf73b3ec7f', '165115c6-df24-f5e1-0c6f-07d6aca375c1', 'f5c0b131-2af3-b1f2-108f-eb26f05b78eb', '48a8ffa7-7bed-dc89-0650-3e41c1c592dc') and publication_status <> 'PUBLISHED';
 
 commit;

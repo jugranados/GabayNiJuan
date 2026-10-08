@@ -5,13 +5,12 @@
  * corrected silently.
  */
 import { devFixtureTables } from '@/data/fixtures/devFixtures';
-import { createInMemoryRowSource } from '@/data/repositories/inMemoryRowSource';
-import { createRepositories } from '@/data/repositories/tableRepositories';
+import { createMockRepositories } from '@/data/repositories/mockRepositories';
 import { VERIFICATION_STATUSES } from '@/domain/enums';
 import type { PersonProfile } from '@/domain/models/personProfile';
 import { checkVerificationConsistency } from '@/domain/validation/verification';
 
-const repos = createRepositories(createInMemoryRowSource(devFixtureTables));
+const repos = createMockRepositories();
 const personIds = (devFixtureTables.people ?? []).map((row) => (row as { id: string }).id);
 const claimIds = (devFixtureTables.claims ?? []).map((row) => (row as { id: string }).id);
 

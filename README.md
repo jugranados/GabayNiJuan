@@ -27,6 +27,16 @@ Its purpose is to help voters understand the documented public record of politic
 
 See `docs/` and `AGENTS.md` before implementing features.
 
+## What the app does today
+
+- **Home:** search, browse by election and office level, how verification works.
+- **Directory:** alphabetical cards, name search, combinable filters (election, office, office level, participation status, organization), pagination. Never ranked.
+- **Profile:** header with documented current context, election participation with exact candidacy state, office history and affiliations as timelines, education, policy positions, sources.
+- **Evidence:** every attested record links to its claim, supporting and conflicting sources, and the original document.
+- All people in this repository are **fictional** development data.
+
+See `docs/ARCHITECTURE.md` for the directory query design, filter model, pagination and the missing-data wording policy.
+
 ## Repository layout
 
 | Path | Contents |
@@ -92,11 +102,11 @@ Full guide: [`supabase/README.md`](supabase/README.md).
 
 ```bash
 supabase start && supabase db reset        # local stack: migrations + fictional seed (needs Docker + Supabase CLI)
-cd mobile && npm run seed:generate         # regenerate supabase/seed.sql from the app fixtures
+cd mobile && npm run seed:generate         # regenerate supabase/seed.sql (idempotent) from the app fixtures
 supabase gen types typescript --local > mobile/src/data/supabase/database.types.ts   # then npm run typecheck
 psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 \
   -f supabase/tests/rls_and_publication.test.sql                                       # RLS / publication / audit tests
-cd mobile && npm run test:integration      # app repositories vs. a real project, anon key only
+cd mobile && npm run test:integration      # mock vs. a real project through the anon key: profiles, directory queries, RLS
 ```
 
 **Publication and RLS model in one paragraph.** Every record has a `publication_status`. Anonymous users (the app) can read only `PUBLISHED` rows, only non-identity columns, and cannot write. Reviewers draft, approvers publish, every change lands in the append-only `revisions` log, and a claim cannot be published unless its evidence matches its verification status.

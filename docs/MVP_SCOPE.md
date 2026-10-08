@@ -17,6 +17,20 @@ Must be completed before mass data entry.
 - database RLS rules
 - contributor/admin roles
 
+## Status after Milestone 2
+
+| MVP screen | State |
+|---|---|
+| 1. Home | done |
+| 2. Search / browse people | done (cards, search, pagination) |
+| 3. Filter by election / office / location | done for election, office, level, status, organization. **Location is deferred** until jurisdictions have names |
+| 4. Person profile | done |
+| 5. Election participation | done |
+| 6. Political / office history | done (timeline) |
+| 7. Sources / evidence viewer | done (`/claims/[id]`) |
+| 8. About verification | done |
+| 9. Report an error | not started (Milestone 3) |
+
 ## Phase 1 — Voter MVP
 
 ### Screens

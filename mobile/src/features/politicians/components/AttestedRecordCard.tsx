@@ -3,8 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import { Card } from '@/components/ui';
 import { colors } from '@/components/theme';
 import type { ClaimWithEvidence } from '@/domain/models/personProfile';
-import { ClaimCard } from '@/features/sources/components/ClaimCard';
-import { VerificationBadge } from '@/features/sources/components/VerificationBadge';
+import { EvidenceBlock } from '@/features/sources/components/EvidenceBlock';
 
 type Props = {
   title: string;
@@ -28,16 +27,7 @@ export function AttestedRecordCard({ title, details, claims, onOpenClaim }: Prop
             {line}
           </Text>
         ))}
-      {claims.length === 0 ? (
-        <>
-          <VerificationBadge status="UNVERIFIED" />
-          <Text style={styles.detail}>No source attached.</Text>
-        </>
-      ) : (
-        claims.map((item) => (
-          <ClaimCard key={item.claim.id} {...item} onOpenDetails={onOpenClaim} />
-        ))
-      )}
+      <EvidenceBlock claims={claims} onOpenClaim={onOpenClaim} />
     </Card>
   );
 }

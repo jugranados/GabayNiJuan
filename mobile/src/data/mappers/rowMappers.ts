@@ -2,6 +2,9 @@
  * Validated row -> domain model. Mappers only rename and convert `null` to
  * `undefined`; they never fill in, derive, or reinterpret political data.
  */
+import type { DirectoryItemRow } from '@/data/schemas/directory';
+import { formatPersonName } from '@/domain/models/person';
+import type { DirectoryEntry } from '@/domain/models/directory';
 import type {
   AffiliationRecord,
   AssetDisclosureRecord,
@@ -228,5 +231,37 @@ export function toRevision(row: RevisionRow): Revision {
     reason: row.reason,
     createdAt: row.created_at,
     approvalState: row.approval_state,
+  };
+}
+
+export function toDirectoryEntry(row: DirectoryItemRow): DirectoryEntry {
+  const person = toPerson({
+    id: row.id,
+    first_name: row.first_name,
+    middle_name: row.middle_name,
+    last_name: row.last_name,
+    suffix: row.suffix,
+    preferred_name: row.preferred_name,
+    birth_date: undefined,
+    photo_asset_id: row.photo_asset_id,
+  });
+  return {
+    id: row.id,
+    displayName: formatPersonName(person),
+    photoAssetId: person.photoAssetId,
+    participations: row.participations.map((p) => ({
+      officeName: p.office_name,
+      electionName: p.election_name,
+      electionDate: p.election_date,
+      status: p.status,
+      effectiveFrom: p.effective_from,
+    })),
+    affiliation: row.affiliation
+      ? {
+          organizationName: row.affiliation.organization_name,
+          affiliationType: row.affiliation.affiliation_type,
+          startDate: row.affiliation.start_date,
+        }
+      : undefined,
   };
 }

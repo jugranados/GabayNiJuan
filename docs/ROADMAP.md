@@ -44,16 +44,35 @@ Exit criteria:
 - [x] UI never consumes raw database rows directly
 - [x] the app loads from a Supabase dev project with `EXPO_PUBLIC_DATA_SOURCE=supabase`
 
-## Milestone 2 — Politician directory MVP
+## Milestone 2 — Politician directory MVP (implemented 2026-10-09; device check and first CI run pending)
 
-- person list
-- search
-- filters
-- profile
-- election participation
-- office history
-- affiliations
-- source viewer
+- [x] Home: search, browse by election and office level, how verification works, neutrality statement
+- [x] directory of reusable `PoliticianCard`s, alphabetical only
+- [x] name search: trimmed, debounced, two-character minimum, clear control, preserved when returning from a profile
+- [x] filters: election, office, office level, participation status, political organization (combinable, removable chips, "Clear all")
+- [x] one directory query (`searchDirectory`) shared by the mock and Supabase backends; Supabase filters, orders and pages in the database (`search_directory`)
+- [x] offset pagination with a total count
+- [x] profile hierarchy: header, election participation, public office history, political affiliations, education, policy positions, sources
+- [x] reverse-chronological timelines for office history and affiliations
+- [x] election participation shown with its exact state; aspirant states never labelled "candidate"
+- [x] one neutral missing-data sentence; never a negative finding
+- [x] evidence reachable from every attested record: record → claim → source viewer → original source
+- [x] image component with placeholder, loading and failure fallback
+- [x] offline / validation / backend error states with retry
+- [x] fictional fixtures expanded to 10 people covering all 8 participation states, all 6 office levels and 4 organizations
+- [x] mock and Supabase directory results proven identical by `npm run test:integration`
+
+Open items before this is called finished:
+- [ ] run the app on an Android emulator / iOS simulator and a physical device (checklist in the Milestone 2 hand-off)
+- [ ] first green CI run, including the `database` job (`supabase db reset`, SQL tests, idempotent seed)
+- [ ] "Report an error" entry point (MVP screen 9) is not built; it belongs with the correction workflow in Milestone 3
+
+Deferred, deliberately:
+- location filter and a structured `Jurisdiction` model (see `docs/ARCHITECTURE.md`)
+- accent-insensitive name search and typo tolerance (`unaccent` / `pg_trgm`)
+- cursor (keyset) pagination
+- photo storage and resolution (`photo_asset_id` is stored but no bucket exists yet)
+- office filter as a typeahead (the option list is fine for the fictional set, not for thousands of offices)
 
 ## Milestone 3 — Editorial workflow
 
