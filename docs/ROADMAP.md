@@ -20,24 +20,26 @@ Exit criteria:
 - [x] automated type-check/test command exists (`npm run verify`)
 - [x] no political data is hard-coded in UI (UI reads repositories; fixtures are fictional)
 
-## Milestone 1 — Data trust foundation
+## Milestone 1 — Data trust foundation (in progress)
 
-- create Supabase project
-- implement schema
-  - tables matching the provisional row contracts in `mobile/src/data/schemas/rows.ts`
-  - publication workflow fields (`publication_status`, editor/approver, timestamps)
-  - `revisions` audit table with triggers
-- implement RLS (anon: read `PUBLISHED` rows only; no anon writes)
-- seed non-controversial development fixtures (port `mobile/src/data/fixtures`, still fictional)
-- generate Supabase types for the data layer only, and keep them out of domain/UI
-- implement Source/Claim/Evidence models end to end against Supabase
-- implement verification status UI (source viewer screen per claim)
-- run verification consistency checks in CI against seed data
+- [x] create Supabase project
+- [x] implement schema (`supabase/migrations/*_core_schema.sql`)
+  - [x] tables matching the row contracts in `mobile/src/data/schemas/rows.ts`
+  - [x] publication workflow fields (`publication_status`, `published_at`, `created_by`, `approved_by`, timestamps)
+  - [x] `revisions` audit table, filled by triggers and append-only
+- [x] implement RLS (anon reads `PUBLISHED` only and cannot write; REVIEWER < APPROVER < ADMIN)
+- [x] database-enforced publish gate, published-change guard (approver + reason), unpublish guard
+- [x] generate Supabase types for the data layer only; compile-time drift check (`schemaDrift.ts`)
+- [x] fictional seed generated from the app fixtures (`supabase/seed.sql`), tested in a rolled-back transaction, not applied to the project
+- [ ] seed a dev database (local stack or Supabase branch) and run the app with `EXPO_PUBLIC_DATA_SOURCE=supabase`
+- [ ] source viewer screen per claim (`/claims/[id]`)
+- [ ] run verification consistency checks against seed data in CI
+- [ ] decide whether published rows should expose `created_by`/`approved_by` user ids to anon (column-level grants or a public view)
 
 Exit criteria:
 - every displayed fixture claim can open evidence metadata
 - UI never consumes raw database rows directly
-- the app runs with `EXPO_PUBLIC_DATA_SOURCE=supabase` against the dev project
+- the app runs with `EXPO_PUBLIC_DATA_SOURCE=supabase` against a dev database
 
 ## Milestone 2 — Politician directory MVP
 

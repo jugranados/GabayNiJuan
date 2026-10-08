@@ -75,7 +75,7 @@ This is a view/read model, not the database table design.
 
 ## Repository preservation
 
-> **Status (2026-10-07):** The RN baseline was bootstrapped on `development` in `mobile/`, not on an `rn/bootstrap` branch. `develop` is unchanged and still holds the Android prototype. `PersonProfile` is implemented without `legalCases`/`disclosures` until Milestone 4 (see `docs/DATA_MODEL.md`). Still to decide: archive `develop` as `archive/android-native`.
+> **Status (2026-10-07):** The RN baseline was bootstrapped on `development` in `mobile/`, not on an `rn/bootstrap` branch. The Android prototype was archived unchanged as `archive/android-native` on 2026-10-08, and `develop` was deleted. `PersonProfile` is implemented without `legalCases`/`disclosures` until Milestone 4 (see `docs/DATA_MODEL.md`).
 
 Recommended branch strategy:
 

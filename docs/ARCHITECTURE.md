@@ -139,6 +139,12 @@ The profile read currently issues several small queries. If that becomes a bottl
 - A dangling reference (for example, a participation pointing to a missing office) raises `DataIntegrityError`.
 - The UI shows an explicit "Some records failed validation" state. TanStack Query does not retry data errors.
 
+### Database contract
+
+The backend schema lives in `supabase/migrations/` (see `supabase/README.md`). `mobile/src/data/supabase/database.types.ts` is generated from it and used **only** in the data layer. `mobile/src/data/supabase/schemaDrift.ts` is a compile-time check that every table row satisfies its Zod contract, that every contract column exists, and that every DB enum equals its domain enum. A migration that drifts from the app fails `npm run typecheck`.
+
+The database also enforces the editorial rules (RLS, publish gate, audit trail), so the mobile app is never the only line of defence.
+
 ### Config and secrets
 
 `shared/config/env.ts` validates `EXPO_PUBLIC_*` variables with Zod and refuses to start if the Supabase key is a service-role JWT or an `sb_secret_` key. The public Supabase client does not persist or refresh sessions, because voters do not sign in.

@@ -22,7 +22,8 @@ import {
   OFFICE_TERM_STATUSES,
   POLICY_ATTRIBUTION_TYPES,
   POLITICAL_ORGANIZATION_TYPES,
-  REVISION_APPROVAL_STATES,
+  PUBLICATION_STATUSES,
+  REVISION_ENTITY_TYPES,
   SOURCE_TYPES,
   VERIFICATION_STATUSES,
 } from '@/domain/enums';
@@ -240,15 +241,15 @@ export const claimEvidenceRowSchema = z.object({
 
 export const revisionRowSchema = z.object({
   id: idSchema,
-  entity_type: z.enum([...CLAIM_SUBJECT_RECORD_TYPES, 'CLAIM', 'SOURCE', 'CLAIM_EVIDENCE']),
+  entity_type: z.enum(REVISION_ENTITY_TYPES),
   entity_id: idSchema,
-  old_value: z.string().nullish(),
-  new_value: z.string().nullish(),
+  old_value: z.json().nullish(),
+  new_value: z.json().nullish(),
   editor_id: idSchema,
   approver_id: optionalId,
   reason: nonEmptyTextSchema,
   created_at: isoDateTimeSchema,
-  approval_state: z.enum(REVISION_APPROVAL_STATES),
+  approval_state: z.enum(PUBLICATION_STATUSES),
 });
 
 export type PersonRow = z.infer<typeof personRowSchema>;

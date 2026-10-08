@@ -307,24 +307,43 @@ Track:
 ```ts
 type Revision = {
   id: string;
-  entityType: ClaimSubjectRecordType | "CLAIM" | "SOURCE" | "CLAIM_EVIDENCE";
-  entityId: string;
-  oldValue?: string; // JSON
-  newValue?: string; // JSON
-  editorId: string;
+  entityType:
+    | "PERSON" | "ELECTION" | "OFFICE" | "POLITICAL_ORGANIZATION"
+    | "ELECTION_PARTICIPATION" | "OFFICE_TERM" | "AFFILIATION" | "EDUCATION" | "AWARD"
+    | "POLICY_POSITION" | "LEGAL_CASE" | "ASSET_DISCLOSURE"
+    | "SOURCE" | "CLAIM" | "CLAIM_EVIDENCE";
+  entityId: string; // record id, or "claimId:sourceId" for evidence
+  oldValue?: JsonValue; // row snapshot before
+  newValue?: JsonValue; // row snapshot after
+  editorId: string; // auth user id, or "system:<db role>"
   approverId?: string;
   reason: string;
   createdAt: string; // ISO timestamp with offset
-  approvalState: "CORRECTION_DRAFT" | "REVIEWED" | "APPROVED" | "REJECTED" | "PUBLISHED";
+  approvalState: PublicationStatus; // the record's status after the change
 };
 ```
 
-Published political data should not change without traceability.
+Revisions are written by database triggers, never by clients, and cannot be updated or deleted.
+
+## Publication workflow fields (database)
+
+Every publishable table (all except `claim_evidence`, `revisions`, `editorial_roles`) has:
+
+| Column | Meaning |
+|---|---|
+| `publication_status` | `DRAFT` → `SOURCE_ATTACHED` → `REVIEWED` → `APPROVED` → `PUBLISHED`, or `RETRACTED` |
+| `published_at` | when the row was first published (`record_published_at` on `sources`, where `published_at` is the source's own publication date) |
+| `created_by`, `approved_by` | Supabase Auth user ids |
+| `created_at`, `updated_at` | row timestamps |
+
+Only `PUBLISHED` rows are visible to voters. The app's Zod schemas ignore these workflow columns. `claim_evidence` has no status of its own: it is public when both its claim and its source are published.
+
+IDs are UUIDs in the database. The app treats ids as opaque strings, so the slug ids in the in-app fixtures are equally valid.
 
 ## Implementation notes (Milestone 0)
 
 - Domain types live in `mobile/src/domain/models`. Enums are readonly tuples in `mobile/src/domain/enums`, shared with Zod.
-- Backend row contracts (snake_case) live in `mobile/src/data/schemas/rows.ts`. Provisional table names: `people`, `elections`, `offices`, `election_participations`, `office_terms`, `political_organizations`, `affiliation_records`, `education_records`, `award_records`, `policy_position_records`, `legal_case_records`, `asset_disclosure_records`, `sources`, `claims`, `claim_evidence`, `revisions`. Milestone 1 migrations should match these, or update the schemas in the same change.
+- Backend row contracts (snake_case) live in `mobile/src/data/schemas/rows.ts`. Table names (implemented in `supabase/migrations`): `people`, `elections`, `offices`, `election_participations`, `office_terms`, `political_organizations`, `affiliation_records`, `education_records`, `award_records`, `policy_position_records`, `legal_case_records`, `asset_disclosure_records`, `sources`, `claims`, `claim_evidence`, `revisions`. Change a migration and its schema in the same commit; `mobile/src/data/supabase/schemaDrift.ts` fails typecheck when they diverge.
 - Dates use `YYYY-MM-DD`. Impossible dates and reversed ranges (end before start) are rejected.
 - An asset disclosure amount requires a currency.
 - `PersonProfile` (read model) does not include legal cases or disclosures until Milestone 4. Their absence must never be shown as "none on record".

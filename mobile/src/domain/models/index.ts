@@ -23,7 +23,8 @@ import type {
   OfficeTermStatus,
   PolicyAttributionType,
   PoliticalOrganizationType,
-  RevisionApprovalState,
+  PublicationStatus,
+  RevisionEntityType,
   SourceType,
   VerificationStatus,
 } from '@/domain/enums';
@@ -32,6 +33,10 @@ import type {
 export type IsoDate = string;
 /** Timestamp with offset, e.g. `2026-10-07T10:00:00Z`. */
 export type IsoDateTime = string;
+
+/** Any JSON value, as stored in audit snapshots. */
+export type JsonValue =
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 /** Stable identity of a public/political figure. Age is derived, never stored. */
 export type Person = {
@@ -198,15 +203,18 @@ export type ClaimEvidence = {
 
 export type Revision = {
   id: string;
-  entityType: ClaimSubjectRecordType | 'CLAIM' | 'SOURCE' | 'CLAIM_EVIDENCE';
+  entityType: RevisionEntityType;
+  /** Record id; `claimId:sourceId` for claim evidence. */
   entityId: string;
-  /** JSON-serialised previous value; undefined for creations. */
-  oldValue?: string;
-  /** JSON-serialised new value; undefined for removals. */
-  newValue?: string;
+  /** Row snapshot before the change; undefined for creations. */
+  oldValue?: JsonValue;
+  /** Row snapshot after the change; undefined for removals. */
+  newValue?: JsonValue;
+  /** Editor's user id, or `system:<db role>` for maintenance changes. */
   editorId: string;
   approverId?: string;
   reason: string;
   createdAt: IsoDateTime;
-  approvalState: RevisionApprovalState;
+  /** Publication status of the record after this change. */
+  approvalState: PublicationStatus;
 };

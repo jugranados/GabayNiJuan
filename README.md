@@ -32,10 +32,11 @@ See `docs/` and `AGENTS.md` before implementing features.
 | Path | Contents |
 |---|---|
 | `mobile/` | React Native / Expo app (Android + iOS) |
+| `supabase/` | Database migrations, RLS, audit triggers, fictional seed (see `supabase/README.md`) |
 | `docs/` | Product, data model, governance, and architecture decisions |
 | `.github/workflows/` | CI (typecheck, lint, test, expo-doctor) |
 
-The original native Android (Kotlin/Compose) prototype is kept on the `develop` branch (`origin/develop`). It is a historical reference and is not part of this branch.
+The original native Android (Kotlin/Compose) prototype is archived on the `archive/android-native` branch. It is a historical reference and is not part of this branch.
 
 ## Development setup
 

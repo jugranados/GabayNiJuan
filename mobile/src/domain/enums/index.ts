@@ -138,11 +138,33 @@ export const CLAIM_SUBJECT_RECORD_TYPES = [
 ] as const;
 export type ClaimSubjectRecordType = (typeof CLAIM_SUBJECT_RECORD_TYPES)[number];
 
-export const REVISION_APPROVAL_STATES = [
-  'CORRECTION_DRAFT',
+/** Editorial workflow state of a record (docs/DATA_TRUST_GOVERNANCE.md). Only PUBLISHED is public. */
+export const PUBLICATION_STATUSES = [
+  'DRAFT',
+  'SOURCE_ATTACHED',
   'REVIEWED',
   'APPROVED',
-  'REJECTED',
   'PUBLISHED',
+  'RETRACTED',
 ] as const;
-export type RevisionApprovalState = (typeof REVISION_APPROVAL_STATES)[number];
+export type PublicationStatus = (typeof PUBLICATION_STATUSES)[number];
+
+/** Kinds of entity recorded in the revision (audit) log. */
+export const REVISION_ENTITY_TYPES = [
+  'PERSON',
+  'ELECTION',
+  'OFFICE',
+  'POLITICAL_ORGANIZATION',
+  'ELECTION_PARTICIPATION',
+  'OFFICE_TERM',
+  'AFFILIATION',
+  'EDUCATION',
+  'AWARD',
+  'POLICY_POSITION',
+  'LEGAL_CASE',
+  'ASSET_DISCLOSURE',
+  'SOURCE',
+  'CLAIM',
+  'CLAIM_EVIDENCE',
+] as const;
+export type RevisionEntityType = (typeof REVISION_ENTITY_TYPES)[number];

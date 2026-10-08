@@ -54,6 +54,23 @@ Development fixtures are tested against these checks.
 - An empty profile section reads "No records have been added for this section yet." This states that records are missing, not anything about the person.
 - Records that fail validation are not displayed. The screen shows an explicit validation-failure state instead.
 
+## Database enforcement (Milestone 1)
+
+The Supabase schema enforces the workflow below directly, so no client can bypass it. See `supabase/README.md`.
+
+- Only `PUBLISHED` rows are readable by voters (Row Level Security).
+- Only APPROVERs can move a row to `APPROVED` or `PUBLISHED`. The approver is recorded in `approved_by`.
+- A row can be published only when everything it references (person, election, office, organization, claim subject) is published.
+- A claim can be published only with at least one source attached (unless `UNVERIFIED`), and only when every cited source is published.
+- Changing a published or retracted row, or the evidence of a published claim, requires an APPROVER and a stated reason (`gnj.change_reason`).
+- Published or retracted rows cannot be deleted. Retract instead.
+- A row cannot be unpublished while published rows depend on it.
+- Every change is appended to `revisions` (before/after snapshot, editor, approver, reason). `revisions` is append-only.
+
+For a solo-maintained prototype, one person may hold both the editor and approver role. The fields are still recorded, as required by the two-person rule above. A database-level two-person check (editor ≠ approver for sensitive tables) is a Milestone 3 candidate.
+
+The verification consistency checks above (for example, "PRIMARY_SOURCE needs a tier-1 source") are not yet enforced in the database. They run in the app's tests and will run in CI against seed data.
+
 ## Publication workflow
 
 ```text

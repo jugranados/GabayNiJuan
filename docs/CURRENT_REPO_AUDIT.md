@@ -1,6 +1,6 @@
 # Current `develop` Branch Audit
 
-> **Status (2026-10-07):** This audit describes the `develop` branch (`origin/develop`), which still holds the native Android prototype. The React Native app lives in `mobile/` on the `development` branch, which shares only the initial commit with `develop`. The prototype has not been modified or deleted.
+> **Status (2026-10-07):** This audit describes the former `develop` branch, now archived unchanged as `archive/android-native` (2026-10-08). The React Native app lives in `mobile/` on the `development` branch, which shares only the initial commit with `develop`. The prototype has not been modified or deleted.
 
 ## Existing implementation
 

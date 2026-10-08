@@ -6,6 +6,7 @@ import {
   electionParticipationRowSchema,
   legalCaseRecordRowSchema,
   personRowSchema,
+  revisionRowSchema,
   sourceRowSchema,
 } from '@/data/schemas/rows';
 import { DataValidationError } from '@/domain/validation/errors';
@@ -145,5 +146,24 @@ describe('row schemas', () => {
       expect((error as DataValidationError).recordId).toBe('src-bad');
       expect((error as DataValidationError).issues[0]?.path).toBe('source_type');
     }
+  });
+
+  it('accepts revision rows exactly as Postgres/PostgREST returns them', () => {
+    const row = parseRow(revisionRowSchema, 'revision', {
+      id: '5d211989-5ede-43e4-88a1-cdde14e1486b',
+      entity_type: 'PERSON',
+      entity_id: '87d8b11e-b790-4f91-8ac2-413bdc500ac0',
+      old_value: { first_name: 'Test', middle_name: null },
+      new_value: { first_name: 'Test', middle_name: 'Corrected' },
+      editor_id: 'system:postgres',
+      approver_id: null,
+      reason: 'Corrected middle name per fictional registry',
+      created_at: '2026-10-08T08:39:49.612366+00:00',
+      approval_state: 'PUBLISHED',
+    });
+    expect(row.approval_state).toBe('PUBLISHED');
+    expect(() =>
+      parseRow(revisionRowSchema, 'revision', { ...row, approval_state: 'APPROVED_BY_AI' }),
+    ).toThrow(DataValidationError);
   });
 });
