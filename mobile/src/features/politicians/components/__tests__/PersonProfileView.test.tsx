@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { devFixtureTables } from '@/data/fixtures/devFixtures';
 import { createInMemoryRowSource } from '@/data/repositories/inMemoryRowSource';
@@ -42,5 +42,18 @@ describe('PersonProfileView', () => {
     ).toBeOnTheScreen();
     expect(screen.queryByText('Official candidate')).toBeNull();
     expect(screen.getByText('No source attached.')).toBeOnTheScreen();
+  });
+
+  it('opens the source viewer for a claim', async () => {
+    const onOpenClaim = jest.fn();
+    await render(
+      <PersonProfileView
+        profile={await loadProfile('person-pedro-santos')}
+        onOpenClaim={onOpenClaim}
+      />,
+    );
+    await fireEvent.press(screen.getAllByRole('link', { name: 'View evidence and sources' })[0]!);
+    expect(onOpenClaim).toHaveBeenCalledTimes(1);
+    expect(onOpenClaim.mock.calls[0]?.[0]).toMatch(/^claim-pedro-/);
   });
 });

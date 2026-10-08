@@ -5,6 +5,9 @@
  *
  * Rows come back as `unknown` on purpose: nothing may use them before Zod
  * validation.
+ *
+ * Only public tables are listed. The audit log (`revisions`) and
+ * `editorial_roles` are never read by the voter app.
  */
 
 export const TABLES = [
@@ -23,7 +26,6 @@ export const TABLES = [
   'sources',
   'claims',
   'claim_evidence',
-  'revisions',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 

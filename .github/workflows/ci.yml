@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, development]
+    paths: ['mobile/**', 'supabase/**', '.github/workflows/mobile-ci.yml']
+  pull_request:
+    paths: ['mobile/**', 'supabase/**', '.github/workflows/mobile-ci.yml']
+
+jobs:
+  mobile:
+    name: Typecheck, lint, tests, consistency
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --ci
+      # Verification-status vs evidence rules over the fictional fixtures.
+      - run: npm run test:consistency -- --ci
+      # supabase/seed.sql must be exactly what the fixtures generate.
+      - run: npm run seed:check
+      - run: npx expo-doctor
+
+  database:
+    name: Migrations, seed, RLS and publication tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      # Starts a local Supabase stack and applies supabase/migrations + seed.sql.
+      - run: supabase start
+      # Rebuild from scratch: proves a clean database can be recreated from the repo.
+      - run: supabase db reset
+      - name: RLS, publication, audit and consistency tests
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/rls_and_publication.test.sql
+      - name: Seed demonstrates every verification status through anon
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -At <<'SQL'
+          set role anon;
+          select 'people=' || count(*) from public.people;
+          do $$
+          begin
+            if (select count(distinct verification_status) from public.claims) <> 7 then
+              raise exception 'seed must demonstrate all 7 verification statuses';
+            end if;
+            if not exists (select 1 from public.claim_evidence where not supports) then
+              raise exception 'seed must include contradicting evidence';
+            end if;
+          end
+          $$;
+          SQL
+      - if: always()
+        run: supabase stop --no-backup

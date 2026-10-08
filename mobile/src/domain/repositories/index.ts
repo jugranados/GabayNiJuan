@@ -6,7 +6,12 @@
  * backend data is invalid, rather than returning partial or coerced data.
  */
 import type { Election, ElectionParticipation, Person, Source } from '@/domain/models';
-import type { EvidenceItem, PersonProfile, PersonSummary } from '@/domain/models/personProfile';
+import type {
+  ClaimDetail,
+  EvidenceItem,
+  PersonProfile,
+  PersonSummary,
+} from '@/domain/models/personProfile';
 
 export interface PersonRepository {
   getPeople(): Promise<PersonSummary[]>;
@@ -25,8 +30,14 @@ export interface SourceRepository {
   getSourcesForClaim(claimId: string): Promise<EvidenceItem[]>;
 }
 
+export interface ClaimRepository {
+  /** The claim with all of its evidence (supporting and contradicting), or null if not found. */
+  getClaimDetail(claimId: string): Promise<ClaimDetail | null>;
+}
+
 export type Repositories = {
   people: PersonRepository;
   elections: ElectionRepository;
   sources: SourceRepository;
+  claims: ClaimRepository;
 };

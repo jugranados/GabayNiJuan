@@ -45,7 +45,7 @@ Implemented in `mobile/src/domain/validation/verification.ts`. These checks flag
 
 Development fixtures are tested against these checks.
 
-## Display rules (Milestone 0)
+## Display rules (Milestones 0–1)
 
 - Each claim shows its own verification badge. Pressing the badge explains the state in evidence terms.
 - All states share one neutral visual style, so no state is colored as "good" or "bad".
@@ -53,23 +53,41 @@ Development fixtures are tested against these checks.
 - A record with no attached claim is shown as `UNVERIFIED` with "No source attached."
 - An empty profile section reads "No records have been added for this section yet." This states that records are missing, not anything about the person.
 - Records that fail validation are not displayed. The screen shows an explicit validation-failure state instead.
+- Tapping "View evidence and sources" opens the claim's source viewer: status and its meaning, dates, and every source with publisher, type, published and retrieved dates, whether it supports or conflicts, and a link to the original. Supporting and conflicting sources are listed separately.
+- If evidence loaded for a claim is inconsistent with its status, the viewer says the record is under review rather than hiding the problem.
+- No score, rating or aggregate "trust" figure is shown anywhere.
 
 ## Database enforcement (Milestone 1)
 
 The Supabase schema enforces the workflow below directly, so no client can bypass it. See `supabase/README.md`.
 
-- Only `PUBLISHED` rows are readable by voters (Row Level Security).
-- Only APPROVERs can move a row to `APPROVED` or `PUBLISHED`. The approver is recorded in `approved_by`.
+- Only `PUBLISHED` rows are readable by voters (Row Level Security), and only their non-identity columns (column-level grants).
+- Only APPROVERs can move a row to `APPROVED` or `PUBLISHED`. Creator, reviewer, approver and publisher are recorded by triggers; users cannot set or alter those columns.
 - A row can be published only when everything it references (person, election, office, organization, claim subject) is published.
-- A claim can be published only with at least one source attached (unless `UNVERIFIED`), and only when every cited source is published.
+- A claim can be published only when its evidence is consistent with its verification status (table below), and only when every cited source is published. Evidence changes to a published claim are re-validated at commit.
 - Changing a published or retracted row, or the evidence of a published claim, requires an APPROVER and a stated reason (`gnj.change_reason`).
 - Published or retracted rows cannot be deleted. Retract instead.
 - A row cannot be unpublished while published rows depend on it.
-- Every change is appended to `revisions` (before/after snapshot, editor, approver, reason). `revisions` is append-only.
+- Every change is appended to `revisions` (JSONB before/after snapshots, editor, approver, reason). `revisions` is append-only and unreadable by voters.
 
-For a solo-maintained prototype, one person may hold both the editor and approver role. The fields are still recorded, as required by the two-person rule above. A database-level two-person check (editor ≠ approver for sensitive tables) is a Milestone 3 candidate.
+For a solo-maintained prototype, one person may hold both the editor and approver role. The fields are still recorded, as required by the two-person rule above. A database-level two-person check (editor ≠ approver for sensitive tables) and an ordered state machine are Milestone 3 candidates.
 
-The verification consistency checks above (for example, "PRIMARY_SOURCE needs a tier-1 source") are not yet enforced in the database. They run in the app's tests and will run in CI against seed data.
+### Verification rules (database and app)
+
+Enforced before publishing by `private.claim_consistency_error` and mirrored in `mobile/src/domain/validation/verification.ts`. Nothing is corrected automatically; a violation fails with an explanation.
+
+| Status | Rule |
+|---|---|
+| `UNVERIFIED` | none: "not enough evidence" is a valid published state |
+| `PRIMARY_SOURCE` | at least one supporting source of type official government, court or tribunal, or legislative record |
+| `CORROBORATED` | supporting sources from at least two distinct publishers |
+| `SELF_DECLARED` | at least one supporting source. Typically campaign or party material, but interviews and speeches reported elsewhere are allowed, so no source-type rule |
+| `REPORTED` | at least one supporting source. No source-type rule; if a primary record is later attached, a reviewer moves the claim to `PRIMARY_SOURCE` |
+| `DISPUTED` | at least one supporting and one contradicting source; both are always shown |
+| `OUTDATED` | at least one supporting source; contradicting sources are allowed |
+| all except `DISPUTED` and `OUTDATED` | no contradicting source attached; mark the claim `DISPUTED` instead |
+
+CI runs these rules over the fictional fixtures (`npm run test:consistency`) and the database job rebuilds the schema and runs `supabase/tests/rls_and_publication.test.sql`.
 
 ## Publication workflow
 

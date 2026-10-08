@@ -146,6 +146,7 @@ export const PUBLICATION_STATUSES = [
   'APPROVED',
   'PUBLISHED',
   'RETRACTED',
+  'REJECTED',
 ] as const;
 export type PublicationStatus = (typeof PUBLICATION_STATUSES)[number];
 

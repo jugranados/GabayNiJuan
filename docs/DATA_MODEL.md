@@ -319,7 +319,7 @@ type Revision = {
   approverId?: string;
   reason: string;
   createdAt: string; // ISO timestamp with offset
-  approvalState: PublicationStatus; // the record's status after the change
+  approvalState: PublicationStatus; // the record's status after the change (DRAFT … PUBLISHED, RETRACTED, REJECTED)
 };
 ```
 
@@ -327,16 +327,18 @@ Revisions are written by database triggers, never by clients, and cannot be upda
 
 ## Publication workflow fields (database)
 
-Every publishable table (all except `claim_evidence`, `revisions`, `editorial_roles`) has:
+Every publishable table (all except `claim_evidence`, `revisions`, `editorial_roles`) has the same columns. Metadata lives on each table rather than in a shared publication table: the columns are uniform, RLS stays a one-column test, public reads need no join, and `revisions` already records every transition.
 
 | Column | Meaning |
 |---|---|
-| `publication_status` | `DRAFT` → `SOURCE_ATTACHED` → `REVIEWED` → `APPROVED` → `PUBLISHED`, or `RETRACTED` |
-| `published_at` | when the row was first published (`record_published_at` on `sources`, where `published_at` is the source's own publication date) |
-| `created_by`, `approved_by` | Supabase Auth user ids |
-| `created_at`, `updated_at` | row timestamps |
+| `publication_status` | `DRAFT` → `SOURCE_ATTACHED` → `REVIEWED` → `APPROVED` → `PUBLISHED`; `REJECTED` (not published, kept for audit); `RETRACTED` (was published, withdrawn) |
+| `created_by`, `created_at` | creator and creation time |
+| `reviewed_by`, `reviewed_at` | set when the record enters `REVIEWED` |
+| `approved_by` | set when approved (or when an approver publishes directly) |
+| `published_by`, `published_at` | set when first published. On `sources`, the workflow timestamp is `record_published_at`, because `published_at` is the source's own publication date |
+| `updated_at` | maintained by trigger |
 
-Only `PUBLISHED` rows are visible to voters. The app's Zod schemas ignore these workflow columns. `claim_evidence` has no status of its own: it is public when both its claim and its source are published.
+`*_by` are Supabase Auth user ids written by triggers; clients cannot set them, and anon cannot read them. Only `PUBLISHED` rows are visible to voters. The app's Zod schemas ignore all workflow columns. `claim_evidence` has no status of its own: it is public when both its claim and its source are published.
 
 IDs are UUIDs in the database. The app treats ids as opaque strings, so the slug ids in the in-app fixtures are equally valid.
 

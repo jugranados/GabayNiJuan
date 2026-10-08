@@ -4,6 +4,10 @@
  *
  * They flag records for human review; they do not change a status
  * automatically. A reviewer decides the status.
+ *
+ * The same rules are enforced in the database before a claim can be
+ * published: supabase/migrations/*_claim_consistency_checks.sql. Keep the two
+ * in sync.
  */
 import { SOURCE_TIER_BY_TYPE } from '@/domain/enums';
 import type { Claim } from '@/domain/models';
@@ -11,6 +15,7 @@ import type { EvidenceItem } from '@/domain/models/personProfile';
 
 export type VerificationIssueCode =
   | 'NO_EVIDENCE'
+  | 'NO_SUPPORTING_SOURCE'
   | 'NO_PRIMARY_SOURCE'
   | 'NOT_INDEPENDENTLY_CORROBORATED'
   | 'DISPUTE_WITHOUT_CONFLICT'
@@ -40,6 +45,13 @@ export function checkVerificationConsistency(
       message: `${status} requires at least one attached source.`,
     });
     return issues;
+  }
+
+  if (status !== 'DISPUTED' && supporting.length === 0) {
+    issues.push({
+      code: 'NO_SUPPORTING_SOURCE',
+      message: `${status} requires at least one supporting source.`,
+    });
   }
 
   if (

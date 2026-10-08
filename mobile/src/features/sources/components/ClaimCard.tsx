@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, spacing } from '@/components/theme';
 import type { ClaimWithEvidence } from '@/domain/models/personProfile';
@@ -6,8 +6,13 @@ import { SourceItem } from '@/features/sources/components/SourceItem';
 import { VerificationBadge } from '@/features/sources/components/VerificationBadge';
 import { formatDateRange, formatIsoDate } from '@/shared/utils/dates';
 
+type Props = ClaimWithEvidence & {
+  /** When provided, shows a link that opens the claim's source viewer. */
+  onOpenDetails?: (claimId: string) => void;
+};
+
 /** A single claim with its verification state and every attached source, supporting or not. */
-export function ClaimCard({ claim, evidence }: ClaimWithEvidence) {
+export function ClaimCard({ claim, evidence, onOpenDetails }: Props) {
   const period = formatDateRange(claim.effectiveFrom, claim.effectiveTo);
 
   return (
@@ -17,6 +22,16 @@ export function ClaimCard({ claim, evidence }: ClaimWithEvidence) {
       {period ? <Text style={styles.meta}>Applies: {period}</Text> : null}
       {claim.lastReviewedAt ? (
         <Text style={styles.meta}>Last reviewed {formatIsoDate(claim.lastReviewedAt)}</Text>
+      ) : null}
+
+      {onOpenDetails ? (
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel="View evidence and sources"
+          onPress={() => onOpenDetails(claim.id)}
+        >
+          <Text style={styles.link}>View evidence and sources</Text>
+        </Pressable>
       ) : null}
 
       {evidence.length === 0 ? (
@@ -48,4 +63,5 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   relation: { fontSize: 12, fontWeight: '600', color: colors.text },
+  link: { fontSize: 13, color: colors.accent, textDecorationLine: 'underline' },
 });

@@ -78,6 +78,15 @@ export type PersonProfile = {
   evidenceSummary: EvidenceSummary;
 };
 
+/**
+ * Everything the source viewer shows for one claim. `subject` is present only
+ * when the claim is about a person who is publicly readable.
+ * Evidence keeps both supporting and contradicting sources.
+ */
+export type ClaimDetail = ClaimWithEvidence & {
+  subject?: PersonSummary;
+};
+
 /** Lightweight list item for directory screens. */
 export type PersonSummary = {
   id: string;

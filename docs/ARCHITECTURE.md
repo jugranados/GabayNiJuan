@@ -77,6 +77,7 @@ mobile/src/
     _layout.tsx        composition root: config -> repositories -> providers
     index.tsx          Home
     politicians/       list + [id] detail
+    claims/[id].tsx    claim detail / source viewer
     about.tsx          About / data verification
   components/          generic UI primitives (no domain knowledge beyond errors)
   features/
@@ -84,7 +85,7 @@ mobile/src/
     elections/         candidacy-status wording
     offices/           office-term wording
     affiliations/      affiliation wording
-    sources/           VerificationBadge, ClaimCard, SourceItem, verification copy
+    sources/           VerificationBadge, ClaimCard, ClaimDetailView (source viewer), SourceItem, verification copy
     legal-cases/       reserved (Milestone 4)
     disclosures/       reserved (Milestone 4)
   domain/
@@ -96,7 +97,8 @@ mobile/src/
     schemas/           Zod schemas for raw backend rows (snake_case) + parse helpers
     mappers/           row -> domain mappers, profile assembler
     repositories/      RowSource abstraction, repository implementations, composition
-    supabase/          public Supabase client + Supabase RowSource
+    supabase/          public Supabase client, Supabase RowSource, explicit public column list,
+                       generated database types (data layer only) + compile-time drift check
     fixtures/          FICTIONAL development data, in raw row shape
   shared/
     config/            validated env config
@@ -141,9 +143,19 @@ The profile read currently issues several small queries. If that becomes a bottl
 
 ### Database contract
 
-The backend schema lives in `supabase/migrations/` (see `supabase/README.md`). `mobile/src/data/supabase/database.types.ts` is generated from it and used **only** in the data layer. `mobile/src/data/supabase/schemaDrift.ts` is a compile-time check that every table row satisfies its Zod contract, that every contract column exists, and that every DB enum equals its domain enum. A migration that drifts from the app fails `npm run typecheck`.
+The backend schema lives in `supabase/migrations/` (see `supabase/README.md`). `mobile/src/data/supabase/database.types.ts` is generated from it and used **only** in the data layer: ESLint forbids importing it (or `@supabase/*`) from `app/`, `components/` and `features/`, and `domain/` never imports it. `mobile/src/data/supabase/schemaDrift.ts` is a compile-time check that every table row satisfies its Zod contract, that every contract column exists, and that every DB enum equals its domain enum. A migration that drifts from the app fails `npm run typecheck`.
 
-The database also enforces the editorial rules (RLS, publish gate, audit trail), so the mobile app is never the only line of defence.
+Generated types do not replace Zod. They describe what the database *should* return; Zod checks what actually arrived.
+
+The database also enforces the editorial rules (RLS, column-level grants, publish gate, verification-consistency checks, audit trail), so the mobile app is never the only line of defence.
+
+### Public read path
+
+The public role has **column-level** `SELECT` on published rows only; editorial identity columns are not readable and a bare `select *` is refused. `SupabaseRowSource` therefore requests exactly the columns of each Zod row schema (`publicColumns.ts`), which also keeps payloads small. The audit log and role tables are not in the app's table list at all.
+
+### Claim detail / source viewer
+
+`ClaimRepository.getClaimDetail(id)` returns a claim with all of its evidence (supporting and contradicting) and the person it is about, if publicly readable. `/claims/[id]` renders it with `ClaimDetailView`. It shows the status and its meaning, effective and review dates, and each source with publisher, type and tier, published and retrieved dates, the relationship (supports or conflicts), the reviewer's note and links to the original and archived copy. If the loaded evidence is inconsistent with the status, the screen says so instead of hiding it. It shows no score or aggregate rating.
 
 ### Config and secrets
 

@@ -2,8 +2,7 @@ import { devFixtureTables } from '@/data/fixtures/devFixtures';
 import { createInMemoryRowSource } from '@/data/repositories/inMemoryRowSource';
 import { createRepositories } from '@/data/repositories/tableRepositories';
 import type { PersonProfile } from '@/domain/models/personProfile';
-import { DataValidationError } from '@/domain/validation/errors';
-import { checkVerificationConsistency } from '@/domain/validation/verification';
+import { DataIntegrityError, DataValidationError } from '@/domain/validation/errors';
 
 const repos = createRepositories(createInMemoryRowSource(devFixtureTables));
 
@@ -74,41 +73,38 @@ describe('mock repositories over fictional fixtures', () => {
   });
 });
 
-describe('fixture integrity', () => {
-  const personIds = (devFixtureTables.people ?? []).map((row) => (row as { id: string }).id);
+describe('claim repository over fictional fixtures', () => {
+  it('returns a disputed claim with supporting and contradicting evidence preserved', async () => {
+    const detail = await repos.claims.getClaimDetail('claim-maria-councilor-term');
+    expect(detail?.claim.verificationStatus).toBe('DISPUTED');
+    expect(detail?.subject?.displayName).toBe('Maria Luntian Makabayan');
+    expect(detail?.evidence.map((e) => [e.source.id, e.link.supports])).toEqual([
+      ['src-city-roster-2022', true],
+      ['src-news-balita-maria-term', false],
+    ]);
+  });
 
-  it.each(personIds)(
-    'every displayed record for %s is attested by a consistent claim',
-    async (id) => {
-      const profile = await profileOf(id);
-      const attested = [
-        ...profile.electionParticipations,
-        ...profile.officeTerms,
-        ...profile.affiliations,
-        ...profile.education,
-        ...profile.policyPositions,
-      ];
-      for (const { claims } of attested) {
-        expect(claims.length).toBeGreaterThan(0);
-      }
-      for (const { claim, evidence } of [
-        ...attested.flatMap((a) => a.claims),
-        ...profile.identityClaims,
-      ]) {
-        expect({ id: claim.id, issues: checkVerificationConsistency(claim, evidence) }).toEqual({
-          id: claim.id,
-          issues: [],
-        });
-      }
-    },
-  );
+  it('returns a claim with no evidence as an empty list, not as verified', async () => {
+    const detail = await repos.claims.getClaimDetail('claim-pedro-councilor-term');
+    expect(detail?.claim.verificationStatus).toBe('UNVERIFIED');
+    expect(detail?.evidence).toEqual([]);
+  });
 
-  it('only links to the reserved example.org domain', () => {
-    for (const row of devFixtureTables.sources ?? []) {
-      const { url, archived_url } = row as { url: string | null; archived_url: string | null };
-      for (const link of [url, archived_url].filter(Boolean)) {
-        expect(new URL(link as string).hostname).toBe('example.org');
-      }
-    }
+  it('returns null for an unknown claim', async () => {
+    expect(await repos.claims.getClaimDetail('claim-does-not-exist')).toBeNull();
+  });
+
+  it('fails explicitly when evidence points to a missing source', async () => {
+    const broken = createRepositories(
+      createInMemoryRowSource({
+        ...devFixtureTables,
+        claim_evidence: [
+          { claim_id: 'claim-maria-filed-coc', source_id: 'src-missing', supports: true },
+        ],
+      }),
+    );
+    await expect(broken.claims.getClaimDetail('claim-maria-filed-coc')).rejects.toBeInstanceOf(
+      DataIntegrityError,
+    );
   });
 });

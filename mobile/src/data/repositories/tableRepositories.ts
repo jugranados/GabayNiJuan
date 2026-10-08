@@ -37,6 +37,7 @@ import { formatPersonName } from '@/domain/models/person';
 import type { Person } from '@/domain/models';
 import type { PersonSummary } from '@/domain/models/personProfile';
 import type {
+  ClaimRepository,
   ElectionRepository,
   PersonRepository,
   Repositories,
@@ -219,10 +220,50 @@ export function createSourceRepository(source: RowSource): SourceRepository {
   };
 }
 
+export function createClaimRepository(source: RowSource): ClaimRepository {
+  return {
+    async getClaimDetail(claimId: string) {
+      const claim = await findOne(source.select('claims', { eq: { id: claimId } }), (row) =>
+        toClaim(parseRow(claimRowSchema, 'claim', row)),
+      );
+      if (!claim) {
+        return null;
+      }
+
+      const evidenceRows = await source.select('claim_evidence', { eq: { claim_id: claimId } });
+      const evidenceLinks = parseRows(claimEvidenceRowSchema, 'claim evidence', evidenceRows).map(
+        toClaimEvidence,
+      );
+      const [sourceRows, subject] = await Promise.all([
+        source.select('sources', {
+          in: { column: 'id', values: unique(evidenceLinks.map((e) => e.sourceId)) },
+        }),
+        claim.subjectPersonId
+          ? findOne(source.select('people', { eq: { id: claim.subjectPersonId } }), (row) =>
+              toPerson(parseRow(personRowSchema, 'person', row)),
+            )
+          : Promise.resolve(null),
+      ]);
+      const sourcesById = new Map(
+        parseRows(sourceRowSchema, 'source', sourceRows)
+          .map(toSource)
+          .map((s) => [s.id, s]),
+      );
+
+      return {
+        claim,
+        evidence: buildEvidenceItems(claim.id, evidenceLinks, sourcesById),
+        subject: subject ? toSummary(subject) : undefined,
+      };
+    },
+  };
+}
+
 export function createRepositories(source: RowSource): Repositories {
   return {
     people: createPersonRepository(source),
     elections: createElectionRepository(source),
     sources: createSourceRepository(source),
+    claims: createClaimRepository(source),
   };
 }

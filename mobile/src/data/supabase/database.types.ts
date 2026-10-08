@@ -33,6 +33,9 @@ export type Database = {
           person_id: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           start_date: string | null
           updated_at: string
         }
@@ -47,6 +50,9 @@ export type Database = {
           person_id: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -61,6 +67,9 @@ export type Database = {
           person_id?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -93,7 +102,10 @@ export type Database = {
           person_id: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
           reporting_date: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           updated_at: string
         }
         Insert: {
@@ -107,7 +119,10 @@ export type Database = {
           person_id: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
           reporting_date?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -121,7 +136,10 @@ export type Database = {
           person_id?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
           reporting_date?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -145,6 +163,9 @@ export type Database = {
           person_id: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           title: string
           updated_at: string
         }
@@ -158,6 +179,9 @@ export type Database = {
           person_id: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           title: string
           updated_at?: string
         }
@@ -171,6 +195,9 @@ export type Database = {
           person_id?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           title?: string
           updated_at?: string
         }
@@ -241,6 +268,9 @@ export type Database = {
           last_reviewed_at: string | null
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           statement: string
           subject_person_id: string | null
           subject_record_id: string | null
@@ -261,6 +291,9 @@ export type Database = {
           last_reviewed_at?: string | null
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           statement: string
           subject_person_id?: string | null
           subject_record_id?: string | null
@@ -281,6 +314,9 @@ export type Database = {
           last_reviewed_at?: string | null
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           statement?: string
           subject_person_id?: string | null
           subject_record_id?: string | null
@@ -334,6 +370,9 @@ export type Database = {
           program: string | null
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           start_date: string | null
           updated_at: string
         }
@@ -349,6 +388,9 @@ export type Database = {
           program?: string | null
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -364,6 +406,9 @@ export type Database = {
           program?: string | null
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -391,6 +436,9 @@ export type Database = {
           person_id: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: Database["public"]["Enums"]["election_participation_status"]
           updated_at: string
         }
@@ -407,6 +455,9 @@ export type Database = {
           person_id: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status: Database["public"]["Enums"]["election_participation_status"]
           updated_at?: string
         }
@@ -423,6 +474,9 @@ export type Database = {
           person_id?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: Database["public"]["Enums"]["election_participation_status"]
           updated_at?: string
         }
@@ -461,6 +515,9 @@ export type Database = {
           name: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: Database["public"]["Enums"]["election_status"]
           updated_at: string
         }
@@ -474,6 +531,9 @@ export type Database = {
           name: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status: Database["public"]["Enums"]["election_status"]
           updated_at?: string
         }
@@ -487,6 +547,9 @@ export type Database = {
           name?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: Database["public"]["Enums"]["election_status"]
           updated_at?: string
         }
@@ -506,6 +569,9 @@ export type Database = {
           proceeding_type: string | null
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: Database["public"]["Enums"]["legal_case_status"]
           status_date: string | null
           title: string | null
@@ -524,6 +590,9 @@ export type Database = {
           proceeding_type?: string | null
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status: Database["public"]["Enums"]["legal_case_status"]
           status_date?: string | null
           title?: string | null
@@ -542,6 +611,9 @@ export type Database = {
           proceeding_type?: string | null
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: Database["public"]["Enums"]["legal_case_status"]
           status_date?: string | null
           title?: string | null
@@ -568,6 +640,9 @@ export type Database = {
           person_id: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["office_term_status"]
           updated_at: string
@@ -582,6 +657,9 @@ export type Database = {
           person_id: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           start_date?: string | null
           status: Database["public"]["Enums"]["office_term_status"]
           updated_at?: string
@@ -596,6 +674,9 @@ export type Database = {
           person_id?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["office_term_status"]
           updated_at?: string
@@ -628,6 +709,9 @@ export type Database = {
           name: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           updated_at: string
         }
         Insert: {
@@ -640,6 +724,9 @@ export type Database = {
           name: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -652,6 +739,9 @@ export type Database = {
           name?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -670,6 +760,9 @@ export type Database = {
           preferred_name: string | null
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           suffix: string | null
           updated_at: string
         }
@@ -686,6 +779,9 @@ export type Database = {
           preferred_name?: string | null
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           suffix?: string | null
           updated_at?: string
         }
@@ -702,6 +798,9 @@ export type Database = {
           preferred_name?: string | null
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           suffix?: string | null
           updated_at?: string
         }
@@ -718,6 +817,9 @@ export type Database = {
           position_text: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           stated_at: string | null
           topic: string
           updated_at: string
@@ -732,6 +834,9 @@ export type Database = {
           position_text: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           stated_at?: string | null
           topic: string
           updated_at?: string
@@ -746,6 +851,9 @@ export type Database = {
           position_text?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           stated_at?: string | null
           topic?: string
           updated_at?: string
@@ -771,6 +879,9 @@ export type Database = {
           organization_type: Database["public"]["Enums"]["political_organization_type"]
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           updated_at: string
         }
         Insert: {
@@ -783,6 +894,9 @@ export type Database = {
           organization_type: Database["public"]["Enums"]["political_organization_type"]
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -795,6 +909,9 @@ export type Database = {
           organization_type?: Database["public"]["Enums"]["political_organization_type"]
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -848,9 +965,12 @@ export type Database = {
           id: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
+          published_by: string | null
           publisher: string
           record_published_at: string | null
           retrieved_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           source_type: Database["public"]["Enums"]["source_type"]
           title: string
           updated_at: string
@@ -865,9 +985,12 @@ export type Database = {
           id?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
           publisher: string
           record_published_at?: string | null
           retrieved_at: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           source_type: Database["public"]["Enums"]["source_type"]
           title: string
           updated_at?: string
@@ -882,9 +1005,12 @@ export type Database = {
           id?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
+          published_by?: string | null
           publisher?: string
           record_published_at?: string | null
           retrieved_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           source_type?: Database["public"]["Enums"]["source_type"]
           title?: string
           updated_at?: string
@@ -966,6 +1092,7 @@ export type Database = {
         | "APPROVED"
         | "PUBLISHED"
         | "RETRACTED"
+        | "REJECTED"
       revision_entity_type:
         | "PERSON"
         | "ELECTION"
@@ -1198,6 +1325,7 @@ export const Constants = {
         "APPROVED",
         "PUBLISHED",
         "RETRACTED",
+        "REJECTED",
       ],
       revision_entity_type: [
         "PERSON",

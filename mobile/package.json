@@ -45,7 +45,10 @@
     "test:watch": "jest --watch",
     "doctor": "npx expo-doctor",
     "verify": "npm run typecheck && npm run lint && npm test",
-    "seed:generate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-seed.mjs"
+    "seed:generate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-seed.mjs",
+    "test:consistency": "jest consistency",
+    "test:integration": "jest -c jest.integration.config.js",
+    "seed:check": "npm run seed:generate && git diff --exit-code -- ../supabase/seed.sql"
   },
   "private": true,
   "engines": {
@@ -61,7 +64,8 @@
     },
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/.expo/"
+      "/.expo/",
+      ".integration.test.ts"
     ],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg)"

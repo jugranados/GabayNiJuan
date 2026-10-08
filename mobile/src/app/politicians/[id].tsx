@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import { Body, ErrorView, LoadingView, Screen } from '@/components/ui';
 import { PersonProfileView } from '@/features/politicians/components/PersonProfileView';
@@ -17,5 +17,10 @@ export default function PoliticianDetailScreen() {
       </Screen>
     );
   }
-  return <PersonProfileView profile={profile} />;
+  return (
+    <PersonProfileView
+      profile={profile}
+      onOpenClaim={(claimId) => router.push({ pathname: '/claims/[id]', params: { id: claimId } })}
+    />
+  );
 }

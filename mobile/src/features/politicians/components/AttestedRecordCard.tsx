@@ -10,13 +10,14 @@ type Props = {
   title: string;
   details: (string | undefined)[];
   claims: ClaimWithEvidence[];
+  onOpenClaim?: (claimId: string) => void;
 };
 
 /**
  * A profile record with the claims that attest to it. A record with no claim
  * is shown as unverified with no source, never as established fact.
  */
-export function AttestedRecordCard({ title, details, claims }: Props) {
+export function AttestedRecordCard({ title, details, claims, onOpenClaim }: Props) {
   return (
     <Card>
       <Text style={styles.title}>{title}</Text>
@@ -33,7 +34,9 @@ export function AttestedRecordCard({ title, details, claims }: Props) {
           <Text style={styles.detail}>No source attached.</Text>
         </>
       ) : (
-        claims.map((item) => <ClaimCard key={item.claim.id} {...item} />)
+        claims.map((item) => (
+          <ClaimCard key={item.claim.id} {...item} onOpenDetails={onOpenClaim} />
+        ))
       )}
     </Card>
   );

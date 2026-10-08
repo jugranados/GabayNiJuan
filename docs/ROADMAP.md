@@ -20,26 +20,29 @@ Exit criteria:
 - [x] automated type-check/test command exists (`npm run verify`)
 - [x] no political data is hard-coded in UI (UI reads repositories; fixtures are fictional)
 
-## Milestone 1 — Data trust foundation (in progress)
+## Milestone 1 — Data trust foundation ✅ (implemented 2026-10-08)
 
-- [x] create Supabase project
-- [x] implement schema (`supabase/migrations/*_core_schema.sql`)
-  - [x] tables matching the row contracts in `mobile/src/data/schemas/rows.ts`
-  - [x] publication workflow fields (`publication_status`, `published_at`, `created_by`, `approved_by`, timestamps)
-  - [x] `revisions` audit table, filled by triggers and append-only
-- [x] implement RLS (anon reads `PUBLISHED` only and cannot write; REVIEWER < APPROVER < ADMIN)
-- [x] database-enforced publish gate, published-change guard (approver + reason), unpublish guard
-- [x] generate Supabase types for the data layer only; compile-time drift check (`schemaDrift.ts`)
-- [x] fictional seed generated from the app fixtures (`supabase/seed.sql`), tested in a rolled-back transaction, not applied to the project
-- [ ] seed a dev database (local stack or Supabase branch) and run the app with `EXPO_PUBLIC_DATA_SOURCE=supabase`
-- [ ] source viewer screen per claim (`/claims/[id]`)
-- [ ] run verification consistency checks against seed data in CI
-- [ ] decide whether published rows should expose `created_by`/`approved_by` user ids to anon (column-level grants or a public view)
+- [x] Supabase schema under version control (`supabase/migrations`, `config.toml`)
+- [x] publication lifecycle on every publishable table (`DRAFT` … `PUBLISHED`, `REJECTED`, `RETRACTED`; created/reviewed/approved/published identity)
+- [x] RLS on every table; anon reads only `PUBLISHED` rows and only non-identity columns, and cannot write
+- [x] append-only `revisions` audit log, trigger-generated, JSONB snapshots
+- [x] verification-consistency rules enforced in the database and in the app; CI runs them
+- [x] fictional seed generated from the app fixtures (`supabase/seed.sql`) and loaded into the dev project
+- [x] generated Supabase types (data layer only) with a compile-time drift check
+- [x] `EXPO_PUBLIC_DATA_SOURCE=supabase` verified against the dev project: repositories return content identical to the fixtures
+- [x] claim detail / source viewer (`/claims/[id]`)
+- [x] CI: typecheck, lint, tests, consistency, seed check, plus a database job (migrations, seed, RLS tests)
+
+Open items carried forward:
+- [ ] run `supabase db reset` and `supabase/tests/rls_and_publication.test.sql` on a machine with Docker (CI job `database` is written but has not run yet)
+- [ ] run the app on an Android emulator / iOS simulator against Supabase
+- [ ] disable public sign-up on the hosted project (dashboard setting, not in SQL)
+- [ ] column-level hiding of editorial identity currently applies to `anon` only (see `supabase/README.md`)
 
 Exit criteria:
-- every displayed fixture claim can open evidence metadata
-- UI never consumes raw database rows directly
-- the app runs with `EXPO_PUBLIC_DATA_SOURCE=supabase` against a dev database
+- [x] every displayed fixture claim can open evidence metadata
+- [x] UI never consumes raw database rows directly
+- [x] the app loads from a Supabase dev project with `EXPO_PUBLIC_DATA_SOURCE=supabase`
 
 ## Milestone 2 — Politician directory MVP
 

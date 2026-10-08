@@ -26,6 +26,27 @@ describe('checkVerificationConsistency', () => {
     expect(codes('OUTDATED', [])).toEqual(['NO_EVIDENCE']);
   });
 
+  it('requires at least one supporting source for every state except UNVERIFIED and DISPUTED', () => {
+    const onlyContradicting = [evidence('NEWS', 'Paper', false)];
+    expect(codes('SELF_DECLARED', onlyContradicting)).toContain('NO_SUPPORTING_SOURCE');
+    expect(codes('REPORTED', onlyContradicting)).toContain('NO_SUPPORTING_SOURCE');
+    expect(codes('OUTDATED', onlyContradicting)).toContain('NO_SUPPORTING_SOURCE');
+    expect(codes('DISPUTED', onlyContradicting)).toEqual(['DISPUTE_WITHOUT_CONFLICT']);
+    expect(codes('UNVERIFIED', onlyContradicting)).toEqual([]);
+  });
+
+  it('applies no extra source-type rule to SELF_DECLARED and REPORTED', () => {
+    expect(codes('SELF_DECLARED', [evidence('OFFICIAL_CANDIDATE', 'Campaign')])).toEqual([]);
+    expect(codes('SELF_DECLARED', [evidence('NEWS', 'Paper')])).toEqual([]);
+    expect(codes('REPORTED', [evidence('NEWS', 'Paper')])).toEqual([]);
+  });
+
+  it('allows OUTDATED claims to keep contradicting evidence', () => {
+    expect(
+      codes('OUTDATED', [evidence('OTHER', 'Roster'), evidence('NEWS', 'Paper', false)]),
+    ).toEqual([]);
+  });
+
   it('requires a tier-1 source for PRIMARY_SOURCE', () => {
     expect(codes('PRIMARY_SOURCE', [evidence('NEWS', 'Paper')])).toEqual(['NO_PRIMARY_SOURCE']);
     expect(codes('PRIMARY_SOURCE', [evidence('COURT_OR_TRIBUNAL', 'Court')])).toEqual([]);

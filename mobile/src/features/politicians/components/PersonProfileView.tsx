@@ -28,7 +28,13 @@ function ProfileSection({
   return <Section title={title}>{isEmpty ? <NotDocumented /> : children}</Section>;
 }
 
-export function PersonProfileView({ profile }: { profile: PersonProfile }) {
+type Props = {
+  profile: PersonProfile;
+  /** Opens the source viewer for a claim. */
+  onOpenClaim?: (claimId: string) => void;
+};
+
+export function PersonProfileView({ profile, onOpenClaim }: Props) {
   const { person, evidenceSummary } = profile;
 
   return (
@@ -45,7 +51,7 @@ export function PersonProfileView({ profile }: { profile: PersonProfile }) {
       <ProfileSection title="Profile" isEmpty={profile.identityClaims.length === 0}>
         {profile.identityClaims.map((item) => (
           <Card key={item.claim.id}>
-            <ClaimCard {...item} />
+            <ClaimCard {...item} onOpenDetails={onOpenClaim} />
           </Card>
         ))}
       </ProfileSection>
@@ -63,6 +69,7 @@ export function PersonProfileView({ profile }: { profile: PersonProfile }) {
                 : undefined,
             ]}
             claims={claims}
+            onOpenClaim={onOpenClaim}
           />
         ))}
       </ProfileSection>
@@ -77,6 +84,7 @@ export function PersonProfileView({ profile }: { profile: PersonProfile }) {
               formatDateRange(record.term.startDate, record.term.endDate),
             ]}
             claims={claims}
+            onOpenClaim={onOpenClaim}
           />
         ))}
       </ProfileSection>
@@ -91,6 +99,7 @@ export function PersonProfileView({ profile }: { profile: PersonProfile }) {
               formatDateRange(record.affiliation.startDate, record.affiliation.endDate),
             ]}
             claims={claims}
+            onOpenClaim={onOpenClaim}
           />
         ))}
       </ProfileSection>
@@ -105,6 +114,7 @@ export function PersonProfileView({ profile }: { profile: PersonProfile }) {
               formatDateRange(record.startDate, record.endDate),
             ]}
             claims={claims}
+            onOpenClaim={onOpenClaim}
           />
         ))}
       </ProfileSection>
@@ -119,6 +129,7 @@ export function PersonProfileView({ profile }: { profile: PersonProfile }) {
               record.statedAt ? `Stated ${formatIsoDate(record.statedAt)}` : undefined,
             ]}
             claims={claims}
+            onOpenClaim={onOpenClaim}
           />
         ))}
       </ProfileSection>

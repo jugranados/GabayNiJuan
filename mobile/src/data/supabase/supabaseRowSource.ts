@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { RowQuery, RowSource, TableName } from '@/data/repositories/rowSource';
+import { publicColumnsFor } from '@/data/supabase/publicColumns';
 
 export class BackendRequestError extends Error {
   override readonly name = 'BackendRequestError';
@@ -13,8 +14,8 @@ function sanitizeSearchTerm(term: string): string {
 
 /**
  * RowSource backed by Supabase/PostgREST. Returns rows as `unknown[]`; the
- * repositories validate them. Table names are provisional until the
- * Milestone 1 schema is migrated.
+ * repositories validate them. Requests explicit columns because the public
+ * role has column-level SELECT only (see publicColumns.ts).
  */
 export function createSupabaseRowSource(client: SupabaseClient): RowSource {
   return {
@@ -22,7 +23,7 @@ export function createSupabaseRowSource(client: SupabaseClient): RowSource {
       if (query.in && query.in.values.length === 0) {
         return [];
       }
-      let request = client.from(table).select('*');
+      let request = client.from(table).select(publicColumnsFor(table).join(','));
       for (const [column, value] of Object.entries(query.eq ?? {})) {
         request = request.eq(column, value);
       }
@@ -42,7 +43,10 @@ export function createSupabaseRowSource(client: SupabaseClient): RowSource {
         return [];
       }
       const filter = columns.map((column) => `${column}.ilike.%${safe}%`).join(',');
-      const { data, error } = await client.from(table).select('*').or(filter);
+      const { data, error } = await client
+        .from(table)
+        .select(publicColumnsFor(table).join(','))
+        .or(filter);
       if (error) {
         throw new BackendRequestError(`Failed to search ${table}: ${error.message}`);
       }
