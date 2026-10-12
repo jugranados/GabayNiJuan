@@ -112,6 +112,7 @@ begin
   end if;
   return v_row;
 end;
+$$;
 
 revoke all on function public.editorial_transition(text, uuid, public.publication_status, integer, text) from public, anon;
 revoke all on function public.editorial_update(text, uuid, integer, jsonb, text) from public, anon;
