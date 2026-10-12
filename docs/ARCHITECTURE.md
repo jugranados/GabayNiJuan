@@ -2,43 +2,24 @@
 
 ## Decision
 
-Use React Native + TypeScript + Expo.
+Gabay ni Juan is **web-first**: a Next.js (App Router) + TypeScript application in `web/`, backed by Supabase. The earlier React Native app (`mobile/`) is frozen and will be archived. Rationale, URL/SEO/caching decisions and the retirement plan are in `docs/WEB_MIGRATION.md`.
 
 ## Why
 
-- one codebase for Android and iOS
-- good fit for the team's existing React Native experience
-- lower setup friction for AI-assisted development
-- Expo simplifies builds, updates, routing, assets, and platform configuration
-- modern React Native defaults to TypeScript
-- supports the New Architecture
+- voters arrive from search results and shared links; a page must open without installing anything
+- every profile and every claim needs a stable, linkable URL so evidence can be cited
+- public, read-heavy pages can be rendered on the server: fast, crawlable, usable without JavaScript
+- one responsive codebase for phones, tablets and desktops
 
-## Recommended client stack
+## Web stack
 
-### Core
-- React Native
-- TypeScript (strict)
-- Expo
-- Expo Router
-
-### Data
-- `@supabase/supabase-js`
-- TanStack Query for server state
+- Next.js 16 App Router, React 19, TypeScript (strict)
+- Tailwind CSS 4
+- `@supabase/supabase-js` and `@supabase/ssr`
 - Zod for runtime validation
+- Vitest and Testing Library
 
-### Local state
-- Zustand only for lightweight local/UI state
-- avoid duplicating server data in Zustand
-
-### Forms
-- React Hook Form
-- Zod resolver
-
-### Testing
-- Jest
-- React Native Testing Library
-- domain/model unit tests
-- mapper/validation tests
+Not used, on purpose: TanStack Query and Zustand (pages read on the server and keep state in the URL), React Hook Form (forms post to server actions and are validated there with Zod) and shadcn/ui. See `docs/WEB_MIGRATION.md`.
 
 ## Backend
 
@@ -65,48 +46,40 @@ Political data is relational and historical. A person can have many:
 
 Relational constraints and joins are useful here.
 
-## Client architecture
-
-The app lives in `mobile/` (Expo SDK 57, React Native 0.86, New Architecture). Keeping it in its own directory leaves room beside it for `supabase/` migrations and a possible admin web app, without nesting another repository.
-
-Feature-first organization (implemented in Milestone 0):
+## Web architecture
 
 ```text
-mobile/src/
-  app/                 Expo Router routes ONLY (every file is a screen)
-    _layout.tsx        composition root: config -> repositories -> providers
-    index.tsx          Home
-    politicians/       list + [id] detail
-    claims/[id].tsx    claim detail / source viewer
-    about.tsx          About / data verification
-  components/          generic UI primitives (no domain knowledge beyond errors)
-  features/
-    politicians/       directory (cards, search, filters), Home, profile header/view, query hooks, UI state (Zustand)
-    elections/         candidacy-status wording
-    offices/           office-term wording
-    affiliations/      affiliation wording
-    sources/           VerificationBadge, ClaimCard, ClaimDetailView (source viewer), SourceItem, verification copy
-    legal-cases/       reserved (Milestone 4)
-    disclosures/       reserved (Milestone 4)
+web/src/
+  app/
+    (public)/          voter pages (Server Components); no cookies, no session
+    admin/             editorial area: login, dashboard, queue, records, corrections,
+                       revisions, roles (always dynamic, never cached or indexed)
+    robots.ts sitemap.ts
+  proxy.ts             /admin only: refresh the editor session, X-Robots-Tag
   domain/
     enums/             readonly tuples -> unions (shared with Zod)
     models/            domain types + PersonProfile read model
     repositories/      repository interfaces
     validation/        Zod primitives, error types, verification consistency checks
+    editorial/         record definitions, workflow transitions, readiness checklist,
+                       roles and capabilities, revision diff, wording guard, view models
+    slug.ts directory.ts currentRecords.ts profileContext.ts timeline.ts corrections.ts
   data/
     schemas/           Zod schemas for raw backend rows (snake_case) + parse helpers
     mappers/           row -> domain mappers, profile assembler
-    repositories/      RowSource abstraction, repository implementations, composition
-    supabase/          public Supabase client, Supabase RowSource, explicit public column list,
+    repositories/      RowSource abstraction, repository implementations
+    editorial/         staff-only reads and RPC calls, taking the signed-in editor's client
+    supabase/          public client, Supabase sources, explicit public column list,
                        generated database types (data layer only) + compile-time drift check
-    fixtures/          FICTIONAL development data, in raw row shape
-  shared/
-    config/            validated env config
-    hooks/             repositories React context
-    utils/             date formatting
+    fixtures/          FICTIONAL development data, in raw row shape (also generates supabase/seed.sql)
+  server/              server-only: validated config, getRepositories() (public, anonymous),
+                       getEditorial() (the signed-in editor's session and data access)
+  features/            politicians, elections, offices, affiliations, sources, corrections, admin
+  components/          generic UI primitives
+  lib/                 config parsing, site metadata, dates, errors
 ```
 
-Tests are colocated in `__tests__/` folders outside `src/app/`, because every file in `src/app/` is treated as a route.
+Tests are colocated in `__tests__/` folders.
 
 ## Data flow
 
@@ -119,41 +92,47 @@ Mapper (data/mappers)                       -> domain model
    ↓
 Repository (data/repositories)              -> implements domain/repositories interface
    ↓
-TanStack Query hook (features/*/hooks)
+getRepositories() (server/, server-only)
    ↓
-Read model (PersonProfile, Attested<T>)
+Server Component page (app/*)               -> read model (PersonProfile, Attested<T>)
    ↓
-Screen (app/*)
+Feature components (features/*)
 ```
 
-UI code never assumes an unvalidated backend payload is correct. An ESLint `no-restricted-imports` rule stops `app/`, `components/` and `features/` from importing `@supabase/*`, `data/supabase`, `data/schemas` or `data/fixtures`.
+UI code never assumes an unvalidated backend payload is correct. An ESLint `no-restricted-imports` rule stops `app/`, `components/` and `features/` from importing `@supabase/*`, `@/data/*` or `@/lib/supabase/*` (the two server-only editorial session modules are the exception).
+
+### Server and client components
+
+Public pages are Server Components. The directory search and filters are a plain GET form, so they work without JavaScript. Client Components exist only where there is real interaction: the report form, the error boundary, and in the editorial area the record form and the small wrapper that shows a server action's result.
 
 ### Switching between mock and Supabase
 
-Repositories are written once against a minimal `RowSource` interface (`select` with `eq`/`in` filters, and `search`). The fixture source and the Supabase source both implement it. `createAppRepositories(config)` picks one based on `EXPO_PUBLIC_DATA_SOURCE`. Switching backends changes no repository, hook or UI code, and fixture data is validated exactly like production data.
-
-The profile read currently issues several small queries. If that becomes a bottleneck, add a Postgres view/RPC and a dedicated repository method. The domain interface stays the same.
+Repositories are written once against a minimal `RowSource` interface. The fixture source and the Supabase source both implement it, and `createAppRepositories(config)` picks one from the server-only `DATA_SOURCE`. Fixture data is validated exactly like production data. With `mock`, corrections are not wired and the report page says so.
 
 ### Validation failure policy
 
 - No `z.coerce`. Wrong types and unknown enum values are rejected.
 - One invalid row fails the whole read. Silently dropping a row could hide a correction or a conflicting source.
 - A dangling reference (for example, a participation pointing to a missing office) raises `DataIntegrityError`.
-- The UI shows an explicit "Some records failed validation" state. TanStack Query does not retry data errors.
+- The page falls to the public error boundary, which says that information failing the data checks is not displayed. Nothing partial is rendered.
 
 ### Database contract
 
-The backend schema lives in `supabase/migrations/` (see `supabase/README.md`). `mobile/src/data/supabase/database.types.ts` is generated from it and used **only** in the data layer: ESLint forbids importing it (or `@supabase/*`) from `app/`, `components/` and `features/`, and `domain/` never imports it. `mobile/src/data/supabase/schemaDrift.ts` is a compile-time check that every table row satisfies its Zod contract, that every contract column exists, and that every DB enum equals its domain enum. A migration that drifts from the app fails `npm run typecheck`.
+The backend schema lives in `supabase/migrations/` (see `supabase/README.md`). `web/src/data/supabase/database.types.ts` is generated from it and used **only** in the data layer. `web/src/data/supabase/schemaDrift.ts` is a compile-time check that every table row satisfies its Zod contract, that every contract column exists, and that every DB enum equals its domain enum. A migration that drifts from the app fails `npm run typecheck`.
 
 Generated types do not replace Zod. They describe what the database *should* return; Zod checks what actually arrived.
 
-The database also enforces the editorial rules (RLS, column-level grants, publish gate, verification-consistency checks, audit trail), so the mobile app is never the only line of defence.
+The database also enforces the editorial rules (RLS, column-level grants, publish gate, verification-consistency checks, audit trail), so the web app is never the only line of defence.
+
+### Public URLs
+
+`/politicians/<slug>` and `/claims/<id>`. `people.slug` is unique, generated in the database and frozen once published; the UUID stays the identity. Policy: `docs/WEB_MIGRATION.md`, "Slugs".
 
 ### Directory query architecture
 
 ```text
-DirectoryView / HomeView (UI, router-free)
-   ↓ useDirectory (TanStack useInfiniteQuery)        features/politicians/hooks
+/politicians?q=&level=&status=&page=   (URL is the state)
+   ↓ parseDirectoryState -> toDirectoryQuery           features/politicians/directoryParams
 PersonRepository.searchDirectory(DirectoryQuery)     domain/repositories
    ↓ normalizeDirectoryQuery  (trim, min length, clamp paging, drop empty filters)
 DirectorySource.search(params) -> unknown            data/repositories
@@ -166,17 +145,17 @@ DirectorySource.search(params) -> unknown            data/repositories
 - **Ordering is deterministic and the same everywhere:** lowercase last name, lowercase first name, id, compared by code point (`collate "C"` in SQL). Accented letters sort after `z`. This is stable and neutral; locale-aware ordering is a later refinement.
 - **Search:** the text is trimmed and whitespace-collapsed; below two characters it is ignored (the UI says so). Every word must appear, case-insensitively, in `first middle last suffix preferred`.
 - **Filters combine with AND.** All participation filters (election, office, office level, status, jurisdiction) must be satisfied by one and the same participation; the organization filter matches any dated affiliation record with that organization (including ended ones).
-- **Directory cards are a lightweight read model** (`DirectoryEntry`): name, photo id, participations (office, election, status) and at most one affiliation. No claims, no sources, no counts. The profile loads separately.
-- **Why a database function and not client-side filtering:** a national dataset has thousands of people, so the app must never download everyone to filter them, and sending long `id in (…)` lists to the API breaks on URL length. `search_directory` is `SECURITY INVOKER`, so Row Level Security and the anon column grants still apply: it can only ever see published rows and non-identity columns.
-- **Two implementations, one behavior.** The SQL function and `inMemoryDirectorySource.ts` follow the same written rules. `npm run test:integration` runs the same queries (search, every filter, combinations, paging) against both and requires identical results. `schemaDrift.ts` also checks at compile time that the arguments the app sends are exactly the function's parameters.
+- **Directory cards are a lightweight read model** (`DirectoryEntry`): name, slug, photo id, participations (office, election, status) and at most one affiliation. No claims, no sources, no counts. The profile loads separately.
+- **Why a database function and not client-side filtering:** a national dataset has thousands of people, so the server must never load everyone to filter them, and sending long `id in (…)` lists to the API breaks on URL length. `search_directory` is `SECURITY INVOKER`, so Row Level Security and the anon column grants still apply: it can only ever see published rows and non-identity columns.
+- **Two implementations, one behavior.** The SQL function and `inMemoryDirectorySource.ts` follow the same written rules. `npm run test:integration` in `web/` runs the same queries (search, every filter, combinations, paging) against both and requires identical results; CI runs it against the local stack. `schemaDrift.ts` also checks at compile time that the arguments the app sends are exactly the function's parameters.
 
 #### Pagination decision
 
-Offset pagination (`limit`/`offset`, 20 per page, maximum 50) with an exact `total`, returned as `Page<T> = { items, total, nextOffset? }`. It is the simplest thing that is adequate for a directory of thousands, supports "N results", and needs no cursor state. The UI uses `useInfiniteQuery` with `onEndReached` plus a visible "Show more" button. Cursor (keyset) pagination can replace it behind the same `Page<T>` contract if rows start being inserted frequently while people scroll.
+Offset pagination (`limit`/`offset`, 20 per page, maximum 50) with an exact `total`, returned as `Page<T> = { items, total, nextOffset? }`. It is the simplest thing that is adequate for a directory of thousands, supports "N results", and needs no cursor state. On the web each page is a real URL (`?page=2`) with Previous/Next links; a page number past the end redirects to page 1. Cursor (keyset) pagination can replace it behind the same `Page<T>` contract if rows start being inserted frequently while people scroll.
 
 #### Filter model
 
-`DirectoryFilters` (domain) holds the supported fields; `features/politicians/filterConfig.ts` lists which ones the UI shows (`FILTER_DEFINITIONS`) and how to label their values. Adding a documented, structured field means one entry there plus one column in the query. Prohibited by product rule: any filter that ranks or judges a person ("best", "most trusted", "clean record", "most experienced", "most popular", "least controversial"). A test asserts the filter sheet contains none.
+`DirectoryFilters` (domain) holds the supported fields; `features/politicians/filterConfig.ts` lists which ones the UI shows (`FILTER_DEFINITIONS`) and how to label their values. Adding a documented, structured field means one entry there plus one column in the query. Prohibited by product rule: any filter that ranks or judges a person ("best", "most trusted", "clean record", "most experienced", "most popular", "least controversial"). A test asserts the filter form contains none, and unknown URL parameters (such as `sort`) are ignored.
 
 #### Jurisdiction decision
 
@@ -185,7 +164,7 @@ Offset pagination (`limit`/`offset`, 20 per page, maximum 50) with an exact `tot
 ### Profile information hierarchy
 
 ```text
-PersonProfileHeader   photo, name, current documented context, evidence counts
+ProfileHeader         name, current documented context, evidence counts
 Personal Details      (only when identity claims exist)
 Election Participation   ElectionParticipationCard × n   (newest election first)
 Public Office History    Timeline (most recent first)
@@ -198,7 +177,7 @@ Sources
 - **"Current" is derived, never guessed** (`domain/profileContext.ts`, `domain/currentRecords.ts`). The header headlines an office or affiliation only if its start date is known and not in the future, its end date is absent or not in the past, **and** it has a claim that is `PRIMARY_SOURCE`, `CORROBORATED`, `SELF_DECLARED` or `REPORTED`. Anything else stays in its own section, with its badge, but is not headlined. The same rule decides the one affiliation shown on a directory card, in SQL and in TypeScript.
 - **Timelines never say "present".** A record with a start but no end date shows "From 2022" and the note "No end date recorded". A missing end is not proof that something is ongoing.
 - **Verification belongs to claims, never to a person.** The header shows counts ("12 claims from 9 sources") as information and says they are not a rating. There is no person-level score, percentage or "verified" label.
-- **Evidence is never more than one tap away.** Every attested record shows its claims with their `VerificationBadge` and a "View evidence and sources" link to `/claims/[id]` (claim → evidence → original source). A record with no claim shows "Unverified · No source attached."
+- **Evidence is never more than one click away.** Every attested record shows its claims with their `VerificationBadge` and a "View evidence and sources" link to `/claims/[id]` (claim → evidence → original source). A record with no claim shows "Unverified · No source attached."
 - Legal cases and asset disclosures are intentionally absent (Milestone 4).
 
 ### Missing-data wording policy
@@ -211,21 +190,19 @@ The public role has **column-level** `SELECT` on published rows only; editorial 
 
 ### Claim detail / source viewer
 
-`ClaimRepository.getClaimDetail(id)` returns a claim with all of its evidence (supporting and contradicting) and the person it is about, if publicly readable. `/claims/[id]` renders it with `ClaimDetailView`. It shows the status and its meaning, effective and review dates, and each source with publisher, type and tier, published and retrieved dates, the relationship (supports or conflicts), the reviewer's note and links to the original and archived copy. If the loaded evidence is inconsistent with the status, the screen says so instead of hiding it. It shows no score or aggregate rating.
+`ClaimRepository.getClaimDetail(id)` returns a claim with all of its evidence (supporting and contradicting) and the person it is about, if publicly readable. `/claims/[id]` renders it with the `ClaimDetail` component. It shows the status and its meaning, effective and review dates, and each source with publisher, type and tier, published and retrieved dates, the relationship (supports or conflicts), the reviewer's note and links to the original and archived copy. If the loaded evidence is inconsistent with the status, the page says so instead of hiding it. It shows no score or aggregate rating.
 
 ### Config and secrets
 
-`shared/config/env.ts` validates `EXPO_PUBLIC_*` variables with Zod and refuses to start if the Supabase key is a service-role JWT or an `sb_secret_` key. The public Supabase client does not persist or refresh sessions, because voters do not sign in.
+`lib/config.ts` validates the environment with Zod and refuses to start if the public Supabase key is a service-role JWT or an `sb_secret_` key. `DATA_SOURCE` and `SITE_INDEXABLE` are server-only. The public Supabase client does not persist or refresh sessions, because voters do not sign in. No service-role key is used anywhere.
 
-### Library decisions (Milestone 0)
+### SEO, indexing and caching
 
-- React Hook Form is deferred until the first form ("Report an error") so that no unused dependency ships.
-- `@react-native-async-storage/async-storage` is not installed, because there is no voter session to persist.
-- RNTL 14 uses `test-renderer` (not the deprecated `react-test-renderer`), and `render` is async.
+Metadata, canonical URLs, `robots.txt`, `sitemap.xml`, the default-off indexing switch and the revalidation times are specified in `docs/WEB_MIGRATION.md`.
 
 ## Backend access model
 
-### Public mobile users
+### Public visitors
 Read only data that has been published.
 
 ### Reviewers
@@ -237,28 +214,46 @@ Can mark records as verified/published.
 ### Admin
 Manages user roles and exceptional corrections.
 
-The mobile app must never contain privileged backend credentials.
+No app in this repository contains privileged backend credentials.
 
-### Editorial web app (Milestone 3)
+### Editorial area
 
-`admin/` is a separate Vite + React + TypeScript app (TanStack Query, React Hook Form, Zod, Supabase JS). Editors sign in with Supabase Auth; the browser uses only the public anon key, so every action is decided by RLS, triggers and RPC checks in PostgreSQL. Reads go through the `editorial_queue` view and tables; writes go through `editorial_update`, `editorial_transition`, `editorial_set_evidence`, `editorial_remove_evidence`, `review_correction` and `set_staff_role` (reasons, optimistic concurrency, state machine). The mobile app gains exactly one write: `submit_correction`. Full rules: `docs/EDITORIAL_WORKFLOW.md`.
+`web/src/app/admin` is the whole editorial tool: dashboard, work queue, record editors, evidence and verification readiness, the publication workflow, revision history, the correction queue and role management (`docs/EDITORIAL_WORKFLOW.md`).
 
-Decision: no shared `packages/domain` workspace yet. Shared enums are duplicated and checked for drift in CI (`scripts/check-enum-drift.mjs`).
+```text
+/admin page or server action
+   ↓ getEditorial() / getEditorialForPage()      server/editorial.ts (server-only)
+   │    verifies the user with the auth server, loads their editorial_roles row,
+   │    refuses anyone without a role
+   ↓ data/editorial/api.ts                       reads: tables + editorial_queue view
+   │                                             writes: editorial_update, editorial_transition,
+   │                                             editorial_set_evidence, editorial_remove_evidence,
+   │                                             review_correction, set_staff_role
+   ↓ Supabase, as the signed-in editor (anon key + their session cookie)
+PostgreSQL: RLS, state machine, two-person rule, reasons, optimistic concurrency, revisions
+```
+
+- **The UI is not the security boundary.** Role checks in pages and actions decide what is offered; every read and write is decided again by PostgreSQL with the editor's own token. There is no service-role client.
+- **Three layers of access checks**, each sufficient alone to keep an outsider out: `proxy.ts` refreshes the session and marks responses non-indexable; the protected layout redirects or shows "No editorial access"; every page and every server action calls `getEditorial()` itself, because layouts and pages render independently and actions can be invoked directly.
+- **Server-rendered, forms post to server actions.** Validation uses the same Zod schema built from the record's field list (`domain/editorial/records.ts`); a rejected form keeps what the editor typed. Queue and history filters are URL parameters.
+- **On-demand revalidation.** When an action publishes, retracts, or changes published content, it calls `revalidatePath('/', 'layout')`, so no public page stays stale. There is no purge endpoint; the 60-second page revalidation remains as a fallback for changes made outside the app (SQL editor).
+- The public site has exactly one write: `submit_correction`.
+
+Decision: no shared `packages/domain` workspace. `web/src/domain` is the only active TypeScript implementation of the enums, workflow tables and record definitions; `scripts/check-enum-drift.mjs` checks it against the SQL in CI (and against the frozen `mobile/` copy until that is archived).
 
 ## Hosting
 
-A mobile app itself does not require traditional web hosting.
+- Vercel (Hobby) hosts `web/`; Supabase (Free) hosts database, API and auth.
+- GitHub hosts source code and CI.
+- Cloudflare with the OpenNext adapter is a possible alternative for `web/`; untested.
 
-For early stages:
-- Supabase hosts database/API/auth/storage.
-- The editorial web app (`admin/`) is a static build: Cloudflare Pages or Vercel free tier.
-- Expo/EAS handles development and mobile build services.
-- GitHub hosts source code.
-- Optional public project/privacy pages can use GitHub Pages or Cloudflare Pages.
+## Previous frontend (frozen)
+
+`mobile/` (Expo SDK 57, React Native, Expo Router, TanStack Query, Zustand) implemented Milestones 0–3 for Android and iOS. Its domain, validation, repository and wording code was copied into `web/src` and is maintained there. It is kept, with its CI checks, until web parity is confirmed against Supabase, then moved to `archive/mobile-react-native/`.
 
 ## Architecture decision to revisit later
 
-If the app reaches substantial traffic or requires complex ingestion pipelines:
+If the site reaches substantial traffic or requires complex ingestion pipelines:
 - introduce a dedicated backend/service layer
 - background ingestion workers
 - dedicated search service

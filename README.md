@@ -17,86 +17,67 @@ Its purpose is to help voters understand the documented public record of politic
 
 ## Stack
 
-- React Native + TypeScript (strict), Expo SDK 57, Expo Router
-- TanStack Query for server state
-- Zustand for lightweight local UI state
-- Zod for runtime validation
-- Supabase: Postgres, Auth for reviewers/admins, Storage where legally appropriate, Edge Functions only when needed
-- Editorial web app (`admin/`): Vite, React, TypeScript, React Hook Form + Zod, Supabase Auth
-- Jest + React Native Testing Library
+- **Web (the only active frontend):** Next.js 16 App Router, React 19, TypeScript (strict), Tailwind CSS 4, Zod
+- Supabase: Postgres, Row Level Security, Auth for reviewers/admins, Edge Functions only when needed
+- Vitest + Testing Library
+
+Gabay ni Juan is **web-first**. The React Native app in `mobile/` is a frozen earlier frontend that is kept until it is archived; see `docs/WEB_MIGRATION.md`.
 
 See `docs/` and `AGENTS.md` before implementing features.
 
-## What the app does today
+## What the site does today
 
-- **Home:** search, browse by election and office level, how verification works.
-- **Directory:** alphabetical cards, name search, combinable filters (election, office, office level, participation status, organization), pagination. Never ranked.
-- **Profile:** header with documented current context, election participation with exact candidacy state, office history and affiliations as timelines, education, policy positions, sources.
-- **Evidence:** every attested record links to its claim, supporting and conflicting sources, and the original document.
-- **Report an error:** from a profile or a claim; sends a private request for editorial review that never changes the public record.
-- All people in this repository are **fictional** development data.
-
-See `docs/ARCHITECTURE.md` for the directory query design, filter model, pagination and the missing-data wording policy.
+- **Home:** search, browse by election and office level, how verification works, neutrality statement.
+- **Directory** (`/politicians`): alphabetical, name search, combinable filters (election, office, office level, participation status, organization), page-based pagination. All state is in the URL. Never ranked.
+- **Profile** (`/politicians/<slug>`): header with documented current context, election participation with exact candidacy state, office history and affiliations as timelines, education, policy positions, sources.
+- **Evidence** (`/claims/<id>`): every attested record links to its claim, supporting and conflicting sources, and the original document.
+- **Report an error** (`/corrections/report`): from a profile or a claim; sends a private request for editorial review that never changes the public record.
+- **Verification** and **Methodology** pages.
+- **Editorial area** (`/admin`): sign-in for invited staff, dashboard, work queue, editors for people, election participation, office terms, affiliations, education, policy positions, sources, claims, elections, offices and organizations, evidence with verification readiness, the publication workflow with reasons and retraction, revision history, the correction queue and role management. See `docs/EDITORIAL_WORKFLOW.md`.
+- All people in this repository are **fictional** development data, and the site is not indexable until that changes.
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
-| `mobile/` | React Native / Expo app (Android + iOS) |
-| `admin/` | Editorial web app for reviewers, approvers and admins (`docs/EDITORIAL_WORKFLOW.md`) |
+| `web/` | **The application.** Next.js public voter site and the editorial area under `/admin` |
+| `mobile/` | React Native / Expo app. **Frozen**; kept until archived |
 | `supabase/` | Database migrations, RLS, audit triggers, fictional seed (see `supabase/README.md`) |
-| `docs/` | Product, data model, governance, and architecture decisions |
-| `.github/workflows/` | CI: mobile (typecheck, lint, tests, verification consistency, seed check, expo-doctor), admin (typecheck, lint, tests, build), enum drift, and database (migrations, seed, RLS and workflow tests) |
+| `docs/` | Product, data model, governance, architecture, web migration |
+| `.github/workflows/` | CI: web (typecheck, lint, tests, seed check, build, bundle key scan), mobile (frozen: typecheck, lint, tests), domain/database drift, and database (migrations, seed, RLS and workflow tests, web integration test) |
 
-The original native Android (Kotlin/Compose) prototype is archived on the `archive/android-native` branch. It is a historical reference and is not part of this branch.
+The original native Android (Kotlin/Compose) prototype is archived on the `archive/android-native` branch.
 
 ## Development setup
 
 ### Requirements
 
-- Node.js 20.19.4+, 22.13+, or 24.3+ (`.nvmrc` pins 24). npm comes with Node.
-- To run on a device: the **Expo Go** app (Android/iOS), or
-- Android Studio with an emulator for `npm run android`, and/or
-- Xcode with an iOS Simulator on macOS for `npm run ios`.
+- Node.js 20.19.4+, 22.18+, or 24.3+ (`.nvmrc` pins 24). npm comes with Node.
 
 ### Install and run
 
 ```bash
-cd mobile
+cd web
 npm install
 cp .env.example .env.local   # optional; defaults to fictional mock data
-npm start                    # Expo dev server; scan the QR code with Expo Go
-npm run android              # open on an Android emulator/device
-npm run ios                  # open on the iOS Simulator (macOS only)
+npm run dev                  # http://localhost:3000
 ```
 
 ### Environment
 
-Configuration is read from `EXPO_PUBLIC_*` variables in `mobile/.env.local`, which is git-ignored. See `mobile/.env.example`.
+Read from `web/.env.local` (git-ignored). See `web/.env.example`.
 
 | Variable | Purpose |
 |---|---|
-| `EXPO_PUBLIC_DATA_SOURCE` | `mock` (default, fictional fixtures) or `supabase` |
-| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL (required for `supabase`) |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Anon / publishable key only (required for `supabase`) |
+| `DATA_SOURCE` | `mock` (default, fictional fixtures) or `supabase`. Server-only |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (required for `supabase` and for `/admin`) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon / publishable key only |
+| `NEXT_PUBLIC_SITE_URL` | Deployed origin, for canonical URLs and the sitemap |
+| `SITE_INDEXABLE` | `true` allows search-engine indexing. Only with `DATA_SOURCE=supabase`; keep `false` for fictional data. While off, every response is `noindex` (header, metadata, `robots.txt`) |
 
-`EXPO_PUBLIC_*` values are bundled into the app and are public. **Never** put the Supabase service-role key or any `sb_secret_` key in the app. The app refuses to start if it detects one.
+`NEXT_PUBLIC_*` values are sent to every browser. **Never** put the Supabase service-role key or any `sb_secret_` key in them. The app refuses to start if it detects one, and it uses no service-role key at all.
 
-### Switching between mock data and Supabase
-
-Only the environment changes; no code does.
-
-```bash
-# fictional in-memory fixtures (default)
-EXPO_PUBLIC_DATA_SOURCE=mock
-
-# Supabase (hosted project, or the local stack from `supabase start`)
-EXPO_PUBLIC_DATA_SOURCE=supabase
-EXPO_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon or sb_publishable_ key>
-```
-
-Restart Metro (`npm start -- --clear`) after editing `.env.local`. In both modes the same repositories validate every row with Zod and map it to domain models. The Supabase database must contain the migrations in `supabase/migrations`, and the fictional seed (`supabase/seed.sql`) if you want the demo profiles.
+With `DATA_SOURCE=supabase` the database must contain every migration in `supabase/migrations` (including `person_slugs`), and the fictional seed if you want the demo profiles. In both modes the same repositories validate every row with Zod and map it to domain models.
 
 ### Supabase (database)
 
@@ -104,36 +85,34 @@ Full guide: [`supabase/README.md`](supabase/README.md).
 
 ```bash
 supabase start && supabase db reset        # local stack: migrations + fictional seed (needs Docker + Supabase CLI)
-cd mobile && npm run seed:generate         # regenerate supabase/seed.sql (idempotent) from the app fixtures
-supabase gen types typescript --local > mobile/src/data/supabase/database.types.ts   # then npm run typecheck
+cd web && npm run seed:generate            # regenerate supabase/seed.sql (idempotent) from the web fixtures
+supabase gen types typescript --local > web/src/data/supabase/database.types.ts      # then npm run typecheck
 psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 \
   -f supabase/tests/rls_and_publication.test.sql                                       # RLS / publication / audit tests
-cd mobile && npm run test:integration      # mock vs. a real project through the anon key: profiles, directory queries, RLS
 ```
 
-**Publication and RLS model in one paragraph.** Every record has a `publication_status`. Anonymous users (the app) can read only `PUBLISHED` rows, only non-identity columns, and cannot write. Reviewers draft, approvers publish, every change lands in the append-only `revisions` log, and a claim cannot be published unless its evidence matches its verification status.
+**Publication and RLS model in one paragraph.** Every record has a `publication_status`. Anonymous users (the site) can read only `PUBLISHED` rows, only non-identity columns, and cannot write. Reviewers draft, approvers publish, every change lands in the append-only `revisions` log, and a claim cannot be published unless its evidence matches its verification status.
 
 ### Quality checks
 
 ```bash
-cd mobile
+cd web
 npm run typecheck          # tsc --noEmit (strict); also checks the database types against the Zod contracts
-npm run lint               # ESLint (expo config) + Prettier check
-npm test                   # Jest + React Native Testing Library (mock data; no network)
+npm run lint               # ESLint (Next.js config + the data-boundary rule)
+npm test                   # Vitest + Testing Library (fictional data; no network)
 npm run test:consistency   # verification status vs. evidence rules over the fixtures
 npm run seed:check         # supabase/seed.sql is exactly what the fixtures generate
+npm run build              # production build
 npm run verify             # typecheck + lint + test
-npm run lint:fix           # auto-fix lint and formatting
+npm run test:integration   # the data layer against a real Supabase database (anon key; needs migrations + seed)
 ```
 
-## Editorial web app (`admin/`)
+## Editorial area (`/admin`)
 
-```bash
-cd admin
-cp .env.example .env.local   # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (public key only)
-npm install
-npm run dev                  # http://localhost:5173
-npm run verify               # typecheck, lint, tests
-```
+Part of `web/`. It needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (it works with `DATA_SOURCE=mock` too, since it always talks to Supabase). Sign in at `/admin/login` with an account an administrator created; there is no sign-up. Every action runs as the signed-in editor under Row Level Security; no service-role key is used. Setup, roles, workflow and security: `docs/EDITORIAL_WORKFLOW.md`.
 
-Sign in with an account an administrator created. Setup, roles, workflow and security: `docs/EDITORIAL_WORKFLOW.md`.
+The earlier standalone Vite tool (`admin/`) was removed after its workflow was ported; it remains in git history (last present in commit `6c875fd`).
+
+## Frozen mobile app (`mobile/`)
+
+Kept as a reference until web parity is confirmed against Supabase, then archived (`docs/WEB_MIGRATION.md`). `cd mobile && npm install && npm run verify` still works; do not add features there.

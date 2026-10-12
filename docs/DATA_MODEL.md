@@ -15,6 +15,7 @@ Stable identity of a political/public figure.
 ```ts
 type Person = {
   id: string;
+  slug: string; // public URL address, e.g. "juan-dela-cruz"
   firstName: string;
   middleName?: string;
   lastName: string;
@@ -26,6 +27,8 @@ type Person = {
 ```
 
 Age should normally be calculated from `birthDate`, not stored.
+
+`slug` is the person's public URL (`/politicians/<slug>`): unique, lowercase, URL-safe, generated in the database from first name, last name and suffix (a collision gets `-2`, `-3`, …), not regenerated when a name changes, and frozen once the person has been published. It is an address only. `id` remains the identity and the only value used in relationships. Slug-change policy: `docs/WEB_MIGRATION.md`.
 
 ### `Election`
 
@@ -340,12 +343,12 @@ Every publishable table (all except `claim_evidence`, `revisions`, `editorial_ro
 
 `*_by` are Supabase Auth user ids written by triggers; clients cannot set them, and anon cannot read them. Only `PUBLISHED` rows are visible to voters. The app's Zod schemas ignore all workflow columns. `claim_evidence` has no status of its own: it is public when both its claim and its source are published.
 
-IDs are UUIDs in the database. The app treats ids as opaque strings, so the slug ids in the in-app fixtures are equally valid.
+IDs are UUIDs in the database. The app treats ids as opaque strings, so the readable ids in the fixtures are equally valid.
 
 ## Implementation notes (Milestone 0)
 
-- Domain types live in `mobile/src/domain/models`. Enums are readonly tuples in `mobile/src/domain/enums`, shared with Zod.
-- Backend row contracts (snake_case) live in `mobile/src/data/schemas/rows.ts`. Table names (implemented in `supabase/migrations`): `people`, `elections`, `offices`, `election_participations`, `office_terms`, `political_organizations`, `affiliation_records`, `education_records`, `award_records`, `policy_position_records`, `legal_case_records`, `asset_disclosure_records`, `sources`, `claims`, `claim_evidence`, `revisions`. Change a migration and its schema in the same commit; `mobile/src/data/supabase/schemaDrift.ts` fails typecheck when they diverge.
+- Domain types live in `web/src/domain/models`. Enums are readonly tuples in `web/src/domain/enums`, shared with Zod. (`mobile/src` holds a frozen copy.)
+- Backend row contracts (snake_case) live in `web/src/data/schemas/rows.ts`. Table names (implemented in `supabase/migrations`): `people`, `elections`, `offices`, `election_participations`, `office_terms`, `political_organizations`, `affiliation_records`, `education_records`, `award_records`, `policy_position_records`, `legal_case_records`, `asset_disclosure_records`, `sources`, `claims`, `claim_evidence`, `revisions`. Change a migration and its schema in the same commit; `web/src/data/supabase/schemaDrift.ts` fails typecheck when they diverge.
 - Dates use `YYYY-MM-DD`. Impossible dates and reversed ranges (end before start) are rejected.
 - An asset disclosure amount requires a currency.
 - `PersonProfile` (read model) does not include legal cases or disclosures until Milestone 4. Their absence must never be shown as "none on record".
@@ -383,3 +386,8 @@ Avoid automatically labeling a family as a "dynasty" unless a clearly defined, p
 - **`private.editorial_settings`** (not exposed): `allow_self_approval` development switch.
 - **`public.editorial_queue`** view (staff only): one row per editable record with type, label, state, version and editor/reviewer/approver ids.
 - **Functions:** `editorial_transition`, `editorial_update`, `editorial_set_evidence`, `editorial_remove_evidence`, `claim_readiness`, `submit_correction`, `review_correction`, `staff_directory`, `set_staff_role`.
+
+## Web migration additions
+
+- **`people.slug text not null unique`** with `people_slug_format` (lowercase words joined by hyphens, ≤ 120 chars). Readable by `anon`. Managed by the `05_person_slug` trigger (`private.manage_person_slug`): generated on insert, frozen after first publication.
+- **`search_directory`** returns `slug` on every card. Parameters, ordering and security are unchanged.

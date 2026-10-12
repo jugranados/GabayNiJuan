@@ -8,6 +8,10 @@ Help Filipino voters make more informed electoral decisions by making public pol
 
 A civic information platform that organizes documented public records related to political figures, election participants, offices, affiliations, policy positions, public disclosures, legal proceedings, and source evidence.
 
+## Platform
+
+Gabay ni Juan is a web-first platform: a public website that works on phones, tablets and desktops, where every profile and every claim has a shareable address. A mobile app may follow as a companion; it is not the primary product. The mission above does not depend on the platform.
+
 ## What Gabay ni Juan is not
 
 - a campaign platform

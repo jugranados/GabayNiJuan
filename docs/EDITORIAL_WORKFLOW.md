@@ -1,17 +1,37 @@
-# Editorial workflow (Milestone 3)
+# Editorial workflow
 
-The voter app is read-only. All research, entry, review, approval, correction and publication
-happens in a separate authenticated web tool (`admin/`) against the same Supabase project.
+The public site is read-only. All research, entry, review, approval, correction and publication
+happens in the authenticated editorial area of the same web app, under `/admin`, against the same
+Supabase project.
 
 ```text
-Public mobile app ──reads PUBLISHED rows only──▶ Supabase ◀── Editorial web app (admin/)
-        └── submit_correction() (one narrow RPC)──▶            ▲
-                                                  Reviewer / Approver / Admin
+Public pages ──read PUBLISHED rows only (anonymous client)──▶ Supabase ◀── /admin (editor's own session)
+     └── submit_correction() (one narrow RPC)──▶                              ▲
+                                                               Reviewer / Approver / Admin
 ```
 
-PostgreSQL is the authority. The admin UI hides actions a role cannot take, but every action is
-re-checked by RLS, triggers and RPC guards. Neither browser (mobile or admin) holds a service-role
-key; both use only the public anon/publishable key.
+PostgreSQL is the authority. The editorial pages hide actions a role cannot take, but every action
+is re-checked by RLS, triggers and RPC guards. No part of the app holds a service-role key: public
+reads use the anon key with no session, and editorial requests use the anon key with the signed-in
+editor's session, on the server.
+
+The workflow was first built as a standalone Vite app (`admin/`, Milestone 3). It was ported into
+`web/src/app/admin` and the standalone app was removed; it remains in git history.
+
+## Screens
+
+| Route | Purpose |
+|---|---|
+| `/admin/login` | Email and password sign-in for invited staff. No sign-up. |
+| `/admin` | Dashboard: counts by publication state, new correction requests, records by type, recent revisions |
+| `/admin/queue` | Work queue, filtered by status, record type, creator and date (filters are URL parameters) |
+| `/admin/records/<type>/new`, `/admin/records/<type>/<id>` | Record editor: workflow bar, linked records, details form, verification readiness and evidence (claims), related records (people), correction requests, revision history |
+| `/admin/corrections`, `/admin/corrections/<id>` | Correction queue and one request with its context and decision |
+| `/admin/revisions` | Append-only history with field-level diff |
+| `/admin/roles` | Administrators only: staff list, assign or remove a role, role change log |
+
+`<type>` is one of `people`, `participations`, `office-terms`, `affiliations`, `education`,
+`policy-positions`, `sources`, `claims`, `elections`, `offices`, `organizations`.
 
 ## Roles
 
@@ -46,7 +66,7 @@ DRAFT ─▶ SOURCE_ATTACHED ─▶ REVIEWED ─▶ APPROVED ─▶ PUBLISHED �
 - Writes without a signed-in user (SQL editor, migrations, seed) are exempt from the state machine
   and two-person rule but are still audited as `system:<db role>`.
 
-`admin/src/domain/workflow.ts` mirrors the transition table to choose which buttons to show;
+`web/src/domain/editorial/workflow.ts` mirrors the transition table to choose which buttons to show;
 `scripts/check-enum-drift.mjs` (CI job `drift`) fails if it differs from the SQL.
 
 ## Two-person rule
@@ -63,7 +83,7 @@ Keep it `false` in production. It cannot be changed through the API (the table i
 
 ## Change reasons
 
-Published records can only be changed by an APPROVER and only with a reason. The admin app asks for
+Published records can only be changed by an APPROVER and only with a reason. The editorial area asks for
 a plain-language reason; RPCs (`editorial_update`, `editorial_transition`, `editorial_set_evidence`,
 `editorial_remove_evidence`) set the transaction setting `gnj.change_reason` themselves and clear it
 afterwards, so editors never see the mechanism. Retracting always requires a reason.
@@ -73,7 +93,7 @@ afterwards, so editors never see the mechanism. Retracting always requires a rea
 Every publishable table has `version integer` (starts at 1). A trigger increments it whenever
 content or workflow columns actually change (no-op updates do not). `editorial_update` and
 `editorial_transition` take `expected_version`; if the row has moved on they fail with
-`STALE_RECORD`, and the admin app shows "changed by someone else" with a **Reload record** button.
+`STALE_RECORD`, and the page shows "changed by someone else" with a **Reload record** button.
 This is optimistic concurrency, not locking. Limits: a user who calls PostgREST directly with
 `UPDATE` can skip the version check (they still cannot skip the state machine, roles, reasons or
 audit). Evidence edits are not version-checked; they are frozen under review and audited.
@@ -100,8 +120,13 @@ Reviewer ─▶ UNDER_REVIEW ─▶ ACCEPTED | REJECTED   (resolution note requi
   `UNDER_REVIEW → ACCEPTED | REJECTED`, `ACCEPTED → RESOLVED`.
 - **Accepting a request changes nothing else.** Published data changes only through the normal
   workflow, which leaves a revision.
-- Submitted URLs are untrusted; the admin app opens them with `rel="noopener noreferrer"` and labels
-  them as unverified.
+- Submitted URLs are untrusted; the request page opens them with `rel="noopener noreferrer nofollow"`
+  and labels them as unverified.
+- Before a report reaches the database the web app applies its own free-tier protection: a honeypot
+  field, a minimum fill time, and a per-address cooldown (5 reports per 10 minutes, held in server
+  memory only). Input is validated on the server with the same limits as the database function.
+  No CAPTCHA, no account and no tracking. The in-memory cooldown is per server instance, so the
+  database caps above remain the limit that always holds.
 
 ## Retraction
 
@@ -113,7 +138,7 @@ information superseded.
 ## Revisions
 
 Triggers append a row to `revisions` for every insert/update/delete (old and new JSONB, editor,
-approver, reason, resulting state). The table is append-only. The admin app shows a field-level diff
+approver, reason, resulting state). The table is append-only. The revisions pages show a field-level diff
 (ignoring `updated_at` and `version`), the editor/approver emails (via `staff_directory()`), and, for
 ADMIN only, the raw JSON. Staff role changes are logged separately in `editorial_role_events`.
 
@@ -121,11 +146,12 @@ ADMIN only, the raw JSON. Staff role changes are logged separately in `editorial
 
 | Actor | Can | Cannot |
 |---|---|---|
-| anonymous mobile user | read PUBLISHED voter columns; call `submit_correction` | read correction requests, revisions, roles, the queue; write anything else |
+| anonymous visitor | read PUBLISHED voter columns; call `submit_correction` | read correction requests, revisions, roles, the queue; write anything else |
 | signed-in, no role | same as anonymous for rows | any editorial read or write |
 | REVIEWER / APPROVER / ADMIN | see "Roles" | skip the state machine, forge identity columns, delete rows, edit revisions |
 
-No service-role key exists in `mobile/` or `admin/`; CI greps the admin bundle for `service_role`.
+No service-role key exists anywhere in the repository's apps; CI greps the web browser bundle for
+`service_role` and `sb_secret_`.
 All new SQL functions revoke `PUBLIC`/`anon` and grant `authenticated` (except `submit_correction`).
 
 ## Storage decision
@@ -135,12 +161,19 @@ URL), not mirrored, and photos are stored only as `photo_asset_id` references. W
 needed, add a public `public-profile-images` bucket with editor-only writes; never mirror government
 or copyrighted documents when a link to the authoritative source is enough.
 
-## Shared types
+## Publishing and the public site
 
-`admin/src/domain/enums.ts` duplicates the small set of shared enums and labels instead of adding a
-`packages/domain` workspace. Metro, Vite and two Jest/Vitest setups make a shared package costlier
-than a few enum lists. `scripts/check-enum-drift.mjs` compares admin ↔ mobile ↔ SQL enums in CI.
-Revisit if the duplicated surface grows.
+Public pages are cached. When an editorial action publishes or retracts a record, changes a
+published record, or changes the evidence of a published claim, the same server action revalidates
+every public route (`revalidatePath('/', 'layout')`). It runs only after the database accepted the
+change and only inside an authenticated action; there is no cache-purge endpoint. Changes made
+outside the app (SQL editor) appear within the 60-second page revalidation.
+
+## Domain rules in one place
+
+`web/src/domain` is the only active TypeScript copy of the enums, the transition table, the
+correction lifecycle, the record field definitions, the readiness checklist and the wording guard.
+`scripts/check-enum-drift.mjs` compares the enums and both state machines with the SQL in CI.
 
 ## Setup
 
@@ -152,11 +185,11 @@ Revisit if the duplicated surface grows.
    insert into public.editorial_roles (user_id, role)
    select id, 'ADMIN' from auth.users where email = '<your email>';
    ```
-   After that, assign roles in the admin app (**Users / roles**).
-5. `cd admin && cp .env.example .env.local`, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then
-   `npm install && npm run dev`.
-6. Deploy `admin/` as a static site (Cloudflare Pages or Vercel free tier: build `npm run build`,
-   output `dist`, set the two `VITE_` variables). Add the deployed URL to Auth → URL configuration.
+   After that, assign roles at `/admin/roles` (**Users / roles**).
+5. In `web/.env.local` set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, then
+   `npm install && npm run dev` and open `http://localhost:3000/admin`.
+6. Deploy `web/` (see `docs/WEB_MIGRATION.md`, "Deployment") and add the deployed origin to
+   Auth → URL configuration.
 
 ## Known limitations
 
@@ -167,3 +200,5 @@ Revisit if the duplicated surface grows.
 - A reviewer cannot edit a published record; they flag it (via correction/comment in the accepted
   request) and an approver edits it with a reason. There is no separate "proposed change" object yet.
 - Email/password only; no MFA yet (recommended before real data).
+- The port has unit and component tests for every action and screen rule, but has not yet been
+  exercised end to end against a real editor account (see `docs/ROADMAP.md`).

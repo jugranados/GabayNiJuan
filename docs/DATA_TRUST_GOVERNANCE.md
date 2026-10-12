@@ -33,7 +33,7 @@ Previously supported but no longer sufficiently current for the context.
 
 ## Verification consistency checks
 
-Implemented in `mobile/src/domain/validation/verification.ts`. These checks flag a claim for human review. They never change a status automatically.
+Implemented in `web/src/domain/validation/verification.ts`. These checks flag a claim for human review. They never change a status automatically.
 
 | Status | Requirement |
 |---|---|
@@ -45,7 +45,7 @@ Implemented in `mobile/src/domain/validation/verification.ts`. These checks flag
 
 Development fixtures are tested against these checks.
 
-## Display rules (Milestones 0–1)
+## Display rules (Milestones 0–1; unchanged on the web)
 
 - Each claim shows its own verification badge. Pressing the badge explains the state in evidence terms.
 - All states share one neutral visual style, so no state is colored as "good" or "bad".
@@ -77,7 +77,7 @@ For a solo-maintained prototype, one person may hold both the editor and approve
 
 ### Verification rules (database and app)
 
-Enforced before publishing by `private.claim_consistency_error` and mirrored in `mobile/src/domain/validation/verification.ts`. Nothing is corrected automatically; a violation fails with an explanation.
+Enforced before publishing by `private.claim_consistency_error` and mirrored in `web/src/domain/validation/verification.ts`. Nothing is corrected automatically; a violation fails with an explanation.
 
 | Status | Rule |
 |---|---|

@@ -3,13 +3,42 @@ name: CI
 on:
   push:
     branches: [main, development]
-    paths: ['mobile/**', 'admin/**', 'supabase/**', 'scripts/**', '.github/workflows/ci.yml']
+    paths: ['web/**', 'mobile/**', 'supabase/**', 'scripts/**', '.github/workflows/ci.yml']
   pull_request:
-    paths: ['mobile/**', 'admin/**', 'supabase/**', 'scripts/**', '.github/workflows/ci.yml']
+    paths: ['web/**', 'mobile/**', 'supabase/**', 'scripts/**', '.github/workflows/ci.yml']
 
 jobs:
+  web:
+    name: Web app (public site + editorial) typecheck, lint, tests, seed check, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # Also checks the generated database types against the Zod row contracts (schemaDrift.ts).
+      - run: npm run typecheck
+      - run: npm run lint
+      # Includes the verification-status vs evidence rules over the fictional fixtures.
+      - run: npm test
+      # supabase/seed.sql must be exactly what the web fixtures generate.
+      - run: npm run seed:check
+      # Builds with the default fictional mock data; no Supabase project is needed.
+      - run: npm run build
+      # Nothing sent to a browser may contain a privileged Supabase key.
+      - name: No service-role key in the browser bundle
+        run: "! grep -rIl -i -E 'service_role|sb_secret_' .next/static"
+
+  # The React Native app is frozen (docs/WEB_MIGRATION.md). Its checks stay required until it is
+  # archived, so the reference implementation keeps compiling and passing while web reaches parity.
   mobile:
-    name: Typecheck, lint, tests, consistency
+    name: Mobile (frozen) typecheck, lint, tests, consistency
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,37 +56,11 @@ jobs:
       - run: npm test -- --ci
       # Verification-status vs evidence rules over the fictional fixtures.
       - run: npm run test:consistency -- --ci
-      # supabase/seed.sql must be exactly what the fixtures generate.
-      - run: npm run seed:check
+      # The seed check moved to the web job: web/ owns the fixtures and supabase/seed.sql now.
       - run: npx expo-doctor
 
-  admin:
-    name: Admin app typecheck, lint, tests, build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: admin
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-          cache-dependency-path: admin/package-lock.json
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
-        env:
-          VITE_SUPABASE_URL: https://example.invalid
-          VITE_SUPABASE_ANON_KEY: public-anon-key-placeholder
-      # The browser bundle must never contain a service-role key.
-      - name: No service-role key in the admin bundle
-        run: "! grep -rIl -i 'service_role' dist"
-
   drift:
-    name: Shared enums and workflow in sync (admin, mobile, database)
+    name: Domain enums and workflows in sync with the database
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,7 +70,7 @@ jobs:
       - run: node scripts/check-enum-drift.mjs
 
   database:
-    name: Migrations, seed, RLS and publication tests
+    name: Migrations, seed, RLS tests, web integration test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -107,5 +110,19 @@ jobs:
           end
           $$;
           SQL
+      # The public site's data layer against a real database, through the anon key only:
+      # mock vs. database equality (directory, profiles, claims, evidence, slugs),
+      # published-only visibility, and rejection of every anonymous write.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Web integration test against the local stack
+        working-directory: web
+        run: |
+          npm ci
+          eval "$(supabase status -o env | grep -E '^(API_URL|ANON_KEY)=')"
+          NEXT_PUBLIC_SUPABASE_URL="$API_URL" NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" npm run test:integration
       - if: always()
         run: supabase stop --no-backup

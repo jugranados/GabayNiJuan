@@ -92,10 +92,62 @@ Deferred, deliberately:
 Open items before this is called finished:
 - [ ] run the **unapplied** migrations on the hosted project: `20261008150050_editorial_evidence_and_queue.sql`, `20261008150100_corrections_and_staff.sql` (first three Milestone 3 migrations are applied)
 - [ ] run `supabase/tests/rls_and_publication.test.sql` in full against a database with all migrations (never run as one script) and a first green CI run including `supabase db reset`
-- [ ] exercise the admin app end to end against a real editor account (create → review → approve → publish → correct → retract)
+- [ ] exercise the editorial area end to end against a real editor account (carried into the consolidation milestone)
 - [ ] regenerate `mobile/src/data/supabase/database.types.ts` after the migrations are applied
 - [ ] enable MFA for editorial accounts before real data
 - [ ] carried forward: Android and iOS runs against Supabase; confirm hosted public sign-up is disabled and leaked-password protection is on
+
+## Web migration — web-first platform (implemented 2026-10-12; database and browser checks pending)
+
+Intentional platform change: the Next.js app in `web/` is now the primary product (`docs/WEB_MIGRATION.md`).
+
+- [x] `web/` Next.js 16 App Router app, TypeScript strict, Tailwind
+- [x] domain, validation, mappers, repositories, wording and fixtures moved to `web/src` with their tests
+- [x] stable person slugs: migration `20261012070000_person_slugs`, `search_directory` returns `slug`
+- [x] public routes: `/`, `/politicians`, `/politicians/[slug]`, `/claims/[id]`, `/verification`, `/methodology`, `/corrections/report`
+- [x] directory state in the URL (search, five filters, page); alphabetical only
+- [x] server-rendered public pages; client components only for forms and the error boundary
+- [x] metadata, canonical URLs, Open Graph, `robots.txt`, `sitemap.xml`; indexing off by default
+- [x] `/admin` boundary: Supabase Auth sign-in, role loading, unauthorized state, never indexed or cached
+- [x] seed generation and fixtures owned by `web/`; drift check covers web
+- [x] CI: web job (typecheck, lint, tests, seed check, build, bundle key scan)
+- [x] documentation and `AGENTS.md` updated
+
+Open items: carried into the consolidation milestone below.
+
+## Web consolidation and editorial workflow (implemented 2026-10-12; database verification pending)
+
+One active frontend, one database, one set of domain rules.
+
+- [x] editorial workflow ported from `admin/` into `web/src/app/admin`: dashboard, work queue, editors for 11 record types, evidence and verification readiness, publication workflow (reasons, retraction, optimistic concurrency), revision history, correction queue, role management
+- [x] editorial requests run on the server as the signed-in editor (anon key + session cookie); no service-role key; access checked in the proxy, the layout, and every page and action
+- [x] enums, roles, transition table, correction lifecycle, record definitions, readiness checklist and wording guard exist once, in `web/src/domain`; drift check compares them with the SQL
+- [x] standalone `admin/` removed (git history keeps it); its domain, component and guard tests have web equivalents
+- [x] real-database integration test ported from `mobile/` to `web/` (`npm run test:integration`) and added to CI's `database` job
+- [x] on-demand revalidation of public pages on publish, retract and published-content changes; no purge endpoint
+- [x] sitemap includes claim pages whose evidence stands; unverified, disputed and outdated claim pages are `noindex`
+- [x] report form: honeypot, minimum fill time, per-address cooldown, server-side validation
+- [x] web parity checklist documented (`docs/WEB_MIGRATION.md`)
+- [x] CI: web, frozen mobile, drift, database (+ web integration test); admin job removed
+
+Open items before this is called finished:
+- [ ] apply to the hosted project, in order: `20261008150050_editorial_evidence_and_queue`, `20261008150100_corrections_and_staff`, `20261012070000_person_slugs`. Not applied (10 of 13 migrations are). The slug migration was dry-run there inside a rolled-back statement and produced the expected slugs; the other two have never run on any database
+- [ ] first green CI run, especially the `database` job: `supabase db reset` from clean, the SQL tests (including the new slug assertions), and the web integration test. None of these has run yet
+- [ ] regenerate `web/src/data/supabase/database.types.ts` (it carries a hand-added `people.slug` and predates the Milestone 3 functions)
+- [ ] run `web/` with `DATA_SOURCE=supabase` in a browser: phone, tablet, desktop; keyboard only; a screen reader pass
+- [ ] exercise `/admin` end to end with real accounts: signed out, no role, REVIEWER, APPROVER, ADMIN; create → sources → review → approve (second person) → publish → correct with a reason → retract; evidence; a correction request from the public form through to resolved; role changes
+- [ ] hosted project settings, **not verified**: public sign-up disabled; leaked-password protection enabled; MFA for editorial accounts (not set up)
+- [ ] deploy to Vercel with `SITE_INDEXABLE=false`
+
+Then:
+- [ ] archive `mobile/` to `archive/mobile-react-native/` once the web integration test is green; remove its CI job and the mobile half of the drift check; drop the Expo notes
+
+Deferred, deliberately (reasons in `docs/WEB_MIGRATION.md`, "Deferred"):
+- readable filter URLs for elections, offices and organizations, and `/elections` pages (Milestone 5)
+- photos: placeholder until the real-data pilot
+- a `person_slug_redirects` table (only needed if a published slug must change)
+- CAPTCHA or edge rate limiting for the report form
+- legal-case and asset-disclosure editors (Milestone 4)
 
 ## Milestone 4 — Sensitive public records
 
@@ -105,13 +157,39 @@ Only after workflow is stable:
 - asset/public disclosure history
 - richer legislative records
 
-## Milestone 5 — 2028 election mode
+## Verification and first deployment (in progress, started 2026-10-12)
 
-- candidate status transitions
-- election/office pages
-- official candidate records
-- ballot information where officially available
-- election-result integration when appropriate
+No new voter-facing features. The purpose is to prove the consolidated web app against the real
+backend, then deploy it non-indexed and archive `mobile/`. A gate is ticked only when it was
+actually observed.
+
+- [x] indexing policy that cannot be forgotten: one server-side switch; while off, a `noindex` header on every response, `noindex` metadata, `robots.txt` disallowing everything, empty sitemap (verified on a production build)
+- [x] all work committed and pushed so CI runs
+- [ ] pending migrations applied to the hosted project (10 of 13 applied; see the consolidation milestone). Repository history = hosted history
+- [ ] `database.types.ts` regenerated from the hosted schema; typecheck, lint, tests, build
+- [ ] clean `supabase db reset`, seed, SQL tests (RLS, publication, verification consistency, corrections, roles, slugs): runs in CI's `database` job only; no Docker on the development machine
+- [ ] `npm run test:integration` green against the hosted project
+- [ ] CI green on all four jobs
+- [ ] editorial accounts for REVIEWER, APPROVER and ADMIN exist; manual pass of each role (create fictional person, related record, source, claim, evidence, submit; reviewer cannot publish or grant roles; approver approves another person's work, publishes, corrects with a reason, retracts; invalid evidence blocks publication; admin manages roles, last-admin protection)
+- [ ] correction flow: public report → private queue → reviewed; accepting changes no public data
+- [ ] published-change test with one fictional record: publish → visible → correct with reason → visible → both values in revision history → retract → gone
+- [ ] browser pass of the public site: phone, tablet and desktop widths; keyboard and focus; 404 and error states
+- [ ] deployed to Vercel with `SITE_INDEXABLE=false` (steps in `docs/WEB_MIGRATION.md`, "Deployment")
+- [ ] deployed smoke test: directory, profile, claim, source links, report submission, admin sign-in and authorization, publish appears, retraction disappears, `X-Robots-Tag: noindex` present
+- [ ] only then: archive `mobile/`, remove its CI job and the mobile half of the drift check
+- [ ] hosted settings confirmed: public sign-up disabled, leaked-password protection on, MFA for editorial accounts
+
+## Milestone 5 — Election Information Foundation
+
+Not started. Structure for elections, not claims about them.
+
+- `/elections` and `/elections/[slug]`
+- readable slugs for elections and offices, and for organizations where justified (same generate-and-freeze rule as people; UUIDs stay the identity)
+- human-readable directory filters (`?election=…&office=…`), with existing UUID links still working
+- the 2028 election structure: election → offices → participants navigation
+- participation shown with its exact state; aspirant states are never called candidacies
+- no official 2028 candidate claim without authoritative evidence (COMELEC or equivalent primary record); until then the structure is filled only with what is documented
+- later in this area: candidate status transitions, ballot information where officially available, election results when appropriate
 
 ## Phase 2
 
@@ -127,6 +205,5 @@ Only when usage justifies it:
 - ingestion workers
 - source archiving
 - full-text search service
-- public web version
 - analytics
 - CDN/read caching

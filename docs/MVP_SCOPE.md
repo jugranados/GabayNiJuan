@@ -17,7 +17,25 @@ Must be completed before mass data entry.
 - database RLS rules
 - contributor/admin roles
 
-## Status after Milestone 2
+## Status after the web migration
+
+The voter MVP is delivered by the web app (`web/`). Screens below are web pages.
+
+| MVP screen | Web route | State |
+|---|---|---|
+| 1. Home | `/` | done |
+| 2. Search / browse people | `/politicians` | done (search, page-based pagination) |
+| 3. Filter by election / office / location | `/politicians?…` | done for election, office, level, status, organization. **Location is deferred** until jurisdictions have names |
+| 4. Person profile | `/politicians/<slug>` | done |
+| 5. Election participation | profile section | done |
+| 6. Political / office history | profile sections | done (timeline) |
+| 7. Sources / evidence viewer | `/claims/<id>` | done |
+| 8. About verification | `/verification`, `/methodology` | done |
+| 9. Report an error | `/corrections/report` | done (needs the `corrections_and_staff` migration on the database) |
+
+In scope for the web MVP and done: stable slugs, SEO metadata, `robots.txt`, `sitemap.xml`, and the `/admin` authentication boundary. Not in scope yet: `/elections` pages (Milestone 5), photos, readable filter URLs for elections/offices/organizations.
+
+## Status after Milestone 2 (mobile, historical)
 
 | MVP screen | State |
 |---|---|
@@ -29,7 +47,7 @@ Must be completed before mass data entry.
 | 6. Political / office history | done (timeline) |
 | 7. Sources / evidence viewer | done (`/claims/[id]`) |
 | 8. About verification | done |
-| 9. Report an error | done in Milestone 3 (person profile and claim detail; reviewed in the admin app) |
+| 9. Report an error | done in Milestone 3 (person profile and claim detail; reviewed in the editorial area) |
 
 ## Phase 1 — Voter MVP
 
@@ -73,9 +91,9 @@ Must be completed before mass data entry.
 - crowdsourced direct publishing
 - AI chatbot making candidate recommendations
 
-## Admin MVP (built in Milestone 3: `admin/`)
+## Admin MVP (`web/`, under `/admin`)
 
-A separate internal web tool; see `docs/EDITORIAL_WORKFLOW.md`.
+Built in Milestone 3 as a separate Vite tool and moved into the web app during consolidation; see `docs/EDITORIAL_WORKFLOW.md`.
 
 Minimum capabilities:
 - create draft person
