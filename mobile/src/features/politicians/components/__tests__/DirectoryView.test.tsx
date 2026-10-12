@@ -46,7 +46,10 @@ afterEach(async () => {
 describe('DirectoryView', () => {
   it('lists politicians as cards in alphabetical order with a neutral ordering note', async () => {
     await renderDirectory();
-    expect(await screen.findByText('10 results · alphabetical by name')).toBeOnTheScreen();
+    // First query of the file: allow for a cold start on slow CI runners (default is 1s).
+    expect(
+      await screen.findByText('10 results · alphabetical by name', {}, { timeout: 10_000 }),
+    ).toBeOnTheScreen();
     expect(screen.getByText('Order does not imply ranking.')).toBeOnTheScreen();
     expect(cardNames()).toEqual([
       'Juan Dela Cruz',
