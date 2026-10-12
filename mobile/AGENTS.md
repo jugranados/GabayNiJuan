@@ -1,3 +1,5 @@
+> **Frozen.** This React Native app is no longer the primary product. The web app in `web/` is the authoritative voter frontend and the authoritative copy of the domain and data code (see `docs/WEB_MIGRATION.md`). Do not add features here; change `web/` instead. This directory is kept only until it is archived.
+
 > **Project rules first:** the repository-root `AGENTS.md` and `docs/` (political neutrality, data trust, source policy) override everything below. This file holds only Expo tooling guidance.
 
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.

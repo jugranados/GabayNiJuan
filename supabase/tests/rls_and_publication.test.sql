@@ -570,6 +570,47 @@ begin
       'revisions record the editor of each change');
   end;
 
+  -- ------------------------------------------------------------------
+  -- Person slugs (public URLs)
+  -- ------------------------------------------------------------------
+  declare
+    s1 uuid;
+    s2 uuid;
+  begin
+    insert into public.people (first_name, last_name, suffix) values ('Señor Slug', 'RlsTest', 'Jr.') returning id into s1;
+    insert into public.people (first_name, last_name, suffix) values ('Senor  slug', 'rlstest', 'JR') returning id into s2;
+    perform pg_temp.check((select slug from public.people where id = s1) = 'senor-slug-rlstest-jr',
+      'a slug is generated lowercase and URL-safe from first name, last name and suffix');
+    perform pg_temp.check((select slug from public.people where id = s2) = 'senor-slug-rlstest-jr-2',
+      'a colliding slug gets a numeric suffix');
+    perform pg_temp.expect_error(format($q$update public.people set slug = 'senor-slug-rlstest-jr' where id = %L$q$, s2),
+      'people_slug_key', 'slugs are unique');
+    perform pg_temp.expect_error(format($q$update public.people set slug = 'Not A Slug' where id = %L$q$, s2),
+      'people_slug_format', 'slugs must be lowercase and URL-safe');
+
+    update public.people set first_name = 'Renamed' where id = s1;
+    perform pg_temp.check((select slug from public.people where id = s1) = 'senor-slug-rlstest-jr',
+      'renaming a person does not change the slug');
+    update public.people set slug = 'custom-rlstest' where id = s2;
+    perform pg_temp.check((select slug from public.people where id = s2) = 'custom-rlstest',
+      'the slug of an unpublished person can still be corrected');
+
+    perform pg_temp.check((select slug from public.people where id = p_pub) = 'published-rlstest',
+      'the published test person has the expected slug');
+    perform pg_temp.expect_error(
+      format($q$select set_config('gnj.change_reason', 'test', true); update public.people set slug = 'moved-rlstest' where id = %L$q$, p_pub),
+      'cannot be changed', 'the slug of a published person is frozen');
+    perform pg_temp.check(
+      pg_temp.scalar_as('anon', null, format('select slug from public.people where id = %L', p_pub)) = 'published-rlstest',
+      'anon can read the slug of a published person');
+    perform pg_temp.check(
+      pg_temp.scalar_as('anon', null, format('select count(*) from public.people where slug = %L', (select slug from public.people where id = p_draft))) = '0',
+      'anon cannot find an unpublished person by slug');
+    perform pg_temp.check(
+      pg_temp.scalar_as('anon', null, $q$select count(*) from jsonb_array_elements(public.search_directory('RlsTest') -> 'items') i where i ->> 'slug' = 'published-rlstest'$q$) = '1',
+      'the directory returns the slug of each published person');
+  end;
+
   raise notice 'ALL DATABASE TESTS PASSED';
 end
 $test$;

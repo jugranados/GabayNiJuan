@@ -45,10 +45,8 @@
     "test:watch": "jest --watch",
     "doctor": "npx expo-doctor",
     "verify": "npm run typecheck && npm run lint && npm test",
-    "seed:generate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-seed.mjs",
     "test:consistency": "jest consistency",
-    "test:integration": "jest -c jest.integration.config.js",
-    "seed:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-seed.mjs --check"
+    "test:integration": "jest -c jest.integration.config.js"
   },
   "private": true,
   "engines": {

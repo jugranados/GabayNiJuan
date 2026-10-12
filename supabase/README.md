@@ -6,14 +6,14 @@ Database for Gabay ni Juan: schema, Row Level Security, editorial workflow, audi
 |---|---|
 | `config.toml` | Supabase CLI config for the local stack (no secrets) |
 | `migrations/` | Ordered SQL migrations. Filenames match the versions recorded in the hosted project |
-| `seed.sql` | **Fictional** development data, generated from `mobile/src/data/fixtures/devFixtures.ts` |
+| `seed.sql` | **Fictional** development data, generated from `web/src/data/fixtures/devFixtures.ts` |
 | `tests/rls_and_publication.test.sql` | RLS, publication lifecycle, audit and consistency tests (plain SQL, run with `psql`) |
 
 ## Migrations
 
 | Version | Name | Contents |
 |---|---|---|
-| `20261008083503` | `core_schema` | Enums, 14 publishable tables + `claim_evidence`, constraints, indexes. Mirrors `mobile/src/data/schemas/rows.ts` |
+| `20261008083503` | `core_schema` | Enums, 14 publishable tables + `claim_evidence`, constraints, indexes. Mirrors `web/src/data/schemas/rows.ts` |
 | `20261008083527` | `editorial_roles_and_rls` | `editorial_roles`, role helpers in the unexposed `private` schema, RLS policies |
 | `20261008083613` | `audit_and_publication_guards` | Append-only `revisions` log, publish gate, published-change guard, unpublish guard |
 | `20261008103658` | `publication_lifecycle` | `REJECTED` state, `reviewed_by/reviewed_at/published_by`, tamper-proof editorial identity |
@@ -25,8 +25,9 @@ Database for Gabay ni Juan: schema, Row Level Security, editorial workflow, audi
 | `20261008145512` | `editorial_rpcs_records` | `editorial_transition`, `editorial_update` (reason + optimistic concurrency) |
 | `20261008150050` | `editorial_evidence_and_queue` | `editorial_set_evidence`, `editorial_remove_evidence`, `claim_readiness`, `editorial_queue` view |
 | `20261008150100` | `corrections_and_staff` | `correction_requests`, `submit_correction`, `review_correction`, `staff_directory`, `set_staff_role`, `editorial_role_events`; role rows become RPC-only |
+| `20261012070000` | `person_slugs` | `people.slug` (unique, URL-safe, generated on insert, frozen once published), anon column grant, `search_directory` re-created to return `slug` |
 
-Never edit an applied migration; add a new one. Change a migration and `mobile/src/data/schemas/rows.ts` in the same commit.
+Never edit an applied migration; add a new one. Change a migration and `web/src/data/schemas/rows.ts` in the same commit.
 
 ## Local setup
 
@@ -38,7 +39,7 @@ supabase db reset     # drops the local database and rebuilds it from migrations
 supabase stop
 ```
 
-`supabase status` prints the local API URL and keys. Use them in `mobile/.env.local` to run the app against the local stack.
+`supabase status` prints the local API URL and keys. Use them in `web/.env.local` (`DATA_SOURCE=supabase`) to run the site against the local stack.
 
 ### Applying migrations to a hosted project
 
@@ -51,15 +52,15 @@ or use the Supabase MCP server's `apply_migration` tool. Then rename the local f
 
 ### Directory function
 
-`public.search_directory(p_query, p_election_id, p_office_id, p_office_level, p_participation_status, p_organization_id, p_jurisdiction_id, p_limit, p_offset)` returns `{ total, items[] }` as JSON. It is `SECURITY INVOKER`: Row Level Security and the anon column grants apply exactly as for a direct query, so the public can only ever see published rows. Execute is granted to `anon` and `authenticated` only. The rules it implements (token name search, one-participation-satisfies-all-filters, alphabetical order by code point, which affiliation counts as current) are written in the migration header and mirrored in `mobile/src/data/repositories/inMemoryDirectorySource.ts`; `npm run test:integration` proves they agree.
+`public.search_directory(p_query, p_election_id, p_office_id, p_office_level, p_participation_status, p_organization_id, p_jurisdiction_id, p_limit, p_offset)` returns `{ total, items[] }` as JSON. It is `SECURITY INVOKER`: Row Level Security and the anon column grants apply exactly as for a direct query, so the public can only ever see published rows. Execute is granted to `anon` and `authenticated` only. The rules it implements (token name search, one-participation-satisfies-all-filters, alphabetical order by code point, which affiliation counts as current) are written in the migration header and mirrored in `web/src/data/repositories/inMemoryDirectorySource.ts`. Each card includes the person's `slug`.
 
 Indexes added: `offices(level)`, `offices(jurisdiction_id)`, `election_participations(status)` and an expression index on the directory ordering. Foreign-key indexes for participations, affiliations and claim subjects already existed.
 
 ### Seed (fictional)
 
 ```bash
-cd mobile && npm run seed:generate     # regenerate supabase/seed.sql from the app fixtures
-cd mobile && npm run seed:check        # fails if seed.sql is out of date (runs in CI)
+cd web && npm run seed:generate     # regenerate supabase/seed.sql from the web fixtures
+cd web && npm run seed:check        # fails if seed.sql is out of date (runs in CI)
 ```
 
 `seed.sql` is idempotent (`on conflict do nothing`, publish steps only touch unpublished rows), so it can be re-run to add new fixtures without touching existing ones. It refuses to run if the database already holds published people that are not fixtures. Published rows cannot be deleted by design, so seeding a hosted project is not undoable except by resetting the database. Use a local stack or a throwaway project.
@@ -67,13 +68,13 @@ cd mobile && npm run seed:check        # fails if seed.sql is out of date (runs 
 ### Generating TypeScript types
 
 ```bash
-supabase gen types typescript --local > ../mobile/src/data/supabase/database.types.ts
+supabase gen types typescript --local > ../web/src/data/supabase/database.types.ts
 # or: supabase gen types typescript --project-id <ref>
 # or: the Supabase MCP server's generate_typescript_types tool
-cd ../mobile && npm run typecheck
+cd ../web && npm run typecheck
 ```
 
-The generated file keeps its header comment; restore it if the command overwrites it. Types are used **only** in `mobile/src/data/supabase/`. `schemaDrift.ts` fails the typecheck when a table or enum no longer matches the app's Zod contracts.
+The generated file keeps its header comment; restore it if the command overwrites it. Types are used **only** in `web/src/data/supabase/`. `schemaDrift.ts` fails the typecheck when a table or enum no longer matches the app's Zod contracts.
 
 ### Database tests
 
@@ -84,16 +85,16 @@ psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
 
 (`54322` is the local stack's database port.) The script runs in one transaction that is rolled back, creates only `@example.org` users and `RlsTest` rows, and can run on a seeded database. It exits non-zero with `FAILED: <what>` on the first broken rule. CI runs it after `supabase db reset` (`.github/workflows/ci.yml`, job `database`).
 
-It covers: anon sees only `PUBLISHED` rows; anon cannot insert, update or delete anything; anon cannot read editorial identity columns, `revisions` or `editorial_roles`; the publish gate and every verification-status rule; reasons and approvers required to change published data; no deletes of published rows; append-only audit log; reviewer/approver separation; tamper-proof identity columns.
+It covers: anon sees only `PUBLISHED` rows; anon cannot insert, update or delete anything; anon cannot read editorial identity columns, `revisions` or `editorial_roles`; the publish gate and every verification-status rule; reasons and approvers required to change published data; no deletes of published rows; append-only audit log; person slugs (generation, uniqueness, format, frozen once published, readable by anon, returned by the directory); reviewer/approver separation; tamper-proof identity columns.
 
 ### App integration test (hosted or local)
 
 ```bash
-cd mobile
-EXPO_PUBLIC_SUPABASE_URL=... EXPO_PUBLIC_SUPABASE_ANON_KEY=... npm run test:integration
+cd web
+NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_ANON_KEY=... npm run test:integration   # or put them in web/.env.local
 ```
 
-Uses only the public key, checks that the app's repositories return profiles identical in content to the fixtures, and that every write attempt fails. Needs the seed loaded.
+Uses only the public key. It checks that the web repositories return the directory (search, every filter, combinations, paging), profiles, claims, evidence and slugs identical in content to the fixtures; that only `PUBLISHED` rows are visible; that every anonymous write and every editorial function call is refused; and that `submit_correction` rejects invalid input. It never modifies data. Needs every migration and the seed. CI runs it against the local stack in the `database` job.
 
 ## Publication lifecycle
 
@@ -122,7 +123,7 @@ Nobody deletes rows through the API. Editorial identity columns (`created_by`, `
 
 ### Bootstrapping the first admin
 
-Create your user in Supabase Auth, then bootstrap the first admin once in the SQL editor (afterwards use the admin app's **Users / roles** page; `editorial_roles` can no longer be written through the API):
+Create your user in Supabase Auth, then bootstrap the first admin once in the SQL editor (afterwards use the **Users / roles** page at `/admin/roles`; `editorial_roles` can no longer be written through the API):
 
 ```sql
 insert into public.editorial_roles (user_id, role)
@@ -158,7 +159,7 @@ A claim cannot be published (and the evidence of a published claim cannot be cha
 | `OUTDATED` | at least one supporting source; contradicting sources allowed |
 | anything except `DISPUTED`/`OUTDATED` | no contradicting source attached; mark it `DISPUTED` instead |
 
-Nothing is corrected automatically; the write fails with the reason. The same rules run in the app's tests (`mobile/src/domain/validation/verification.ts`).
+Nothing is corrected automatically; the write fails with the reason. The same rules run in the web app's tests (`web/src/domain/validation/verification.ts`).
 
 ## Not covered by these tests
 
