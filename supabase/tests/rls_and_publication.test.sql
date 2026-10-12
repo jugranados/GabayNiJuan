@@ -310,7 +310,9 @@ begin
   perform pg_temp.expect_error(format('delete from public.people where id = %L', p_work),
     'permission denied', 'even an approver cannot delete through the API', approver, 'authenticated');
   perform pg_temp.expect_error(format($q$insert into public.editorial_roles (user_id, role) values (%L, 'ADMIN')$q$, reviewer),
-    'row-level security', 'a reviewer cannot grant themselves a role', reviewer, 'authenticated');
+    -- Since corrections_and_staff, role rows change only through set_staff_role(): the table
+    -- grant is gone, so the refusal comes before Row Level Security is even consulted.
+    'permission denied', 'a reviewer cannot grant themselves a role', reviewer, 'authenticated');
 
   select count(*) into r from public.revisions
     where entity_type = 'PERSON' and entity_id = p_work::text and approval_state = 'PUBLISHED'

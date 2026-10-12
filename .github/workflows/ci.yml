@@ -53,7 +53,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
-      - run: npm test -- --ci
+      - name: Tests
+        run: ../scripts/ci-run.sh "mobile tests" npm test -- --ci
       # Verification-status vs evidence rules over the fictional fixtures.
       - run: npm run test:consistency -- --ci
       # The seed check moved to the web job: web/ owns the fixtures and supabase/seed.sql now.
