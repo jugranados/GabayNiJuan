@@ -131,8 +131,8 @@ One active frontend, one database, one set of domain rules.
 - [x] CI: web, frozen mobile, drift, database (+ web integration test); admin job removed
 
 Open items before this is called finished:
-- [ ] apply to the hosted project, in order: `20261008150050_editorial_evidence_and_queue`, `20261008150100_corrections_and_staff`, `20261012070000_person_slugs`. Not applied (10 of 13 migrations are). The slug migration was dry-run there inside a rolled-back statement and produced the expected slugs; the other two have never run on any database
-- [ ] first green CI run, especially the `database` job: `supabase db reset` from clean, the SQL tests (including the new slug assertions), and the web integration test. None of these has run yet
+- [ ] apply the pending migrations to the hosted project (now four; tracked under "Verification and first deployment")
+- [x] first green CI run, including the `database` job (see "Verification and first deployment")
 - [ ] regenerate `web/src/data/supabase/database.types.ts` (it carries a hand-added `people.slug` and predates the Milestone 3 functions)
 - [ ] run `web/` with `DATA_SOURCE=supabase` in a browser: phone, tablet, desktop; keyboard only; a screen reader pass
 - [ ] exercise `/admin` end to end with real accounts: signed out, no role, REVIEWER, APPROVER, ADMIN; create → sources → review → approve (second person) → publish → correct with a reason → retract; evidence; a correction request from the public form through to resolved; role changes
@@ -165,11 +165,13 @@ actually observed.
 
 - [x] indexing policy that cannot be forgotten: one server-side switch; while off, a `noindex` header on every response, `noindex` metadata, `robots.txt` disallowing everything, empty sitemap (verified on a production build)
 - [x] all work committed and pushed so CI runs
-- [ ] pending migrations applied to the hosted project (10 of 13 applied; see the consolidation milestone). Repository history = hosted history
+- [x] every applied migration file compared with the statement recorded in the hosted history: all ten are identical apart from comments. One file (`editorial_rpcs_records`) had lost a closing `$$;` in the repository copy and could not run on a clean database; it was restored to what hosted actually ran
+- [x] defect found by the first full database test run and fixed in a new migration (`20261012090000_grant_editorial_table_helpers`): staff could not execute two helpers that `editorial_update` and `editorial_transition` call, so **every save and workflow transition was refused for every editor**, on hosted as well
+- [ ] pending migrations applied to the hosted project. **10 of 14 applied.** Pending, in order: `20261008150050_editorial_evidence_and_queue`, `20261008150100_corrections_and_staff`, `20261012070000_person_slugs`, `20261012090000_grant_editorial_table_helpers`. Use `supabase db push` so the recorded versions equal the file names
 - [ ] `database.types.ts` regenerated from the hosted schema; typecheck, lint, tests, build
-- [ ] clean `supabase db reset`, seed, SQL tests (RLS, publication, verification consistency, corrections, roles, slugs): runs in CI's `database` job only; no Docker on the development machine
-- [ ] `npm run test:integration` green against the hosted project
-- [ ] CI green on all four jobs
+- [x] clean `supabase start` and `supabase db reset` from `supabase/migrations` + `seed.sql`, the complete SQL test script (RLS, publication, verification consistency, editorial RPCs, corrections, roles, slugs), seed idempotency, and the web integration test against that database: green in CI's `database` job (commit `cf4521b`). Not run on the development machine (no Docker)
+- [ ] `npm run test:integration` green against the **hosted** project (green against CI's local stack; hosted needs the pending migrations first)
+- [x] CI green on all four jobs (first fully green run of this repository)
 - [ ] editorial accounts for REVIEWER, APPROVER and ADMIN exist; manual pass of each role (create fictional person, related record, source, claim, evidence, submit; reviewer cannot publish or grant roles; approver approves another person's work, publishes, corrects with a reason, retracts; invalid evidence blocks publication; admin manages roles, last-admin protection)
 - [ ] correction flow: public report → private queue → reviewed; accepting changes no public data
 - [ ] published-change test with one fictional record: publish → visible → correct with reason → visible → both values in revision history → retract → gone

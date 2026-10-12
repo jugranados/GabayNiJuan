@@ -164,5 +164,5 @@ Nothing is corrected automatically; the write fails with the reason. The same ru
 
 ## Not covered by these tests
 
-- A clean rebuild with `supabase db reset` runs in CI only; it has not been run on a developer machine here.
+- A clean rebuild with `supabase db reset` runs in CI only (green); it has not been run on a developer machine here.
 - Hosted-project settings that are not in SQL: disabling public sign-up, which schemas the API exposes (only `public` and `graphql_public`; `private` must stay hidden).

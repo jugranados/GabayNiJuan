@@ -265,9 +265,9 @@ but this has not been tried; verify ISR and the proxy there before relying on it
 
 `mobile/` is **frozen**: no new features, CI still runs its typecheck, lint and tests so the
 reference keeps working. Its last unique asset, the real-database integration test, has been ported
-to `web/` (`npm run test:integration`). It is not archived yet for one reason: that test has not
-yet passed against a database that has every migration. The parity checklist is below. When the
-integration test is green (CI `database` job, or the hosted project once its migrations are applied):
+to `web/` (`npm run test:integration`) and passes in CI. It is not archived yet because the remaining
+gates in `docs/ROADMAP.md` ("Verification and first deployment") are still open: the hosted project,
+the manual editorial pass, the browser pass and the deployed smoke test. When they are done:
 
 1. `git mv mobile archive/mobile-react-native`;
 2. remove the `mobile` CI job and the mobile half of the drift check, noting why in the commit;
@@ -294,8 +294,9 @@ What remains reusable for a future mobile companion: everything under `web/src/d
 | Neutral missing-data states | every section and empty result | page tests |
 | Photos | not rendered | no photo exists in any data set; see "Deferred" |
 
-"Integration test" rows are written and run in CI's `database` job; they have not passed anywhere
-yet. Everything else has passed locally.
+"Integration test" rows pass in CI's `database` job, against a database built from scratch from
+`supabase/migrations` and `seed.sql`. They have not yet been run against the hosted project, which
+is still missing migrations.
 
 ## Deferred, with reasons
 
