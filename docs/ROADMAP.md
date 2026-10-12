@@ -179,7 +179,7 @@ actually observed.
 - [ ] deployed to Vercel with `SITE_INDEXABLE=false` (steps in `docs/WEB_MIGRATION.md`, "Deployment")
 - [ ] deployed smoke test: directory, profile, claim, source links, report submission, admin sign-in and authorization, publish appears, retraction disappears, `X-Robots-Tag: noindex` present
 - [ ] only then: archive `mobile/`, remove its CI job and the mobile half of the drift check
-- [ ] hosted settings confirmed: public sign-up disabled, leaked-password protection on, MFA for editorial accounts
+- [ ] hosted settings: **leaked-password protection is OFF** (Supabase security advisor, 2026-10-12; turn it on under Authentication → Policies); public sign-up disabled (not verifiable from the advisor; check Authentication → Sign In / Providers); MFA for editorial accounts (not set up). The advisor's only other finding, RLS without a policy on `private.editorial_settings`, is intended: that table is denied to every API role
 
 ## Milestone 5 — Election Information Foundation
 
