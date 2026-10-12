@@ -26,6 +26,7 @@ Database for Gabay ni Juan: schema, Row Level Security, editorial workflow, audi
 | `20261008150050` | `editorial_evidence_and_queue` | `editorial_set_evidence`, `editorial_remove_evidence`, `claim_readiness`, `editorial_queue` view |
 | `20261008150100` | `corrections_and_staff` | `correction_requests`, `submit_correction`, `review_correction`, `staff_directory`, `set_staff_role`, `editorial_role_events`; role rows become RPC-only |
 | `20261012070000` | `person_slugs` | `people.slug` (unique, URL-safe, generated on insert, frozen once published), anon column grant, `search_directory` re-created to return `slug` |
+| `20261012090000` | `grant_editorial_table_helpers` | Grants staff `EXECUTE` on the two table-whitelist helpers that `editorial_update` and `editorial_transition` call; without it every save and transition was refused |
 
 Never edit an applied migration; add a new one. Change a migration and `web/src/data/schemas/rows.ts` in the same commit.
 
