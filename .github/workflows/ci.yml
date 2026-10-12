@@ -78,17 +78,19 @@ jobs:
         with:
           version: latest
       # Starts a local Supabase stack and applies supabase/migrations + seed.sql.
-      - run: supabase start
+      - name: Start the local stack (applies migrations and seed)
+        run: scripts/ci-run.sh "supabase start" supabase start
       # Rebuild from scratch: proves a clean database can be recreated from the repo.
-      - run: supabase db reset
+      - name: Rebuild from scratch (supabase db reset)
+        run: scripts/ci-run.sh "supabase db reset" supabase db reset
       - name: RLS, publication, audit and consistency tests
         run: |
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
-            -v ON_ERROR_STOP=1 \
+          scripts/ci-run.sh "database tests" psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 -q \
             -f supabase/tests/rls_and_publication.test.sql
       - name: Seed is idempotent (re-running it adds nothing and changes nothing)
         run: |
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
+          scripts/ci-run.sh "seed re-run" psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
       - name: Seed and directory work through the anon role
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -At <<'SQL'
@@ -123,6 +125,7 @@ jobs:
         run: |
           npm ci
           eval "$(supabase status -o env | grep -E '^(API_URL|ANON_KEY)=')"
-          NEXT_PUBLIC_SUPABASE_URL="$API_URL" NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" npm run test:integration
+          export NEXT_PUBLIC_SUPABASE_URL="$API_URL" NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
+          ../scripts/ci-run.sh "web integration test" npm run test:integration
       - if: always()
         run: supabase stop --no-backup
