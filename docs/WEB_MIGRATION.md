@@ -256,7 +256,18 @@ First deployment, step by step:
    origin.
 4. Confirm indexing is off: `curl -sI https://<site>/ | grep -i x-robots-tag` prints
    `noindex, nofollow`, and `https://<site>/robots.txt` says `Disallow: /`.
-5. Run the smoke test in `docs/ROADMAP.md` ("Verification and first deployment").
+5. Run `npm run smoke -- https://<site>` from `web/`, then the manual part of the smoke test in
+   `docs/VERIFICATION_CHECKLIST.md` (step 7).
+
+Do not deploy before the pending migrations are applied to the project the deployment reads:
+without `people.slug` the directory and profiles fail validation. The full order of operations
+is in `docs/VERIFICATION_CHECKLIST.md`.
+
+Readiness review (2026-10-13): the production build passes; the environment is validated at build
+time; public pages use a session-less anonymous client; `/admin` is checked in the proxy, the
+layout and every page and action, is always dynamic, `no-store` and `noindex`; session cookies are
+set by `@supabase/ssr` on the server; `robots.txt`, the sitemap and the `noindex` header all follow
+the one `SITE_INDEXABLE` switch.
 
 Alternative: Cloudflare (Workers with the OpenNext adapter). The app uses no Vercel-specific API,
 but this has not been tried; verify ISR and the proxy there before relying on it.

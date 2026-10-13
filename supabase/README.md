@@ -45,11 +45,16 @@ supabase stop
 ### Applying migrations to a hosted project
 
 ```bash
-supabase link --project-ref <ref>
-supabase db push                       # applies pending files in migrations/
+npx supabase login
+npx supabase link --project-ref <ref>   # asks for the database password
+npx supabase migration list             # Local vs. Remote, side by side
+npx supabase db push --dry-run          # shows what would be applied
+npx supabase db push                    # applies pending files in migrations/
 ```
 
-or use the Supabase MCP server's `apply_migration` tool. Then rename the local file to the version the server recorded (`list_migrations`).
+`db push` records each file under its own version, so the repository and the hosted history stay identical. Avoid applying migrations through a tool that assigns its own timestamp (the Supabase MCP `apply_migration` does): the local file would then have to be renamed to match.
+
+Status on the hosted development project (2026-10-13): 10 of 14 applied. Pending: `20261008150050`, `20261008150100`, `20261012070000`, `20261012090000`. Procedure and checks: `docs/VERIFICATION_CHECKLIST.md`.
 
 ### Directory function
 
@@ -69,13 +74,13 @@ cd web && npm run seed:check        # fails if seed.sql is out of date (runs in 
 ### Generating TypeScript types
 
 ```bash
-supabase gen types typescript --local > ../web/src/data/supabase/database.types.ts
-# or: supabase gen types typescript --project-id <ref>
-# or: the Supabase MCP server's generate_typescript_types tool
-cd ../web && npm run typecheck
+cd web
+npm run db:types                 # from the linked project
+npm run db:types -- --local      # from the local stack
+npm run typecheck
 ```
 
-The generated file keeps its header comment; restore it if the command overwrites it. Types are used **only** in `web/src/data/supabase/`. `schemaDrift.ts` fails the typecheck when a table or enum no longer matches the app's Zod contracts.
+The script keeps the file's header and refuses to overwrite the file if generation fails. The committed file is currently out of date: it predates the Milestone 3 functions and carries a hand-added `people.slug`; regenerate it once the pending migrations are applied. Types are used **only** in `web/src/data/supabase/`. `schemaDrift.ts` fails the typecheck when a table or enum no longer matches the app's Zod contracts.
 
 ### Database tests
 

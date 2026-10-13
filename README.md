@@ -105,7 +105,13 @@ npm run seed:check         # supabase/seed.sql is exactly what the fixtures gene
 npm run build              # production build
 npm run verify             # typecheck + lint + test
 npm run test:integration   # the data layer against a real Supabase database (anon key; needs migrations + seed)
+npm run db:types           # regenerate database.types.ts from the linked Supabase project
+npm run smoke -- <url>     # read-only smoke test of a running site (public routes, indexing, /admin redirects)
 ```
+
+### Verification status
+
+What is verified automatically, what needs a person, and what is blocked, with the exact steps to the first deployment: [`docs/VERIFICATION_CHECKLIST.md`](docs/VERIFICATION_CHECKLIST.md). In short: CI proves a clean database, the SQL rules and the web app; the hosted project is still missing four migrations, and the editorial area has not yet been exercised with real accounts.
 
 ## Editorial area (`/admin`)
 

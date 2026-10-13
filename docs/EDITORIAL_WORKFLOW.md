@@ -200,5 +200,9 @@ correction lifecycle, the record field definitions, the readiness checklist and 
 - A reviewer cannot edit a published record; they flag it (via correction/comment in the accepted
   request) and an approver edits it with a reason. There is no separate "proposed change" object yet.
 - Email/password only; no MFA yet (recommended before real data).
-- The port has unit and component tests for every action and screen rule, but has not yet been
-  exercised end to end against a real editor account (see `docs/ROADMAP.md`).
+- The port has unit and component tests for every action and screen rule, and the database rules
+  behind it pass in CI, but it has not yet been exercised end to end with real editor accounts.
+  The acceptance test for that, role by role, is `docs/VERIFICATION_CHECKLIST.md` (steps 4 and 5).
+- Until migration `20261012090000_grant_editorial_table_helpers` is applied to a database, every
+  save and workflow transition there is refused ("permission denied for function
+  assert_editorial_table").

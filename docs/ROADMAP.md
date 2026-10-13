@@ -160,26 +160,38 @@ Only after workflow is stable:
 ## Verification and first deployment (in progress, started 2026-10-12)
 
 No new voter-facing features. The purpose is to prove the consolidated web app against the real
-backend, then deploy it non-indexed and archive `mobile/`. A gate is ticked only when it was
-actually observed.
+backend, deploy it non-indexed, and only then archive `mobile/`. The step-by-step procedure, with
+exact commands and tick boxes, is `docs/VERIFICATION_CHECKLIST.md`. Status as of 2026-10-13:
 
-- [x] indexing policy that cannot be forgotten: one server-side switch; while off, a `noindex` header on every response, `noindex` metadata, `robots.txt` disallowing everything, empty sitemap (verified on a production build)
-- [x] all work committed and pushed so CI runs
-- [x] every applied migration file compared with the statement recorded in the hosted history: all ten are identical apart from comments. One file (`editorial_rpcs_records`) had lost a closing `$$;` in the repository copy and could not run on a clean database; it was restored to what hosted actually ran
-- [x] defect found by the first full database test run and fixed in a new migration (`20261012090000_grant_editorial_table_helpers`): staff could not execute two helpers that `editorial_update` and `editorial_transition` call, so **every save and workflow transition was refused for every editor**, on hosted as well
-- [ ] pending migrations applied to the hosted project. **10 of 14 applied.** Pending, in order: `20261008150050_editorial_evidence_and_queue`, `20261008150100_corrections_and_staff`, `20261012070000_person_slugs`, `20261012090000_grant_editorial_table_helpers`. Use `supabase db push` so the recorded versions equal the file names
-- [ ] `database.types.ts` regenerated from the hosted schema; typecheck, lint, tests, build
-- [x] clean `supabase start` and `supabase db reset` from `supabase/migrations` + `seed.sql`, the complete SQL test script (RLS, publication, verification consistency, editorial RPCs, corrections, roles, slugs), seed idempotency, and the web integration test against that database: green in CI's `database` job (commit `cf4521b`). Not run on the development machine (no Docker)
-- [ ] `npm run test:integration` green against the **hosted** project (green against CI's local stack; hosted needs the pending migrations first)
-- [x] CI green on all four jobs (first fully green run of this repository). Two stabilisations of the frozen mobile job since: one intermittent test file is retried, and the `expo-doctor` step was removed because it fails whenever Expo ships a new patch release
-- [ ] editorial accounts for REVIEWER, APPROVER and ADMIN exist; manual pass of each role (create fictional person, related record, source, claim, evidence, submit; reviewer cannot publish or grant roles; approver approves another person's work, publishes, corrects with a reason, retracts; invalid evidence blocks publication; admin manages roles, last-admin protection)
-- [ ] correction flow: public report → private queue → reviewed; accepting changes no public data
-- [ ] published-change test with one fictional record: publish → visible → correct with reason → visible → both values in revision history → retract → gone
+### AUTOMATED VERIFIED
+
+- [x] a clean database builds from `supabase/migrations` + `supabase/seed.sql` (`supabase start`, `supabase db reset`): CI `database` job. Not run on the development machine (no Docker)
+- [x] the complete SQL test script passes: RLS, publication workflow, verification consistency, editorial functions, corrections, roles, slugs; the seed re-runs without changes
+- [x] the web integration test passes against that database (mock vs. database equality, published-only visibility, every anonymous write and editorial call refused)
+- [x] web typecheck, lint, 269 tests, production build, no privileged key in the browser bundle
+- [x] enums and both state machines equal the SQL (`drift` job)
+- [x] CI green on all four jobs (first fully green state of this repository). The frozen mobile job was stabilised twice: one intermittent test file is retried, and `expo-doctor` was removed because it fails whenever Expo ships a new patch release
+- [x] every applied migration file equals the statement recorded in the hosted history (comments aside). The repository copy of `editorial_rpcs_records` had lost a closing `$$;` and could not run on a clean database; it was restored to what hosted actually ran
+- [x] defect found by the first full database test run and fixed in a new migration (`20261012090000_grant_editorial_table_helpers`): staff could not execute two helpers that `editorial_update` and `editorial_transition` call, so every save and workflow transition was refused for every editor, on hosted as well
+- [x] indexing cannot be forgotten: one server-side switch; while off, a `noindex` header on every response, `noindex` metadata, `robots.txt` disallowing everything, an empty sitemap
+- [x] `npm run smoke -- <url>`: 33 read-only checks of a running site (public routes, 404s, indexing, `/admin` redirects), passing against a local production build
+- [x] all work committed and pushed
+
+### MANUAL CHECK REQUIRED
+
+- [ ] apply the four pending migrations to the hosted project with `supabase db push` (10 of 14 applied): `20261008150050_editorial_evidence_and_queue`, `20261008150100_corrections_and_staff`, `20261012070000_person_slugs`, `20261012090000_grant_editorial_table_helpers`
+- [ ] Supabase dashboard: **leaked-password protection is OFF** (security advisor, 2026-10-12); public sign-up disabled (not visible to the advisor); MFA for editorial accounts (not set up, and the app has no MFA screen yet). The advisor's only other finding, RLS without a policy on `private.editorial_settings`, is intended: that table is denied to every API role
+- [ ] create REVIEWER, APPROVER and ADMIN accounts
 - [ ] browser pass of the public site: phone, tablet and desktop widths; keyboard and focus; 404 and error states
-- [ ] deployed to Vercel with `SITE_INDEXABLE=false` (steps in `docs/WEB_MIGRATION.md`, "Deployment")
-- [ ] deployed smoke test: directory, profile, claim, source links, report submission, admin sign-in and authorization, publish appears, retraction disappears, `X-Robots-Tag: noindex` present
-- [ ] only then: archive `mobile/`, remove its CI job and the mobile half of the drift check
-- [ ] hosted settings: **leaked-password protection is OFF** (Supabase security advisor, 2026-10-12; turn it on under Authentication → Policies); public sign-up disabled (not verifiable from the advisor; check Authentication → Sign In / Providers); MFA for editorial accounts (not set up). The advisor's only other finding, RLS without a policy on `private.editorial_settings`, is intended: that table is denied to every API role
+
+### BLOCKED (each waits for the item named)
+
+- [ ] regenerate `database.types.ts` with `npm run db:types`: needs the migrations
+- [ ] `npm run test:integration` against the **hosted** project: needs the migrations. Today 31 tests fail there, all because `people.slug` and `submit_correction` do not exist yet
+- [ ] editorial acceptance test (reviewer, approver, admin, correction request, published-change test): needs the migrations and the accounts
+- [ ] deploy to Vercel with `SITE_INDEXABLE=false`: needs the migrations (the directory breaks without `people.slug`)
+- [ ] deployed smoke test, automated and manual: needs the deployment
+- [ ] archive `mobile/`, remove its CI job and the mobile half of the drift check: needs every item above
 
 ## Milestone 5 — Election Information Foundation
 
