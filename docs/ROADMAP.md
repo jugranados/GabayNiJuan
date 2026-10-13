@@ -171,7 +171,7 @@ actually observed.
 - [ ] `database.types.ts` regenerated from the hosted schema; typecheck, lint, tests, build
 - [x] clean `supabase start` and `supabase db reset` from `supabase/migrations` + `seed.sql`, the complete SQL test script (RLS, publication, verification consistency, editorial RPCs, corrections, roles, slugs), seed idempotency, and the web integration test against that database: green in CI's `database` job (commit `cf4521b`). Not run on the development machine (no Docker)
 - [ ] `npm run test:integration` green against the **hosted** project (green against CI's local stack; hosted needs the pending migrations first)
-- [x] CI green on all four jobs (first fully green run of this repository)
+- [x] CI green on all four jobs (first fully green run of this repository). Two stabilisations of the frozen mobile job since: one intermittent test file is retried, and the `expo-doctor` step was removed because it fails whenever Expo ships a new patch release
 - [ ] editorial accounts for REVIEWER, APPROVER and ADMIN exist; manual pass of each role (create fictional person, related record, source, claim, evidence, submit; reviewer cannot publish or grant roles; approver approves another person's work, publishes, corrects with a reason, retracts; invalid evidence blocks publication; admin manages roles, last-admin protection)
 - [ ] correction flow: public report → private queue → reviewed; accepting changes no public data
 - [ ] published-change test with one fictional record: publish → visible → correct with reason → visible → both values in revision history → retract → gone

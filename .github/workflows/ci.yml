@@ -58,7 +58,9 @@ jobs:
       # Verification-status vs evidence rules over the fictional fixtures.
       - run: npm run test:consistency -- --ci
       # The seed check moved to the web job: web/ owns the fixtures and supabase/seed.sql now.
-      - run: npx expo-doctor
+      # `npx expo-doctor` was removed from this job on 2026-10-13. It fails whenever Expo publishes a
+      # newer patch release than the one installed, which for a frozen app means on someone else's
+      # schedule and for no change of ours. Dependencies here are not upgraded; the app is archived next.
 
   drift:
     name: Domain enums and workflows in sync with the database
