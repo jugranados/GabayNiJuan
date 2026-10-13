@@ -86,7 +86,7 @@ Full guide: [`supabase/README.md`](supabase/README.md).
 ```bash
 supabase start && supabase db reset        # local stack: migrations + fictional seed (needs Docker + Supabase CLI)
 cd web && npm run seed:generate            # regenerate supabase/seed.sql (idempotent) from the web fixtures
-supabase gen types typescript --local > web/src/data/supabase/database.types.ts      # then npm run typecheck
+cd web && npm run db:types -- --local      # regenerate database.types.ts (omit --local for the linked project), then npm run typecheck
 psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 \
   -f supabase/tests/rls_and_publication.test.sql                                       # RLS / publication / audit tests
 ```
