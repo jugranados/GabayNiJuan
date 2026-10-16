@@ -131,19 +131,19 @@ One active frontend, one database, one set of domain rules.
 - [x] CI: web, frozen mobile, drift, database (+ web integration test); admin job removed
 
 Open items before this is called finished:
-- [ ] apply the pending migrations to the hosted project (now four; tracked under "Verification and first deployment")
+- [x] apply the pending migrations to the hosted project (done 2026-10-16)
 - [x] first green CI run, including the `database` job (see "Verification and first deployment")
-- [ ] regenerate `web/src/data/supabase/database.types.ts` (it carries a hand-added `people.slug` and predates the Milestone 3 functions)
+- [x] regenerate `web/src/data/supabase/database.types.ts` (done 2026-10-16 from hosted)
 - [ ] run `web/` with `DATA_SOURCE=supabase` in a browser: phone, tablet, desktop; keyboard only; a screen reader pass
 - [ ] exercise `/admin` end to end with real accounts: signed out, no role, REVIEWER, APPROVER, ADMIN; create → sources → review → approve (second person) → publish → correct with a reason → retract; evidence; a correction request from the public form through to resolved; role changes
-- [ ] hosted project settings, **not verified**: public sign-up disabled; leaked-password protection enabled; MFA for editorial accounts (not set up)
+- [x] hosted sign-up disabled, anonymous sign-ins disabled, exposed schemas checked (2026-10-16); leaked-password protection deferred (plan); MFA open (tracked under "Verification and first deployment")
 - [ ] deploy to Vercel with `SITE_INDEXABLE=false`
 
 Then:
 - [ ] archive `mobile/` to `archive/mobile-react-native/` once the web integration test is green; remove its CI job and the mobile half of the drift check; drop the Expo notes
 
 Deferred, deliberately (reasons in `docs/WEB_MIGRATION.md`, "Deferred"):
-- readable filter URLs for elections, offices and organizations, and `/elections` pages (Milestone 5)
+- ~~readable filter URLs for elections, offices and organizations, and `/elections` pages~~: done in Milestone 5
 - photos: placeholder until the real-data pilot
 - a `person_slug_redirects` table (only needed if a published slug must change)
 - CAPTCHA or edge rate limiting for the report form
@@ -157,43 +157,41 @@ Only after workflow is stable:
 - asset/public disclosure history
 - richer legislative records
 
-## Verification and first deployment (in progress, started 2026-10-12)
+## Verification and first deployment (in progress, started 2026-10-12; hosted rollout done 2026-10-16)
 
-No new voter-facing features. The purpose is to prove the consolidated web app against the real
-backend, deploy it non-indexed, and only then archive `mobile/`. The step-by-step procedure, with
-exact commands and tick boxes, is `docs/VERIFICATION_CHECKLIST.md`. Status as of 2026-10-13:
+No new voter-facing features. The purpose is to prove the web app against the real backend,
+deploy it non-indexed, and only then archive `mobile/`. Procedure, evidence and tick boxes:
+`docs/VERIFICATION_CHECKLIST.md`. Status as of 2026-10-16:
 
 ### AUTOMATED VERIFIED
 
-- [x] a clean database builds from `supabase/migrations` + `supabase/seed.sql` (`supabase start`, `supabase db reset`): CI `database` job. Not run on the development machine (no Docker)
-- [x] the complete SQL test script passes: RLS, publication workflow, verification consistency, editorial functions, corrections, roles, slugs; the seed re-runs without changes
-- [x] the web integration test passes against that database (mock vs. database equality, published-only visibility, every anonymous write and editorial call refused)
-- [x] web typecheck, lint, 269 tests, production build, no privileged key in the browser bundle
-- [x] enums and both state machines equal the SQL (`drift` job)
-- [x] CI green on all four jobs (first fully green state of this repository). The frozen mobile job was stabilised twice: one intermittent test file is retried, and `expo-doctor` was removed because it fails whenever Expo ships a new patch release
-- [x] every applied migration file equals the statement recorded in the hosted history (comments aside). The repository copy of `editorial_rpcs_records` had lost a closing `$$;` and could not run on a clean database; it was restored to what hosted actually ran
-- [x] defect found by the first full database test run and fixed in a new migration (`20261012090000_grant_editorial_table_helpers`): staff could not execute two helpers that `editorial_update` and `editorial_transition` call, so every save and workflow transition was refused for every editor, on hosted as well
-- [x] indexing cannot be forgotten: one server-side switch; while off, a `noindex` header on every response, `noindex` metadata, `robots.txt` disallowing everything, an empty sitemap
-- [x] `npm run smoke -- <url>`: 33 read-only checks of a running site (public routes, 404s, indexing, `/admin` redirects), passing against a local production build
-- [x] all work committed and pushed
+- [x] CI green on all four jobs (web, mobile, drift, database) for `51e4586` (Milestone 5): clean `supabase start` and `db reset`, all 16 migrations, seed, SQL/RLS tests, seed idempotence, anon directory queries, web integration test against the local stack
+- [x] all 16 migrations applied to the hosted project with `supabase db push`; history equals the files
+- [x] Milestone 5 backfill on hosted (5 election offices, audited) and the fictional seed re-run (`db push --include-seed`): hosted data equals a fresh seed, including the fictional 2028 structure
+- [x] `database.types.ts` regenerated from hosted; no hand-made exception remains
+- [x] `npm run verify` (329 tests), `npm run test:integration` against hosted (50 of 50), `npm run build` against hosted
+- [x] Milestone 5 against hosted: election and office slug lookup, election → offices, office → participants, the eight statuses kept distinct, readable filters, 308 redirects from UUID URLs, canonical URLs
+- [x] `npm run smoke` against a production build reading hosted: 40 of 40, including election routes and indexing protection
+- [x] hosted auth: sign-up disabled, anonymous sign-ins disabled, only the email provider; exposed schemas `public` and `graphql_public` only
+- [x] earlier: the repository copy of `editorial_rpcs_records` restored; the `grant_editorial_table_helpers` defect fixed
+
+### DEFERRED
+
+- leaked-password protection: Pro plan and above; unavailable on the Free plan (owner to confirm the plan). Compensating controls in `docs/VERIFICATION_CHECKLIST.md`, step 3
 
 ### MANUAL CHECK REQUIRED
 
-- [ ] apply the six pending migrations to the hosted project with `supabase db push` (10 of 16 applied, checked 2026-10-16): `20261008150050_editorial_evidence_and_queue`, `20261008150100_corrections_and_staff`, `20261012070000_person_slugs`, `20261012090000_grant_editorial_table_helpers`, `20261016090000_election_office_entity_type`, `20261016090100_election_foundation`
-- [ ] Supabase dashboard: **leaked-password protection is OFF** (security advisor, 2026-10-12); public sign-up disabled (not visible to the advisor); MFA for editorial accounts (not set up, and the app has no MFA screen yet). The advisor's only other finding, RLS without a policy on `private.editorial_settings`, is intended: that table is denied to every API role
-- [ ] create REVIEWER, APPROVER and ADMIN accounts
-- [ ] browser pass of the public site: phone, tablet and desktop widths; keyboard and focus; 404 and error states
+- [ ] create REVIEWER, APPROVER and ADMIN accounts (step 4)
+- [ ] editorial acceptance: reviewer, approver, admin, election records, correction request, published edit, retraction (step 5)
+- [ ] deploy to Vercel with `SITE_INDEXABLE=false`; set the Supabase Site URL (step 6)
+- [ ] MFA: not enforced (no MFA screen in the app). Required before real political data; does not block the fictional deployment
 
 ### BLOCKED (each waits for the item named)
 
-- [ ] regenerate `database.types.ts` with `npm run db:types`: needs the migrations
-- [ ] `npm run test:integration` against the **hosted** project: needs the migrations. Today 31 tests fail there, all because `people.slug` and `submit_correction` do not exist yet
-- [ ] editorial acceptance test (reviewer, approver, admin, correction request, published-change test): needs the migrations and the accounts
-- [ ] deploy to Vercel with `SITE_INDEXABLE=false`: needs the migrations (the directory breaks without `people.slug`)
-- [ ] deployed smoke test, automated and manual: needs the deployment
-- [ ] archive `mobile/`, remove its CI job and the mobile half of the drift check: needs every item above
+- [ ] deployed smoke test and browser/keyboard pass: needs the deployment (step 7)
+- [ ] archive `mobile/`, remove its CI job and the mobile half of the drift check: needs every item above (step 8)
 
-## Milestone 5 — Election Information Foundation (implemented 2026-10-16; hosted migrations pending)
+## Milestone 5 — Election Information Foundation (implemented 2026-10-16; on hosted 2026-10-16)
 
 Structure for elections, not claims about them. Model and rules: `docs/ELECTION_INFORMATION_MODEL.md`.
 
@@ -210,8 +208,9 @@ Structure for elections, not claims about them. Model and rules: `docs/ELECTION_
 - [x] tests: 59 new web tests (pages, filters, canonical URLs, labels, repositories, domain rules, editorial forms and actions), ~40 new SQL checks, integration equality for election pages, smoke test covers election routes
 
 Open items:
-- [ ] apply `20261016090000_election_office_entity_type` and `20261016090100_election_foundation` to the hosted project (with the four earlier pending migrations, `docs/VERIFICATION_CHECKLIST.md` step 1), then re-run the seed and regenerate `database.types.ts` (hand-edited for now)
-- [ ] first CI run of the new migrations and integration checks (rehearsed locally on PostgreSQL 16 with a Supabase stand-in; PostgREST not run locally)
+- [x] both migrations applied to hosted, seed re-run, `database.types.ts` regenerated (2026-10-16)
+- [x] CI green with the new migrations and integration checks (run 38922164879); hosted integration test 50 of 50
+- [ ] election editorial acceptance with real accounts (`docs/VERIFICATION_CHECKLIST.md`, step 5, "Election records")
 - [ ] election and office metadata linked to sources (today only participations carry claims)
 
 Deferred:

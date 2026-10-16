@@ -78,6 +78,20 @@ insert into public.election_offices (id, election_id, office_id, sort_order) val
   ('3c599b86-7065-8fd3-59e4-5f58dcb3b54a', '584bd485-2ef2-dbb9-057d-770162cfc69d', '4394d94e-bc97-fd81-09c7-3675f7df104d', 70)
 on conflict do nothing;
 
+update public.election_offices eo set sort_order = v.sort_order from (values
+  ('834551e9-b01b-aaad-629d-7ab177914203'::uuid, 'd19e7afd-ec04-0c6d-bd89-3be1aff4cb77'::uuid, 10),
+  ('834551e9-b01b-aaad-629d-7ab177914203'::uuid, 'a0b80187-0a04-7dcf-7d1a-3147fd63ce4b'::uuid, 20),
+  ('834551e9-b01b-aaad-629d-7ab177914203'::uuid, '9b99c763-f2e5-5794-74df-9c9d0fe0a4c4'::uuid, 30),
+  ('834551e9-b01b-aaad-629d-7ab177914203'::uuid, '264f583d-9eca-b73e-82e1-82220f17ff9d'::uuid, 40),
+  ('834551e9-b01b-aaad-629d-7ab177914203'::uuid, '870edec1-a6ff-83e6-7dd1-3a6762dafcf6'::uuid, 50),
+  ('834551e9-b01b-aaad-629d-7ab177914203'::uuid, '4394d94e-bc97-fd81-09c7-3675f7df104d'::uuid, 70),
+  ('72b46115-8272-a0fb-b624-405b85bab363'::uuid, 'c7509707-5e67-cff6-7f1b-151f9f80e461'::uuid, 70),
+  ('72b46115-8272-a0fb-b624-405b85bab363'::uuid, '7ecc43e5-ad70-0e46-bed1-11b1033bca02'::uuid, 80),
+  ('584bd485-2ef2-dbb9-057d-770162cfc69d'::uuid, '870edec1-a6ff-83e6-7dd1-3a6762dafcf6'::uuid, 50),
+  ('584bd485-2ef2-dbb9-057d-770162cfc69d'::uuid, '4394d94e-bc97-fd81-09c7-3675f7df104d'::uuid, 70)
+) as v(election_id, office_id, sort_order)
+where eo.election_id = v.election_id and eo.office_id = v.office_id and eo.sort_order <> v.sort_order;
+
 -- sources
 insert into public.sources (id, title, publisher, url, document_identifier, source_type, published_at, retrieved_at, archived_url) values
   ('9a2cb0cc-19d4-8070-5d9a-7d9ef21704f3', 'Certificate of Candidacy for Mayor: Maria L. Makabayan (fictional)', 'Halimbawa City Election Office (fictional)', 'https://example.org/gabay-ni-juan-fixtures/election-office/coc/maria-makabayan', 'HCEO-COC-2027-0041 (fictional)', 'OFFICIAL_GOVERNMENT', '2026-08-15', '2026-09-30', null),

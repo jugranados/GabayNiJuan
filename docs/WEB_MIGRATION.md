@@ -264,9 +264,11 @@ First deployment, step by step:
 5. Run `npm run smoke -- https://<site>` from `web/`, then the manual part of the smoke test in
    `docs/VERIFICATION_CHECKLIST.md` (step 7).
 
-Do not deploy before the pending migrations are applied to the project the deployment reads:
-without `people.slug` the directory and profiles fail validation. The full order of operations
-is in `docs/VERIFICATION_CHECKLIST.md`.
+The deployment must read a project with every migration in `supabase/migrations`: without the
+slug columns and `election_offices` the directory, profiles and election pages fail validation.
+The hosted development project has all 16 (2026-10-16), and a production build reading it passes
+`npm run smoke` (40 of 40). Deploy the committed `development` branch. The full order of
+operations is in `docs/VERIFICATION_CHECKLIST.md`.
 
 Readiness review (2026-10-13): the production build passes; the environment is validated at build
 time; public pages use a session-less anonymous client; `/admin` is checked in the proxy, the

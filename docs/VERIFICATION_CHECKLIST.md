@@ -9,57 +9,65 @@ Status words used here and in `docs/ROADMAP.md`:
 - **MANUAL CHECK REQUIRED**: a person has to do it or look at it; it cannot be confirmed from code.
 - **BLOCKED**: cannot be done until an earlier step is finished.
 
-## Status (2026-10-13)
+## Status (2026-10-16, after the hosted rollout)
+
+Status words: AUTOMATED VERIFIED (a command, CI job or API call ran and passed), MANUAL VERIFIED (a
+person observed it), MANUAL CHECK REQUIRED, BLOCKED, DEFERRED.
 
 | Item | Status | Evidence or reason |
 |---|---|---|
-| Clean database from `supabase/migrations` + `seed.sql` | AUTOMATED VERIFIED | CI `database` job: `supabase start`, `supabase db reset` |
-| SQL tests: RLS, publication, verification consistency, editorial functions, corrections, roles, slugs | AUTOMATED VERIFIED | CI `database` job, `supabase/tests/rls_and_publication.test.sql` |
+| Clean database from `supabase/migrations` + `seed.sql` | AUTOMATED VERIFIED | CI `database` job (run 38922164879 on `51e4586`, all four jobs green) |
+| SQL tests: RLS, publication, consistency, editorial functions, corrections, roles, slugs, Milestone 5 rules | AUTOMATED VERIFIED | CI `database` job, `supabase/tests/rls_and_publication.test.sql` |
 | Seed is idempotent and equals the fixtures | AUTOMATED VERIFIED | CI `database` and `web` jobs |
-| Web integration test against a real database | AUTOMATED VERIFIED (local stack only) | CI `database` job |
-| Web typecheck, lint, 329 tests, production build, no privileged key in the bundle | AUTOMATED VERIFIED | CI `web` job; also run locally (Milestone 5, 2026-10-16) |
 | Enums and both state machines equal the SQL | AUTOMATED VERIFIED | CI `drift` job |
-| Applied migration files equal the hosted history | AUTOMATED VERIFIED | all 10 applied files match the recorded statements (comments aside) |
-| Indexing off by default | AUTOMATED VERIFIED | `npm run smoke` on a production build |
-| Signed-out visitors cannot reach `/admin` | AUTOMATED VERIFIED | `npm run smoke`; boundary tests |
-| Pending migrations applied to hosted | MANUAL CHECK REQUIRED | 10 of 16 applied (checked 2026-10-16). Step 1 |
-| `database.types.ts` regenerated | BLOCKED | needs step 1. Step 2 |
-| Integration test against the **hosted** project | BLOCKED | needs step 1. Today 31 tests fail there, all because `people.slug` and `submit_correction` do not exist yet |
-| Leaked-password protection | MANUAL CHECK REQUIRED | Supabase security advisor reports it **off** (2026-10-12). Step 3 |
-| Public sign-up disabled | MANUAL CHECK REQUIRED | not visible to the advisor. Step 3 |
-| MFA for editorial accounts | MANUAL CHECK REQUIRED | not set up. Step 3 |
+| All 16 migrations applied to hosted | AUTOMATED VERIFIED | `supabase db push`: four on 2026-10-16, then the two Milestone 5 migrations the same day. `migration list`: 16 rows, each Local and Remote |
+| Hosted history equals the migration files | AUTOMATED VERIFIED | all 16 recorded statements equal the files (comments, whitespace and statement separators aside) |
+| Milestone 5 backfill on hosted | AUTOMATED VERIFIED | 5 election offices backfilled and published, each with its revision; then `db push --include-seed` added the new fictional offices and aligned the display order: 10 published election offices, same as a fresh seed |
+| `database.types.ts` regenerated | AUTOMATED VERIFIED | `npm run db:types` from the linked project; no hand-made exception remains |
+| Web typecheck (schema drift), lint, 329 tests | AUTOMATED VERIFIED | `npm run verify` with the regenerated types |
+| Integration test against the **hosted** project | AUTOMATED VERIFIED | `npm run test:integration`: 50 of 50, including election pages, office pages and exact statuses equal to the fixtures |
+| Production build against hosted | AUTOMATED VERIFIED | `npm run build` with `DATA_SOURCE=supabase`; no privileged key in `.next/static` |
+| Smoke test (incl. `/elections`, an election, an office page, readable filters) | AUTOMATED VERIFIED | `npm run smoke` against that build: 40 of 40 |
+| Milestone 5 routes on hosted data | AUTOMATED VERIFIED | `/elections`, the 2028 page (six offices in ballot order), office pages with every status group, 404 for an office not in the election, 308 from UUID election/office/filter URLs to slug URLs, readable filters, unknown slug shows "Not found" |
+| Indexing off (`SITE_INDEXABLE=false`) | AUTOMATED VERIFIED | `X-Robots-Tag: noindex, nofollow`, `robots.txt` `Disallow: /`, empty sitemap |
+| Public sign-up disabled; anonymous sign-ins disabled | AUTOMATED VERIFIED | hosted `GET /auth/v1/settings`: `disable_signup: true`, `anonymous_users: false`, only the email provider |
+| Exposed API schemas are `public`, `graphql_public` | AUTOMATED VERIFIED | PostgREST refuses `Accept-Profile: private`: "Only the following schemas are exposed: public, graphql_public" |
+| Leaked-password protection | DEFERRED | unavailable on the current plan: Supabase offers it on Pro and above, and the project is on Free (`docs/FREE_TIER_PLAN.md`; owner to confirm). Compensating controls in step 3 |
+| MFA for editorial accounts | MANUAL CHECK REQUIRED | not enforced: the app has no MFA enrolment or challenge screen. Required before real political data; does not block the fictional deployment |
 | REVIEWER, APPROVER, ADMIN accounts | MANUAL CHECK REQUIRED | Step 4 |
-| Editorial acceptance test | BLOCKED | needs steps 1 and 4. Step 5 |
-| Vercel deployment | BLOCKED | needs step 1 (the directory and election pages break without the slug columns and `election_offices`). Step 6 |
+| Editorial acceptance, election acceptance, corrections, published edit, retraction | MANUAL CHECK REQUIRED | Step 5 (no longer blocked) |
+| Vercel deployment | MANUAL CHECK REQUIRED | Step 6 (no longer blocked) |
 | Deployed smoke test | BLOCKED | needs step 6. Step 7 |
-| Browser pass: phone, tablet, desktop, keyboard | MANUAL CHECK REQUIRED | Step 7 |
-| Archive `mobile/` | BLOCKED | needs every step above. Step 8 |
+| Browser pass: phone, tablet, desktop, keyboard | BLOCKED | needs step 6. Step 7 |
+| Archive `mobile/` | BLOCKED | needs steps 4 to 7. Step 8 |
 
 ## Step 1. Apply the pending migrations
 
+Already applied on 2026-10-16 with `supabase db push` (history verified equal to the files):
+`20261008150050_editorial_evidence_and_queue`, `20261008150100_corrections_and_staff`,
+`20261012070000_person_slugs`, `20261012090000_grant_editorial_table_helpers`.
+
 Pending, in order:
 
-1. `20261008150050_editorial_evidence_and_queue`
-2. `20261008150100_corrections_and_staff`
-3. `20261012070000_person_slugs`
-4. `20261012090000_grant_editorial_table_helpers`
-5. `20261016090000_election_office_entity_type` (Milestone 5; must be committed before the next one)
-6. `20261016090100_election_foundation` (Milestone 5)
+1. `20261016090000_election_office_entity_type` (Milestone 5; must be committed before the next one)
+2. `20261016090100_election_foundation` (Milestone 5)
 
-From the repository root (the CLI asks for the database password once, at `link`):
+From the repository root (`supabase/.temp/` holds the link and is git-ignored):
 
 ```bash
 npx supabase login
 npx supabase link --project-ref gqplutvabfnxakpmqofv
-npx supabase migration list          # 10 rows have both Local and Remote; 6 have Local only
-npx supabase db push --dry-run       # must list exactly the six files above
+npx supabase migration list          # 14 rows have both Local and Remote; 2 have Local only
+npx supabase db push --dry-run       # must list exactly the two files above
 npx supabase db push
 npx supabase migration list          # every row now has both Local and Remote
 ```
 
-- [ ] `db push --dry-run` listed exactly those six
-- [ ] `db push` finished without an error
-- [ ] `migration list` shows 16 rows, each with Local and Remote
+- [x] the first four: dry run listed exactly them, push succeeded, history equals the files (2026-10-16)
+- [x] `db push --dry-run` listed exactly the two Milestone 5 files (2026-10-16)
+- [x] `db push` finished without an error
+- [x] `migration list` shows 16 rows, each with Local and Remote
+- [x] `npx supabase db push --include-seed` re-ran the fictional seed (dry run first: seed only, no migrations)
 
 If a migration fails: stop, keep the error text, and do not edit `schema_migrations` or an applied
 file. Files after the failing one are not applied; run `npx supabase migration list` to see exactly
@@ -72,10 +80,9 @@ the fixtures); the grant without which no editor can save or move a record; and,
 slugs for elections, offices and organizations (generated from their names; expected: exactly the
 fixture slugs) and `election_offices`, backfilled from existing participations (expected: five
 published election offices, each logged in `revisions` with the reason "Milestone 5: election
-office backfilled from existing participations"). Then re-run `supabase/seed.sql` to add the new
-fictional offices and election offices. Backfilled election offices keep display order 100 (the
-seed skips pairs that already exist), so their order on election pages differs from a fresh seed
-until an editor sets it. The upgrade path was rehearsed locally on PostgreSQL 16 (old schema +
+office backfilled from existing participations"). Then re-run the seed (`npx supabase db push --include-seed`) to add the new
+fictional offices and election offices; it also gives backfilled election offices the fixture
+display order, so an upgraded and a fresh database are identical. The upgrade path was rehearsed locally on PostgreSQL 16 (old schema +
 old seed, then the two migrations, then the new seed).
 
 ## Step 2. Regenerate types and verify the web app
@@ -88,30 +95,32 @@ npm run test:integration    # against the hosted project; reads web/.env.local
 npm run build
 ```
 
-- [ ] `db:types` wrote the file (it refuses to overwrite it with an error)
-- [ ] `verify` passes
-- [ ] `test:integration` passes: all tests, no skips
-- [ ] `build` passes
-- [ ] commit the regenerated `database.types.ts`
+- [x] `db:types` wrote the file (2026-10-16)
+- [x] `verify` passes (329 tests)
+- [x] `test:integration` passes: 50 of 50, no skips
+- [x] `build` passes with `DATA_SOURCE=supabase`
+- [x] commit the regenerated `database.types.ts`
 
 If `typecheck` fails in `schemaDrift.ts` after regeneration, that is real drift between the
 database and the Zod contracts: fix the cause. Do not loosen a Zod schema to make it compile.
 
 ## Step 3. Supabase dashboard security settings
 
-These live in the dashboard, not in SQL. None of them can be confirmed from the repository.
+These live in the dashboard, not in SQL. Some can be read from the hosted API (checked
+2026-10-16); the dashboard view is still worth a look.
 
-- [ ] **Leaked-password protection ON.** Authentication → Sign In / Providers → Email (or
-      Authentication → Policies, depending on dashboard version) → "Prevent use of leaked
-      passwords". Currently off.
-- [ ] **Public sign-up OFF.** Authentication → Sign In / Providers → "Allow new users to sign up"
-      disabled. Confirm by trying: `/admin/login` has no sign-up path, and the Auth API should
-      refuse a sign-up request.
+- [x] **Public sign-up OFF** and **anonymous sign-ins OFF**: `GET <project>/auth/v1/settings`
+      (with the anon key) returns `disable_signup: true` and `external.anonymous_users: false`.
+- [ ] **Leaked-password protection.** Authentication → Sign In / Providers → Email → "Prevent use
+      of leaked passwords". Supabase offers it on the **Pro plan and above**; on Free it is
+      unavailable. Record which applies. If unavailable, the compensating controls are: accounts
+      created only by an administrator, no public sign-up, strong unique passwords, separate
+      reviewer and approver accounts, and MFA before real political data.
 - [ ] **MFA for editorial users.** Authentication → Multi-Factor → enable TOTP. Note: the web app
       has no MFA enrolment or challenge screen yet, so enabling it here does not enforce it at
       sign-in. Treat MFA as an open item before real data (see "Before real data").
 - [ ] **Site URL.** Authentication → URL configuration → Site URL = the deployed origin (step 6).
-- [ ] API settings: exposed schemas are `public` and `graphql_public` only. `private` stays hidden.
+- [x] API settings: exposed schemas are `public` and `graphql_public` only (PostgREST refuses `private`).
 
 ## Step 4. Editorial accounts
 
@@ -200,6 +209,50 @@ record is fictional; put "(fictional)" in names so nothing can be mistaken for a
 - [ ] revision history holds both values
 - [ ] retracted with a reason
 - [ ] no longer shown publicly; still present, with its history, in `/admin`
+
+### Election records (Milestone 5)
+
+Fictional only. As REVIEWER unless stated.
+
+- [ ] New election: name "Halalan Test (fictional)", a date next year, status Upcoming, slug empty
+      → Save draft. The slug is generated from the name
+- [ ] change the status to Completed → refused ("cannot be completed before its date")
+- [ ] change the date to last year with status Upcoming → refused ("date has passed")
+- [ ] set the slug to `halalan-test-fictional` → saved (unpublished slugs can be corrected)
+- [ ] New office: "Konsehal Test (fictional)", level City, slug empty → slug generated
+- [ ] on the election page → "Add an office to this election": choose the office, display order 50 → saved
+- [ ] adding the same office to the same election again → "already part of this election"
+- [ ] New election participation for a fictional person with an office that is **not** an
+      election office of that election → refused ("not recorded as contested")
+- [ ] participation "Filed certificate of candidacy" dated 1 October, then a second one
+      "Potential aspirant" dated 1 November → the second is refused ("cannot follow")
+- [ ] a second one "Official candidate" dated 1 December → accepted (a new record, not an edit)
+- [ ] claims for each participation with a source; submit everything for approval
+- [ ] as APPROVER: publishing the participation before its election office is refused; publish in
+      order: source, person, election, office, election office, participations, claims
+- [ ] `/elections` lists the test election; its page shows the office; the office page shows the
+      person under "Official candidates" with the earlier "Filed certificate of candidacy" record
+      below it, each linking to its evidence
+- [ ] as APPROVER, edit the published election's slug → refused (permanent once published);
+      edit the published participation's status → refused ("cannot be changed")
+- [ ] retract the "Official candidate" participation with a reason → the office page now groups
+      the person under "Filed a certificate of candidacy" straight away
+- [ ] retracting the election office while a published participation belongs to it → refused
+
+### Retraction workflow (as APPROVER, with the ADMIN watching the revisions)
+
+Use the fictional person, office term, claim and source published above.
+
+- [ ] on the published **person**, Retract… is refused while the office term and claim are still
+      published ("cannot be unpublished: published rows … still reference it")
+- [ ] retract the **claim** first: Retract… without a reason is refused; with a reason it succeeds
+- [ ] the claim's `/claims/<id>` page now returns 404, and the profile no longer shows it
+- [ ] retract the **office term**, then the **person**, each with a reason
+- [ ] `/politicians/<slug>` returns 404 and the person is gone from `/politicians` straight away
+- [ ] in `/admin` each record shows "Retracted records are kept for the audit trail and cannot be
+      edited", with no Save button and no further workflow action
+- [ ] Revisions shows each retraction with its reason, editor and state RETRACTED
+- [ ] a REVIEWER cannot retract (no Retract… action; the database refuses it)
 
 Afterwards retract every test record you published. Published rows cannot be deleted, by design.
 

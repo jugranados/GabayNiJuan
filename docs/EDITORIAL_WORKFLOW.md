@@ -225,6 +225,6 @@ correction lifecycle, the record field definitions, the readiness checklist and 
 - The port has unit and component tests for every action and screen rule, and the database rules
   behind it pass in CI, but it has not yet been exercised end to end with real editor accounts.
   The acceptance test for that, role by role, is `docs/VERIFICATION_CHECKLIST.md` (steps 4 and 5).
-- Until migration `20261012090000_grant_editorial_table_helpers` is applied to a database, every
+- (Resolved on hosted 2026-10-16.) Until migration `20261012090000_grant_editorial_table_helpers` is applied to a database, every
   save and workflow transition there is refused ("permission denied for function
   assert_editorial_table").

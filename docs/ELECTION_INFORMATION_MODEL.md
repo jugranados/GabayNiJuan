@@ -238,3 +238,13 @@ reporting for corroboration and context. An official-candidate status needs an o
   refuses records that break the succession rules, with the reason on the status field.
 - The election form refuses a date/status pair that disagrees.
 - Duplicate slugs and duplicate election offices are explained in plain language.
+
+## Hosted status
+
+Both Milestone 5 migrations were applied to the hosted development project on 2026-10-16
+(`supabase db push`). The backfill created five published election offices from existing
+participations, each audited; the fictional seed was then re-run, adding the new offices and
+aligning display order, so hosted data equals a fresh seed. The hosted integration test (election
+pages, office pages and exact statuses equal to the fixtures) passes, and the election routes were
+checked against a production build reading hosted. Editorial acceptance of election records with
+real accounts is still open (`docs/VERIFICATION_CHECKLIST.md`, step 5, "Election records").

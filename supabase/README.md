@@ -56,7 +56,7 @@ npx supabase db push                    # applies pending files in migrations/
 
 `db push` records each file under its own version, so the repository and the hosted history stay identical. Avoid applying migrations through a tool that assigns its own timestamp (the Supabase MCP `apply_migration` does): the local file would then have to be renamed to match.
 
-Status on the hosted development project (2026-10-16): 10 of 16 applied. Pending: `20261008150050`, `20261008150100`, `20261012070000`, `20261012090000`, `20261016090000`, `20261016090100`. Procedure and checks: `docs/VERIFICATION_CHECKLIST.md`.
+Status on the hosted development project (2026-10-16): all 16 applied with `supabase db push`; history equals the files. The fictional seed was re-run with `npx supabase db push --include-seed` (dry run first). `supabase/.temp/` (the CLI's link state) is git-ignored. Procedure and checks: `docs/VERIFICATION_CHECKLIST.md`.
 
 ### Directory function
 
@@ -82,7 +82,7 @@ npm run db:types -- --local      # from the local stack
 npm run typecheck
 ```
 
-The script keeps the file's header and refuses to overwrite the file if generation fails. The committed file is currently out of date: it predates the Milestone 3 functions and carries a hand-added `people.slug`; regenerate it once the pending migrations are applied. Types are used **only** in `web/src/data/supabase/`. `schemaDrift.ts` fails the typecheck when a table or enum no longer matches the app's Zod contracts.
+The script keeps the file's header and refuses to overwrite the file if generation fails. The committed file was regenerated from the hosted project on 2026-10-16, after all 16 migrations. Types are used **only** in `web/src/data/supabase/`. `schemaDrift.ts` fails the typecheck when a table or enum no longer matches the app's Zod contracts.
 
 ### Database tests
 

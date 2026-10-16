@@ -42,3 +42,6 @@ google-services.json
 
 # Node
 node_modules/
+
+# Supabase CLI local state (linked project ref, versions); never commit
+supabase/.temp/

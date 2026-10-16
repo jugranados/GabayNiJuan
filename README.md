@@ -112,7 +112,7 @@ npm run smoke -- <url>     # read-only smoke test of a running site (public rout
 
 ### Verification status
 
-What is verified automatically, what needs a person, and what is blocked, with the exact steps to the first deployment: [`docs/VERIFICATION_CHECKLIST.md`](docs/VERIFICATION_CHECKLIST.md). In short: CI proves a clean database, the SQL rules and the web app; the hosted project is still missing six migrations, and the editorial area has not yet been exercised with real accounts.
+What is verified automatically, what needs a person, and what is blocked, with the exact steps to the first deployment: [`docs/VERIFICATION_CHECKLIST.md`](docs/VERIFICATION_CHECKLIST.md). In short: CI proves a clean database, the SQL rules and the web app; the hosted project has all 16 migrations and passes the integration test (2026-10-16); the editorial area has not yet been exercised with real accounts, and the site is not deployed yet.
 
 ## Editorial area (`/admin`)
 

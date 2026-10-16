@@ -1,11 +1,5 @@
-// GENERATED from the Supabase schema. Do not edit by hand.
-// EXCEPTION: `people.slug` (20261012070000_person_slugs.sql), the `slug` columns of elections,
-// offices and political_organizations, the `election_offices` table and the ELECTION_OFFICE
-// revision entity type (20261016090000/20261016090100, Milestone 5) were added by hand, because
-// those migrations are not applied to the hosted project yet. Regenerate this file with
-// `npm run db:types` once they are, and delete this note.
-// Regenerate after every migration (Supabase MCP `generate_typescript_types`, or
-// `npx supabase gen types typescript --project-id <ref>`), then run `npm run typecheck`:
+// GENERATED from the Supabase schema by `npm run db:types`. Do not edit by hand.
+// Regenerate after every migration, then run `npm run typecheck`:
 // src/data/supabase/schemaDrift.ts fails to compile if the Zod row contracts drift.
 //
 // Data layer only. Domain and UI code must never import these types.
@@ -43,6 +37,7 @@ export type Database = {
           reviewed_by: string | null
           start_date: string | null
           updated_at: string
+          version: number
         }
         Insert: {
           affiliation_type: Database["public"]["Enums"]["affiliation_type"]
@@ -60,6 +55,7 @@ export type Database = {
           reviewed_by?: string | null
           start_date?: string | null
           updated_at?: string
+          version?: number
         }
         Update: {
           affiliation_type?: Database["public"]["Enums"]["affiliation_type"]
@@ -77,6 +73,7 @@ export type Database = {
           reviewed_by?: string | null
           start_date?: string | null
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -112,6 +109,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -129,6 +127,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -146,6 +145,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -173,6 +173,7 @@ export type Database = {
           reviewed_by: string | null
           title: string
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -189,6 +190,7 @@ export type Database = {
           reviewed_by?: string | null
           title: string
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -205,6 +207,7 @@ export type Database = {
           reviewed_by?: string | null
           title?: string
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -284,6 +287,7 @@ export type Database = {
             | null
           updated_at: string
           verification_status: Database["public"]["Enums"]["verification_status"]
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -307,6 +311,7 @@ export type Database = {
             | null
           updated_at?: string
           verification_status: Database["public"]["Enums"]["verification_status"]
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -330,6 +335,7 @@ export type Database = {
             | null
           updated_at?: string
           verification_status?: Database["public"]["Enums"]["verification_status"]
+          version?: number
         }
         Relationships: [
           {
@@ -340,6 +346,95 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      correction_requests: {
+        Row: {
+          claim_id: string | null
+          contact_email: string | null
+          created_at: string
+          description: string
+          id: string
+          record_id: string
+          record_type: Database["public"]["Enums"]["correction_target_type"]
+          resolution_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_url: string | null
+          status: Database["public"]["Enums"]["correction_status"]
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          claim_id?: string | null
+          contact_email?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          record_id: string
+          record_type: Database["public"]["Enums"]["correction_target_type"]
+          resolution_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["correction_status"]
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          claim_id?: string | null
+          contact_email?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          record_id?: string
+          record_type?: Database["public"]["Enums"]["correction_target_type"]
+          resolution_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["correction_status"]
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correction_requests_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editorial_role_events: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_role: Database["public"]["Enums"]["editorial_role"] | null
+          old_role: Database["public"]["Enums"]["editorial_role"] | null
+          target_email: string
+          target_user_id: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_role?: Database["public"]["Enums"]["editorial_role"] | null
+          old_role?: Database["public"]["Enums"]["editorial_role"] | null
+          target_email: string
+          target_user_id?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_role?: Database["public"]["Enums"]["editorial_role"] | null
+          old_role?: Database["public"]["Enums"]["editorial_role"] | null
+          target_email?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
       }
       editorial_roles: {
         Row: {
@@ -380,6 +475,7 @@ export type Database = {
           reviewed_by: string | null
           start_date: string | null
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -398,6 +494,7 @@ export type Database = {
           reviewed_by?: string | null
           start_date?: string | null
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -416,6 +513,7 @@ export type Database = {
           reviewed_by?: string | null
           start_date?: string | null
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -476,7 +574,22 @@ export type Database = {
           updated_at?: string
           version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "election_offices_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "election_offices_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       election_participations: {
         Row: {
@@ -497,6 +610,7 @@ export type Database = {
           reviewed_by: string | null
           status: Database["public"]["Enums"]["election_participation_status"]
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -516,6 +630,7 @@ export type Database = {
           reviewed_by?: string | null
           status: Database["public"]["Enums"]["election_participation_status"]
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -535,6 +650,7 @@ export type Database = {
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["election_participation_status"]
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -543,6 +659,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "elections"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "election_participations_election_office_fkey"
+            columns: ["election_id", "office_id"]
+            isOneToOne: false
+            referencedRelation: "election_offices"
+            referencedColumns: ["election_id", "office_id"]
           },
           {
             foreignKeyName: "election_participations_office_id_fkey"
@@ -577,6 +700,7 @@ export type Database = {
           slug: string
           status: Database["public"]["Enums"]["election_status"]
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -591,9 +715,10 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
-          slug?: string
+          slug: string
           status: Database["public"]["Enums"]["election_status"]
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -611,6 +736,7 @@ export type Database = {
           slug?: string
           status?: Database["public"]["Enums"]["election_status"]
           updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -635,6 +761,7 @@ export type Database = {
           status_date: string | null
           title: string | null
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -656,6 +783,7 @@ export type Database = {
           status_date?: string | null
           title?: string | null
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -677,6 +805,7 @@ export type Database = {
           status_date?: string | null
           title?: string | null
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -705,6 +834,7 @@ export type Database = {
           start_date: string | null
           status: Database["public"]["Enums"]["office_term_status"]
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -722,6 +852,7 @@ export type Database = {
           start_date?: string | null
           status: Database["public"]["Enums"]["office_term_status"]
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -739,6 +870,7 @@ export type Database = {
           start_date?: string | null
           status?: Database["public"]["Enums"]["office_term_status"]
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -773,6 +905,7 @@ export type Database = {
           reviewed_by: string | null
           slug: string
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -787,8 +920,9 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
-          slug?: string
+          slug: string
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -805,6 +939,7 @@ export type Database = {
           reviewed_by?: string | null
           slug?: string
           updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -828,6 +963,7 @@ export type Database = {
           slug: string
           suffix: string | null
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -845,9 +981,10 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
-          slug?: string
+          slug: string
           suffix?: string | null
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -868,6 +1005,7 @@ export type Database = {
           slug?: string
           suffix?: string | null
           updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -888,6 +1026,7 @@ export type Database = {
           stated_at: string | null
           topic: string
           updated_at: string
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -905,6 +1044,7 @@ export type Database = {
           stated_at?: string | null
           topic: string
           updated_at?: string
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -922,6 +1062,7 @@ export type Database = {
           stated_at?: string | null
           topic?: string
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -949,6 +1090,7 @@ export type Database = {
           reviewed_by: string | null
           slug: string
           updated_at: string
+          version: number
         }
         Insert: {
           abbreviation?: string | null
@@ -963,8 +1105,9 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
-          slug?: string
+          slug: string
           updated_at?: string
+          version?: number
         }
         Update: {
           abbreviation?: string | null
@@ -981,6 +1124,7 @@ export type Database = {
           reviewed_by?: string | null
           slug?: string
           updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -1043,6 +1187,7 @@ export type Database = {
           title: string
           updated_at: string
           url: string | null
+          version: number
         }
         Insert: {
           approved_by?: string | null
@@ -1063,6 +1208,7 @@ export type Database = {
           title: string
           updated_at?: string
           url?: string | null
+          version?: number
         }
         Update: {
           approved_by?: string | null
@@ -1083,27 +1229,115 @@ export type Database = {
           title?: string
           updated_at?: string
           url?: string | null
+          version?: number
         }
         Relationships: []
       }
     }
     Views: {
-      [_ in never]: never
+      editorial_queue: {
+        Row: {
+          approved_by: string | null
+          created_by: string | null
+          id: string | null
+          label: string | null
+          person_id: string | null
+          publication_status:
+            | Database["public"]["Enums"]["publication_status"]
+            | null
+          record_type: string | null
+          reviewed_by: string | null
+          table_name: string | null
+          updated_at: string | null
+          version: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      claim_readiness: { Args: { p_claim_id: string }; Returns: Json }
+      editorial_remove_evidence: {
+        Args: { p_claim_id: string; p_reason?: string; p_source_id: string }
+        Returns: undefined
+      }
+      editorial_set_evidence: {
+        Args: {
+          p_claim_id: string
+          p_note?: string
+          p_reason?: string
+          p_source_id: string
+          p_supports: boolean
+        }
+        Returns: Json
+      }
+      editorial_transition: {
+        Args: {
+          p_expected_version: number
+          p_id: string
+          p_reason?: string
+          p_table: string
+          p_to: Database["public"]["Enums"]["publication_status"]
+        }
+        Returns: Json
+      }
+      editorial_update: {
+        Args: {
+          p_changes: Json
+          p_expected_version: number
+          p_id: string
+          p_reason?: string
+          p_table: string
+        }
+        Returns: Json
+      }
+      review_correction: {
+        Args: {
+          p_expected_version: number
+          p_id: string
+          p_note?: string
+          p_status: Database["public"]["Enums"]["correction_status"]
+        }
+        Returns: Json
+      }
       search_directory: {
         Args: {
           p_election_id?: string
           p_jurisdiction_id?: string
           p_limit?: number
-          p_offset?: number
           p_office_id?: string
           p_office_level?: Database["public"]["Enums"]["office_level"]
+          p_offset?: number
           p_organization_id?: string
           p_participation_status?: Database["public"]["Enums"]["election_participation_status"]
           p_query?: string
         }
         Returns: Json
+      }
+      set_staff_role: {
+        Args: {
+          p_email: string
+          p_role: Database["public"]["Enums"]["editorial_role"]
+        }
+        Returns: undefined
+      }
+      staff_directory: {
+        Args: never
+        Returns: {
+          email: string
+          role: Database["public"]["Enums"]["editorial_role"]
+          user_id: string
+        }[]
+      }
+      submit_correction: {
+        Args: {
+          p_claim_id?: string
+          p_contact_email?: string
+          p_description: string
+          p_record_id: string
+          p_record_type: Database["public"]["Enums"]["correction_target_type"]
+          p_source_url?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
@@ -1123,6 +1357,21 @@ export type Database = {
         | "POLICY_POSITION"
         | "LEGAL_CASE"
         | "ASSET_DISCLOSURE"
+      correction_status:
+        | "SUBMITTED"
+        | "UNDER_REVIEW"
+        | "ACCEPTED"
+        | "REJECTED"
+        | "RESOLVED"
+      correction_target_type:
+        | "PERSON"
+        | "CLAIM"
+        | "SOURCE"
+        | "ELECTION_PARTICIPATION"
+        | "OFFICE_TERM"
+        | "AFFILIATION"
+        | "EDUCATION"
+        | "POLICY_POSITION"
       currency_code: "PHP"
       editorial_role: "REVIEWER" | "APPROVER" | "ADMIN"
       election_participation_status:
@@ -1351,6 +1600,23 @@ export const Constants = {
         "POLICY_POSITION",
         "LEGAL_CASE",
         "ASSET_DISCLOSURE",
+      ],
+      correction_status: [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "ACCEPTED",
+        "REJECTED",
+        "RESOLVED",
+      ],
+      correction_target_type: [
+        "PERSON",
+        "CLAIM",
+        "SOURCE",
+        "ELECTION_PARTICIPATION",
+        "OFFICE_TERM",
+        "AFFILIATION",
+        "EDUCATION",
+        "POLICY_POSITION",
       ],
       currency_code: ["PHP"],
       editorial_role: ["REVIEWER", "APPROVER", "ADMIN"],

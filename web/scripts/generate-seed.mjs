@@ -82,6 +82,19 @@ function insertStatement(table, rows) {
   return `insert into public.${table} (${columns.join(', ')}) values\n${values.join(',\n')}\non conflict${target} do nothing;`;
 }
 
+/**
+ * A database upgraded by 20261016090100_election_foundation holds backfilled election offices
+ * (other ids, display order 100) for pairs the fixtures also define, and the insert above skips
+ * them. Give those pairs the fixture display order, so an upgraded and a fresh database show the
+ * same order. Changes nothing on a re-run.
+ */
+function alignElectionOfficeOrder(rows) {
+  const values = rows
+    .map((row) => `  (${literal('election_id', row.election_id)}::uuid, ${literal('office_id', row.office_id)}::uuid, ${row.sort_order})`)
+    .join(',\n');
+  return `update public.election_offices eo set sort_order = v.sort_order from (values\n${values}\n) as v(election_id, office_id, sort_order)\nwhere eo.election_id = v.election_id and eo.office_id = v.office_id and eo.sort_order <> v.sort_order;`;
+}
+
 const allFixtureIds = [];
 const body = [];
 
@@ -89,6 +102,7 @@ for (const table of INSERT_ORDER) {
   const rows = devFixtureTables[table] ?? [];
   if (rows.length === 0) continue;
   body.push(`-- ${table}`, insertStatement(table, rows), '');
+  if (table === 'election_offices') body.push(alignElectionOfficeOrder(rows), '');
   if (table !== 'claim_evidence') {
     allFixtureIds.push(...rows.map((row) => fixtureUuid(row.id)));
   }
