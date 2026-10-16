@@ -118,7 +118,8 @@ Supabase (anon key, RLS)  |  in-memory fixtures (DATA_SOURCE=mock)
 |---|---|
 | `/politicians/<slug>` | e.g. `/politicians/juan-dela-cruz`. A URL that uses the database id redirects permanently to the slug. |
 | `/claims/<id>` | The claim's UUID. Claims have no natural name, and a UUID never needs to change. |
-| `/politicians?q=&election=&office=&level=&status=&organization=&page=` | All directory state is in the URL. `level` and `status` are readable (`national`, `filed-coc`); `election`, `office` and `organization` are still UUIDs (see "Deferred"). Unknown values are dropped. There is no `sort` parameter. |
+| `/politicians?q=&election=&office=&level=&status=&organization=&page=` | All directory state is in the URL, all of it readable: `election`, `office` and `organization` are slugs, `level` and `status` enum values (`national`, `filed-coc`). A legacy UUID value redirects permanently (308) to the slug URL, and the canonical URL always uses slugs. A slug that matches nothing shows "Not found" and no results. Malformed values are dropped. There is no `sort` parameter. |
+| `/elections`, `/elections/<slug>`, `/elections/<slug>/<office slug>` | Election index, election page, office page (Milestone 5; `docs/ELECTION_INFORMATION_MODEL.md`). A UUID in either position redirects permanently to the slug URL. Cached for 5 minutes (index) and 60 seconds (pages), revalidated on publish. |
 
 ### Slugs
 
@@ -167,15 +168,19 @@ Supabase (anon key, RLS)  |  in-memory fixtures (DATA_SOURCE=mock)
   Turning it on is a deliberate act: set `SITE_INDEXABLE=true` in the production environment and
   redeploy (it is read at build time). Do that only when the database holds real, reviewed,
   published records and no fictional seed. `/admin` and `/corrections` stay non-indexable either way.
-- No JSON-LD is emitted. Structured data about a person would restate claims without their
-  verification status.
+- JSON-LD only where the mapping is exact: schema.org `Event` (name, date, URL, country) and
+  `BreadcrumbList` on election pages, `BreadcrumbList` on office pages. No `Person`: structured data
+  about a person would restate claims without their verification status.
+- Election titles are `<Election>` and `<Office> — <Election>`; descriptions say what the page
+  lists. Published elections and election offices are in the sitemap.
 
 ## Caching
 
 | Route | Behaviour |
 |---|---|
 | `/politicians` | Rendered per request (it depends on the query string). |
-| `/politicians/[slug]`, `/claims/[id]` | Rendered on first request, cached for 60 seconds. |
+| `/politicians/[slug]`, `/claims/[id]`, `/elections/[slug]`, `/elections/[slug]/[office]` | Rendered on first request, cached for 60 seconds. |
+| `/elections` | Cached for 5 minutes. |
 | `/` | Cached for 5 minutes. `sitemap.xml` for 1 hour. |
 | `/admin/**` | Never cached (`force-dynamic`, `Cache-Control: private, no-store`). |
 
@@ -311,12 +316,8 @@ is still missing migrations.
 
 ## Deferred, with reasons
 
-- **Readable filter URLs** (`?election=2028` instead of a UUID). Needs a `slug` on `elections`,
-  `offices` and `political_organizations` (one migration, the same generate-and-freeze rule as
-  people) and a lookup from slug to id in the directory page. It is not hard, but it is new schema
-  that could not be run here, and it is better done together with the `/elections` pages
-  (Milestone 5), which need the same slugs. Until then filter links work and are shareable, just
-  not pretty. Old UUID links should keep working when slugs arrive.
+- ~~Readable filter URLs~~: done in Milestone 5 (`20261016090100_election_foundation`), with
+  legacy UUID links redirecting to the readable URL.
 - **Photos.** Decision: keep the placeholder (no image) until the real-data pilot.
   `people.photo_asset_id` stays a reference. Publishing a person's photo raises questions the
   fictional data cannot answer (source, licence, attribution, consent), and there is nothing to

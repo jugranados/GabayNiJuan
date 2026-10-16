@@ -143,10 +143,41 @@ describe('form schemas', () => {
     expect(sources.safeParse({ ...src, url: 'https://example.org/doc' }).success).toBe(true);
     expect(sources.safeParse({ ...src, document_identifier: 'GAZ-1' }).success).toBe(true);
   });
+  it('elections: date and status must agree, and the slug must be URL-safe', () => {
+    const elections = buildFormSchema(recordTypeBySlug('elections')!, '2026-10-16');
+    const e = { name: '2028 Election (fictional)', election_date: '2028-05-08', status: 'UPCOMING', slug: '' };
+    expect(elections.safeParse(e).success).toBe(true);
+    expect((elections.parse(e) as Record<string, unknown>).slug).toBeNull();
+    const completedEarly = elections.safeParse({ ...e, status: 'COMPLETED' });
+    expect(completedEarly.success).toBe(false);
+    expect(completedEarly.error?.issues[0]?.path).toEqual(['status']);
+    expect(elections.safeParse({ ...e, election_date: '2022-05-09' }).success).toBe(false);
+    expect(elections.safeParse({ ...e, election_date: '2022-05-09', status: 'COMPLETED' }).success).toBe(true);
+    for (const bad of ['2028 Election', '2028_election', '-2028', 'Halalan-2028']) {
+      expect(elections.safeParse({ ...e, slug: bad }).success).toBe(false);
+    }
+    expect(elections.safeParse({ ...e, slug: '2028-philippine-general-election' }).success).toBe(true);
+  });
+  it('offices and organizations can set a readable slug; election offices need a whole display order', () => {
+    const offices = buildFormSchema(recordTypeBySlug('offices')!);
+    const office = { name: 'Governor, Bataan', level: 'PROVINCIAL', jurisdiction_id: '', slug: 'governor-bataan' };
+    expect(offices.safeParse(office).success).toBe(true);
+    expect(offices.safeParse({ ...office, slug: 'Governor Bataan' }).success).toBe(false);
+    const contests = buildFormSchema(recordTypeBySlug('election-offices')!);
+    const contest = {
+      election_id: '11111111-1111-4111-8111-111111111111',
+      office_id: '22222222-2222-4222-8222-222222222222',
+      sort_order: '30',
+    };
+    expect(contests.safeParse(contest).success).toBe(true);
+    for (const bad of ['', '-1', '3.5', '10000', 'first']) {
+      expect(contests.safeParse({ ...contest, sort_order: bad }).success).toBe(false);
+    }
+  });
   it('covers exactly the supported record types (no legal-case or asset editors yet)', () => {
     const types = RECORD_TYPES.map((t) => t.table);
     expect(types).not.toContain('legal_case_records');
     expect(types).not.toContain('asset_disclosure_records');
-    expect(types).toEqual(expect.arrayContaining(['people', 'claims', 'sources', 'election_participations', 'office_terms', 'affiliation_records', 'education_records', 'policy_position_records']));
+    expect(types).toEqual(expect.arrayContaining(['people', 'claims', 'sources', 'election_participations', 'office_terms', 'affiliation_records', 'education_records', 'policy_position_records', 'elections', 'offices', 'election_offices', 'political_organizations']));
   });
 });

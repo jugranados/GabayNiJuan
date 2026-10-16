@@ -17,12 +17,12 @@ Status words used here and in `docs/ROADMAP.md`:
 | SQL tests: RLS, publication, verification consistency, editorial functions, corrections, roles, slugs | AUTOMATED VERIFIED | CI `database` job, `supabase/tests/rls_and_publication.test.sql` |
 | Seed is idempotent and equals the fixtures | AUTOMATED VERIFIED | CI `database` and `web` jobs |
 | Web integration test against a real database | AUTOMATED VERIFIED (local stack only) | CI `database` job |
-| Web typecheck, lint, 269 tests, production build, no privileged key in the bundle | AUTOMATED VERIFIED | CI `web` job; also run locally |
+| Web typecheck, lint, 329 tests, production build, no privileged key in the bundle | AUTOMATED VERIFIED | CI `web` job; also run locally (Milestone 5, 2026-10-16) |
 | Enums and both state machines equal the SQL | AUTOMATED VERIFIED | CI `drift` job |
 | Applied migration files equal the hosted history | AUTOMATED VERIFIED | all 10 applied files match the recorded statements (comments aside) |
 | Indexing off by default | AUTOMATED VERIFIED | `npm run smoke` on a production build |
 | Signed-out visitors cannot reach `/admin` | AUTOMATED VERIFIED | `npm run smoke`; boundary tests |
-| Pending migrations applied to hosted | MANUAL CHECK REQUIRED | 10 of 14 applied. Step 1 |
+| Pending migrations applied to hosted | MANUAL CHECK REQUIRED | 10 of 16 applied (checked 2026-10-16). Step 1 |
 | `database.types.ts` regenerated | BLOCKED | needs step 1. Step 2 |
 | Integration test against the **hosted** project | BLOCKED | needs step 1. Today 31 tests fail there, all because `people.slug` and `submit_correction` do not exist yet |
 | Leaked-password protection | MANUAL CHECK REQUIRED | Supabase security advisor reports it **off** (2026-10-12). Step 3 |
@@ -30,7 +30,7 @@ Status words used here and in `docs/ROADMAP.md`:
 | MFA for editorial accounts | MANUAL CHECK REQUIRED | not set up. Step 3 |
 | REVIEWER, APPROVER, ADMIN accounts | MANUAL CHECK REQUIRED | Step 4 |
 | Editorial acceptance test | BLOCKED | needs steps 1 and 4. Step 5 |
-| Vercel deployment | BLOCKED | needs step 1 (the directory breaks without `people.slug`). Step 6 |
+| Vercel deployment | BLOCKED | needs step 1 (the directory and election pages break without the slug columns and `election_offices`). Step 6 |
 | Deployed smoke test | BLOCKED | needs step 6. Step 7 |
 | Browser pass: phone, tablet, desktop, keyboard | MANUAL CHECK REQUIRED | Step 7 |
 | Archive `mobile/` | BLOCKED | needs every step above. Step 8 |
@@ -43,21 +43,23 @@ Pending, in order:
 2. `20261008150100_corrections_and_staff`
 3. `20261012070000_person_slugs`
 4. `20261012090000_grant_editorial_table_helpers`
+5. `20261016090000_election_office_entity_type` (Milestone 5; must be committed before the next one)
+6. `20261016090100_election_foundation` (Milestone 5)
 
 From the repository root (the CLI asks for the database password once, at `link`):
 
 ```bash
 npx supabase login
 npx supabase link --project-ref gqplutvabfnxakpmqofv
-npx supabase migration list          # 10 rows have both Local and Remote; 4 have Local only
-npx supabase db push --dry-run       # must list exactly the four files above
+npx supabase migration list          # 10 rows have both Local and Remote; 6 have Local only
+npx supabase db push --dry-run       # must list exactly the six files above
 npx supabase db push
 npx supabase migration list          # every row now has both Local and Remote
 ```
 
-- [ ] `db push --dry-run` listed exactly those four
+- [ ] `db push --dry-run` listed exactly those six
 - [ ] `db push` finished without an error
-- [ ] `migration list` shows 14 rows, each with Local and Remote
+- [ ] `migration list` shows 16 rows, each with Local and Remote
 
 If a migration fails: stop, keep the error text, and do not edit `schema_migrations` or an applied
 file. Files after the failing one are not applied; run `npx supabase migration list` to see exactly
@@ -66,7 +68,15 @@ where it stopped before doing anything else.
 What these change on hosted: the evidence functions and the work queue view; correction requests
 and role management (after this, role rows change only through `/admin/roles`); `people.slug`
 (existing people get their slug; expected result: the ten fictional people get exactly the slugs in
-the fixtures); and the grant without which no editor can save or move a record.
+the fixtures); the grant without which no editor can save or move a record; and, for Milestone 5,
+slugs for elections, offices and organizations (generated from their names; expected: exactly the
+fixture slugs) and `election_offices`, backfilled from existing participations (expected: five
+published election offices, each logged in `revisions` with the reason "Milestone 5: election
+office backfilled from existing participations"). Then re-run `supabase/seed.sql` to add the new
+fictional offices and election offices. Backfilled election offices keep display order 100 (the
+seed skips pairs that already exist), so their order on election pages differs from a fresh seed
+until an editor sets it. The upgrade path was rehearsed locally on PostgreSQL 16 (old schema +
+old seed, then the two migrations, then the new seed).
 
 ## Step 2. Regenerate types and verify the web app
 

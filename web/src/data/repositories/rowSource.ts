@@ -14,6 +14,7 @@ export const TABLES = [
   'people',
   'elections',
   'offices',
+  'election_offices',
   'election_participations',
   'office_terms',
   'political_organizations',

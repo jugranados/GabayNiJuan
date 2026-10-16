@@ -42,6 +42,12 @@ describe('home', () => {
       'href',
       '/politicians?level=national',
     );
+    // Elections are a primary discovery path: each links to its election page, by date.
+    expect(screen.getByRole('link', { name: 'All elections and offices' })).toHaveAttribute('href', '/elections');
+    expect(screen.getByRole('link', { name: 'National and District Election 2028 (fictional)' })).toHaveAttribute(
+      'href',
+      '/elections/national-and-district-election-2028-fictional',
+    );
     expect(container).toHaveTextContent('does not endorse, rank, score, or recommend any candidate');
     expect(container.textContent).not.toMatch(FORBIDDEN);
     // No person is featured on the home page.

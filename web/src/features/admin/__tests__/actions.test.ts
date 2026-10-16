@@ -25,6 +25,7 @@ const editorial = {
   reviewCorrection: vi.fn(),
   setStaffRole: vi.fn(),
   queue: vi.fn(),
+  contestParticipations: vi.fn(),
 };
 const getEditorial = vi.fn();
 vi.mock('@/server/editorial', () => ({
@@ -172,6 +173,66 @@ describe('records', () => {
       stale: true,
       values: expect.objectContaining({ first_name: 'Juan' }),
     });
+  });
+});
+
+describe('election records', () => {
+  const PERSON = '33333333-3333-4333-8333-333333333333';
+  const ELECTION = '44444444-4444-4444-8444-444444444444';
+  const OFFICE = '55555555-5555-4555-8555-555555555555';
+  const participation = (status: string, effective_from: string) =>
+    form({ person_id: PERSON, election_id: ELECTION, office_id: OFFICE, status, effective_from });
+  const existing = [
+    { id: ID, status: 'FILED_COC', effectiveFrom: '2027-10-01', publicationStatus: 'PUBLISHED' },
+  ];
+
+  it('creates a later status as a new record when it validly follows the existing one', async () => {
+    editorial.contestParticipations.mockResolvedValue(existing);
+    editorial.createRecord.mockResolvedValue({ id: SOURCE });
+    await expect(createRecordAction('participations', {}, participation('OFFICIAL_CANDIDATE', '2027-12-01'))).rejects.toThrow(
+      'REDIRECT:',
+    );
+    expect(editorial.contestParticipations).toHaveBeenCalledWith({ personId: PERSON, electionId: ELECTION, officeId: OFFICE });
+  });
+
+  it('refuses a status that cannot follow the existing record, and keeps what was typed', async () => {
+    editorial.contestParticipations.mockResolvedValue(existing);
+    const result = await createRecordAction('participations', {}, participation('POTENTIAL_ASPIRANT', '2027-12-01'));
+    expect(result.fieldErrors?.status).toMatch(/cannot follow/);
+    expect(result.values).toMatchObject({ status: 'POTENTIAL_ASPIRANT' });
+    expect(editorial.createRecord).not.toHaveBeenCalled();
+  });
+
+  it('ignores retracted and rejected records, and the record being edited', async () => {
+    editorial.contestParticipations.mockResolvedValue([
+      { ...existing[0], publicationStatus: 'RETRACTED' },
+      { id: SOURCE, status: 'ELECTED', effectiveFrom: '2027-01-01', publicationStatus: 'DRAFT' },
+    ]);
+    editorial.updateRecord.mockResolvedValue({ status: 'DRAFT' });
+    const data = participation('POTENTIAL_ASPIRANT', '2027-12-01');
+    data.set('version', '1');
+    expect(await saveRecordAction('participations', SOURCE, {}, data)).toEqual({ ok: true });
+  });
+
+  it('refuses an election marked completed before its date', async () => {
+    const result = await createRecordAction(
+      'elections',
+      {},
+      form({ name: 'Future Election (fictional)', election_date: '2099-05-08', status: 'COMPLETED' }),
+    );
+    expect(result.fieldErrors?.status).toMatch(/cannot be completed/);
+    expect(editorial.createRecord).not.toHaveBeenCalled();
+  });
+
+  it('creates an election office for an election with its display order', async () => {
+    editorial.createRecord.mockResolvedValue({ id: SOURCE });
+    await expect(
+      createRecordAction('election-offices', {}, form({ election_id: ELECTION, office_id: OFFICE, sort_order: '30' })),
+    ).rejects.toThrow(`REDIRECT:/admin/records/election-offices/${SOURCE}`);
+    expect(editorial.createRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ recordType: 'ELECTION_OFFICE', table: 'election_offices' }),
+      { election_id: ELECTION, office_id: OFFICE, sort_order: '30' },
+    );
   });
 });
 

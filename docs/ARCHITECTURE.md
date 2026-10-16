@@ -126,13 +126,39 @@ The database also enforces the editorial rules (RLS, column-level grants, publis
 
 ### Public URLs
 
-`/politicians/<slug>` and `/claims/<id>`. `people.slug` is unique, generated in the database and frozen once published; the UUID stays the identity. Policy: `docs/WEB_MIGRATION.md`, "Slugs".
+`/politicians/<slug>`, `/claims/<id>`, `/elections`, `/elections/<election slug>` and
+`/elections/<election slug>/<office slug>`. People, elections, offices and organizations have slugs
+that are unique, generated in the database and frozen once published; the UUID stays the identity.
+Policy: `docs/WEB_MIGRATION.md`, "Slugs", and `docs/ELECTION_INFORMATION_MODEL.md`.
+
+### Election information (Milestone 5)
+
+```text
+/elections                       ElectionRepository.listElections        -> grouped by recorded status, by date
+/elections/<slug>                ElectionRepository.getElectionDetail    -> election offices in ballot order + per-status counts
+/elections/<slug>/<office slug>  ElectionRepository.getElectionOfficeDetail
+                                   -> participants grouped by exact status of their most recent record,
+                                      each record with its own claims and evidence
+```
+
+- Offices of an election come from the publishable `election_offices` table, not from
+  participations, so an office with no documented participant still appears (with the neutral
+  missing-records sentence).
+- Pure rules (ordering, date/status consistency, participation succession, Philippine date) are in
+  `domain/elections.ts`, shared by repositories, pages and the editorial area; PostgreSQL enforces
+  the date rule, the election-office integrity and the frozen participation status.
+- Structured data: `Event` and `BreadcrumbList` on election pages, `BreadcrumbList` on office pages
+  (`lib/structuredData.ts`); still no `Person`.
+- The directory resolves `?election=`, `?office=` and `?organization=` slugs to ids on the server
+  (`resolveDirectoryState`) and permanently redirects legacy UUID links to the readable URL.
+  Details: `docs/ELECTION_INFORMATION_MODEL.md`.
 
 ### Directory query architecture
 
 ```text
-/politicians?q=&level=&status=&page=   (URL is the state)
-   ↓ parseDirectoryState -> toDirectoryQuery           features/politicians/directoryParams
+/politicians?q=&election=&office=&level=&status=&organization=&page=   (URL is the state; slugs)
+   ↓ parseDirectoryState -> resolveDirectoryState (slug|legacy id -> id) -> toDirectoryQuery
+                                                       features/politicians/directoryParams
 PersonRepository.searchDirectory(DirectoryQuery)     domain/repositories
    ↓ normalizeDirectoryQuery  (trim, min length, clamp paging, drop empty filters)
 DirectorySource.search(params) -> unknown            data/repositories

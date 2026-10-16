@@ -67,6 +67,7 @@ const people = [
 const elections = [
   {
     id: 'election-halimbawa-2027',
+    slug: 'halimbawa-city-local-election-2027-fictional',
     name: 'Halimbawa City Local Election 2027 (fictional)',
     election_date: '2027-05-10',
     country_code: 'PH',
@@ -77,33 +78,58 @@ const elections = [
 const offices = [
   {
     id: 'office-halimbawa-mayor',
+    slug: 'mayor-city-of-halimbawa-fictional',
     name: 'Mayor, City of Halimbawa (fictional)',
     level: 'CITY',
     jurisdiction_id: 'jurisdiction-halimbawa-city',
   },
   {
     id: 'office-halimbawa-councilor',
+    slug: 'city-councilor-city-of-halimbawa-fictional',
     name: 'City Councilor, City of Halimbawa (fictional)',
     level: 'CITY',
     jurisdiction_id: 'jurisdiction-halimbawa-city',
   },
   {
     id: 'office-barangay-uno-captain',
+    slug: 'punong-barangay-barangay-uno-halimbawa-fictional',
     name: 'Punong Barangay, Barangay Uno, Halimbawa (fictional)',
     level: 'BARANGAY',
     jurisdiction_id: 'jurisdiction-barangay-uno',
   },
 ];
 
+/**
+ * Offices contested in each election. `sort_order` is the order of offices on the election
+ * page (ballot order); it never orders people. The fictional 2028 election is the
+ * representative structure for the real cycle: President, Vice President, Senator, a House
+ * district, a governor and a mayor. President and Vice President deliberately have no
+ * participants, so the empty state is exercised.
+ */
+const election_offices = [
+  ['eo-2028-president', 'election-pambansa-2028', 'office-president', 10],
+  ['eo-2028-vice-president', 'election-pambansa-2028', 'office-vice-president', 20],
+  ['eo-2028-senator', 'election-pambansa-2028', 'office-senator', 30],
+  ['eo-2028-rep-halimbawa-1', 'election-pambansa-2028', 'office-rep-halimbawa-1', 40],
+  ['eo-2028-governor-kathang-isip', 'election-pambansa-2028', 'office-governor-kathang-isip', 50],
+  ['eo-2028-mayor-bayan-ejemplo', 'election-pambansa-2028', 'office-mayor-bayan-ejemplo', 70],
+  ['eo-2027-halimbawa-mayor', 'election-halimbawa-2027', 'office-halimbawa-mayor', 70],
+  ['eo-2027-halimbawa-councilor', 'election-halimbawa-2027', 'office-halimbawa-councilor', 80],
+  ['eo-2022-governor-kathang-isip', 'election-local-2022', 'office-governor-kathang-isip', 50],
+  ['eo-2022-mayor-bayan-ejemplo', 'election-local-2022', 'office-mayor-bayan-ejemplo', 70],
+].map(([id, election_id, office_id, sort_order]) => ({ id, election_id, office_id, sort_order }));
+
 const political_organizations = [
   {
     id: 'org-partido-halimbawa',
+    slug: 'partido-halimbawa-fictional',
     name: 'Partido Halimbawa (fictional)',
     abbreviation: 'PHal',
     organization_type: 'POLITICAL_PARTY',
   },
   {
     id: 'org-samahang-kathang-isip',
+    slug: 'samahang-kathang-isip-fictional',
     name: 'Samahang Kathang-Isip (fictional)',
     abbreviation: 'SKI',
     organization_type: 'OTHER',
@@ -569,6 +595,7 @@ export const devFixtureTables: FixtureTables = {
   people: [...people, ...extraPeople],
   elections: [...elections, ...extraElections],
   offices: [...offices, ...extraOffices],
+  election_offices,
   political_organizations: [...political_organizations, ...extraOrganizations],
   election_participations: [...election_participations, ...extraParticipations],
   office_terms: [...office_terms, ...extraOfficeTerms],

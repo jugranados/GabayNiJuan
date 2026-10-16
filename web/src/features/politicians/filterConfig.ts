@@ -9,18 +9,16 @@
  * jurisdictions have human-readable names.
  */
 import { OFFICE_LEVELS } from '@/domain/enums';
-import type {
-  DirectoryFilterKey,
-  DirectoryFilterOptions,
-  DirectoryFilters,
-} from '@/domain/models/directory';
+import type { DirectoryFilterOptions } from '@/domain/models/directory';
+import type { DirectoryUrlFilters, UrlFilterKey } from '@/features/politicians/directoryParams';
 import {
   PARTICIPATION_STATUS_INFO,
   PARTICIPATION_STATUS_ORDER,
 } from '@/features/elections/participationLabels';
 import { OFFICE_LEVEL_LABELS } from '@/features/offices/officeLevelLabels';
 
-export type UiFilterKey = Exclude<DirectoryFilterKey, 'jurisdictionId'>;
+/** Filters the UI shows, in URL vocabulary: elections, offices and organizations by slug. */
+export type UiFilterKey = UrlFilterKey;
 
 export type FilterDefinition = {
   key: UiFilterKey;
@@ -30,28 +28,28 @@ export type FilterDefinition = {
 export type FilterChoice = { value: string; label: string };
 
 export const FILTER_DEFINITIONS: readonly FilterDefinition[] = [
-  { key: 'electionId', label: 'Election' },
+  { key: 'election', label: 'Election' },
   { key: 'officeLevel', label: 'Office level' },
-  { key: 'officeId', label: 'Office' },
+  { key: 'office', label: 'Office' },
   { key: 'participationStatus', label: 'Participation status' },
-  { key: 'organizationId', label: 'Political organization' },
+  { key: 'organization', label: 'Political organization' },
 ];
 
 export function choicesFor(key: UiFilterKey, options: DirectoryFilterOptions): FilterChoice[] {
   switch (key) {
-    case 'electionId':
-      return options.elections.map((e) => ({ value: e.id, label: e.name }));
+    case 'election':
+      return options.elections.map((e) => ({ value: e.slug, label: e.name }));
     case 'officeLevel':
       return OFFICE_LEVELS.map((level) => ({ value: level, label: OFFICE_LEVEL_LABELS[level] }));
-    case 'officeId':
-      return options.offices.map((o) => ({ value: o.id, label: o.name }));
+    case 'office':
+      return options.offices.map((o) => ({ value: o.slug, label: o.name }));
     case 'participationStatus':
       return PARTICIPATION_STATUS_ORDER.map((status) => ({
         value: status,
         label: PARTICIPATION_STATUS_INFO[status].label,
       }));
-    case 'organizationId':
-      return options.organizations.map((o) => ({ value: o.id, label: o.name }));
+    case 'organization':
+      return options.organizations.map((o) => ({ value: o.slug, label: o.name }));
   }
 }
 
@@ -69,12 +67,13 @@ export function describeFilterValue(
     );
   }
   if (!options) return 'Selected';
-  return choicesFor(key, options).find((choice) => choice.value === value)?.label ?? 'Selected';
+  // A reference that matches no public record (a stale or mistyped link) is said to be not found.
+  return choicesFor(key, options).find((choice) => choice.value === value)?.label ?? 'Not found';
 }
 
 /** Filters currently set that the UI knows how to show and clear. */
 export function activeUiFilters(
-  filters: DirectoryFilters,
+  filters: DirectoryUrlFilters,
 ): { definition: FilterDefinition; value: string }[] {
   return FILTER_DEFINITIONS.flatMap((definition) => {
     const value = filters[definition.key];

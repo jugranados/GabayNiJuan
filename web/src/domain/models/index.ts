@@ -54,6 +54,8 @@ export type Person = {
 
 export type Election = {
   id: string;
+  /** Stable public URL slug (`/elections/<slug>`). An address only; relationships use `id`. */
+  slug: string;
   name: string;
   electionDate: IsoDate;
   countryCode: 'PH';
@@ -62,9 +64,23 @@ export type Election = {
 
 export type Office = {
   id: string;
+  /** Stable public URL slug (`/elections/<election>/<office>`, `?office=`). An address only. */
+  slug: string;
   name: string;
   level: OfficeLevel;
   jurisdictionId?: string;
+};
+
+/**
+ * An office contested in an election. Election pages list these, so an office can be shown
+ * before anyone has a documented participation in it. Every participation belongs to one.
+ */
+export type ElectionOffice = {
+  id: string;
+  electionId: string;
+  officeId: string;
+  /** Presentation order of offices on the election page (lower first). Orders offices, never people. */
+  sortOrder: number;
 };
 
 export type ElectionParticipation = {
@@ -89,6 +105,8 @@ export type OfficeTerm = {
 
 export type PoliticalOrganization = {
   id: string;
+  /** Stable slug for readable directory filter URLs (`?organization=`). An address only. */
+  slug: string;
   name: string;
   abbreviation?: string;
   organizationType: PoliticalOrganizationType;

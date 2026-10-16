@@ -56,6 +56,7 @@ export type TableContracts = [
   Assert<MatchesTable<'people', typeof rows.personRowSchema>>,
   Assert<MatchesTable<'elections', typeof rows.electionRowSchema>>,
   Assert<MatchesTable<'offices', typeof rows.officeRowSchema>>,
+  Assert<MatchesTable<'election_offices', typeof rows.electionOfficeRowSchema>>,
   Assert<MatchesTable<'election_participations', typeof rows.electionParticipationRowSchema>>,
   Assert<MatchesTable<'office_terms', typeof rows.officeTermRowSchema>>,
   Assert<MatchesTable<'political_organizations', typeof rows.politicalOrganizationRowSchema>>,

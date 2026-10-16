@@ -2,7 +2,12 @@
  * View models for the editorial area. They are produced by src/data/editorial (Zod-validated,
  * then mapped) and are what /admin pages and components consume.
  */
-import type { CorrectionStatus, EditorialRole, PublicationStatus } from '@/domain/enums';
+import type {
+  CorrectionStatus,
+  EditorialRole,
+  ElectionParticipationStatus,
+  PublicationStatus,
+} from '@/domain/enums';
 
 import type { EditorialRecordType } from './records';
 
@@ -92,3 +97,11 @@ export type RoleEvent = {
 };
 
 export type RecordTypeCount = { recordType: EditorialRecordType; count: number };
+
+/** One participation record as the succession check needs it (any workflow state). */
+export type ContestParticipationRecord = {
+  id: string;
+  status: ElectionParticipationStatus;
+  effectiveFrom: string;
+  publicationStatus: PublicationStatus;
+};

@@ -1,7 +1,9 @@
 // GENERATED from the Supabase schema. Do not edit by hand.
-// EXCEPTION (web migration): `people.slug` was added by hand to match
-// supabase/migrations/20261012070000_person_slugs.sql, because that migration is not applied to
-// the hosted project yet. Regenerate this file once it is, and delete this note.
+// EXCEPTION: `people.slug` (20261012070000_person_slugs.sql), the `slug` columns of elections,
+// offices and political_organizations, the `election_offices` table and the ELECTION_OFFICE
+// revision entity type (20261016090000/20261016090100, Milestone 5) were added by hand, because
+// those migrations are not applied to the hosted project yet. Regenerate this file with
+// `npm run db:types` once they are, and delete this note.
 // Regenerate after every migration (Supabase MCP `generate_typescript_types`, or
 // `npx supabase gen types typescript --project-id <ref>`), then run `npm run typecheck`:
 // src/data/supabase/schemaDrift.ts fails to compile if the Zod row contracts drift.
@@ -425,6 +427,57 @@ export type Database = {
           },
         ]
       }
+      election_offices: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          election_id: string
+          id: string
+          office_id: string
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sort_order: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          election_id: string
+          id?: string
+          office_id: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sort_order?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          election_id?: string
+          id?: string
+          office_id?: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sort_order?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       election_participations: {
         Row: {
           approved_by: string | null
@@ -521,6 +574,7 @@ export type Database = {
           published_by: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          slug: string
           status: Database["public"]["Enums"]["election_status"]
           updated_at: string
         }
@@ -537,6 +591,7 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          slug?: string
           status: Database["public"]["Enums"]["election_status"]
           updated_at?: string
         }
@@ -553,6 +608,7 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          slug?: string
           status?: Database["public"]["Enums"]["election_status"]
           updated_at?: string
         }
@@ -715,6 +771,7 @@ export type Database = {
           published_by: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          slug: string
           updated_at: string
         }
         Insert: {
@@ -730,6 +787,7 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          slug?: string
           updated_at?: string
         }
         Update: {
@@ -745,6 +803,7 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          slug?: string
           updated_at?: string
         }
         Relationships: []
@@ -888,6 +947,7 @@ export type Database = {
           published_by: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          slug: string
           updated_at: string
         }
         Insert: {
@@ -903,6 +963,7 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          slug?: string
           updated_at?: string
         }
         Update: {
@@ -918,6 +979,7 @@ export type Database = {
           published_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          slug?: string
           updated_at?: string
         }
         Relationships: []
@@ -1128,6 +1190,7 @@ export type Database = {
         | "SOURCE"
         | "CLAIM"
         | "CLAIM_EVIDENCE"
+        | "ELECTION_OFFICE"
       source_type:
         | "OFFICIAL_GOVERNMENT"
         | "COURT_OR_TRIBUNAL"
@@ -1362,6 +1425,7 @@ export const Constants = {
         "SOURCE",
         "CLAIM",
         "CLAIM_EVIDENCE",
+        "ELECTION_OFFICE",
       ],
       source_type: [
         "OFFICIAL_GOVERNMENT",

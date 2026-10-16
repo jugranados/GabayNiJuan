@@ -179,7 +179,7 @@ exact commands and tick boxes, is `docs/VERIFICATION_CHECKLIST.md`. Status as of
 
 ### MANUAL CHECK REQUIRED
 
-- [ ] apply the four pending migrations to the hosted project with `supabase db push` (10 of 14 applied): `20261008150050_editorial_evidence_and_queue`, `20261008150100_corrections_and_staff`, `20261012070000_person_slugs`, `20261012090000_grant_editorial_table_helpers`
+- [ ] apply the six pending migrations to the hosted project with `supabase db push` (10 of 16 applied, checked 2026-10-16): `20261008150050_editorial_evidence_and_queue`, `20261008150100_corrections_and_staff`, `20261012070000_person_slugs`, `20261012090000_grant_editorial_table_helpers`, `20261016090000_election_office_entity_type`, `20261016090100_election_foundation`
 - [ ] Supabase dashboard: **leaked-password protection is OFF** (security advisor, 2026-10-12); public sign-up disabled (not visible to the advisor); MFA for editorial accounts (not set up, and the app has no MFA screen yet). The advisor's only other finding, RLS without a policy on `private.editorial_settings`, is intended: that table is denied to every API role
 - [ ] create REVIEWER, APPROVER and ADMIN accounts
 - [ ] browser pass of the public site: phone, tablet and desktop widths; keyboard and focus; 404 and error states
@@ -193,17 +193,31 @@ exact commands and tick boxes, is `docs/VERIFICATION_CHECKLIST.md`. Status as of
 - [ ] deployed smoke test, automated and manual: needs the deployment
 - [ ] archive `mobile/`, remove its CI job and the mobile half of the drift check: needs every item above
 
-## Milestone 5 — Election Information Foundation
+## Milestone 5 — Election Information Foundation (implemented 2026-10-16; hosted migrations pending)
 
-Not started. Structure for elections, not claims about them.
+Structure for elections, not claims about them. Model and rules: `docs/ELECTION_INFORMATION_MODEL.md`.
 
-- `/elections` and `/elections/[slug]`
-- readable slugs for elections and offices, and for organizations where justified (same generate-and-freeze rule as people; UUIDs stay the identity)
-- human-readable directory filters (`?election=…&office=…`), with existing UUID links still working
-- the 2028 election structure: election → offices → participants navigation
-- participation shown with its exact state; aspirant states are never called candidacies
-- no official 2028 candidate claim without authoritative evidence (COMELEC or equivalent primary record); until then the structure is filled only with what is documented
-- later in this area: candidate status transitions, ballot information where officially available, election results when appropriate
+- [x] `/elections`, `/elections/[slug]`, `/elections/[slug]/[office]`; Elections in the main navigation; home links to election pages
+- [x] stable slugs for elections, offices and organizations (generate-and-freeze, like people; UUIDs stay the identity); organizations justified by readable filter URLs only
+- [x] `election_offices`: an office contested in an election, publishable under the full workflow; participations must belong to one (composite foreign key)
+- [x] human-readable directory filters; legacy UUID links redirect permanently; canonical URLs always use slugs
+- [x] participation shown with its exact state, grouped by state on office pages; only `OFFICIAL_CANDIDATE` is called an official candidate
+- [x] each status is its own evidence-backed record; published status frozen in the database; succession checked in the editorial area
+- [x] election date/status consistency (database and editorial form)
+- [x] election source hierarchy (`docs/SOURCE_POLICY.md`)
+- [x] SEO metadata, sitemap entries, `Event` / `BreadcrumbList` structured data
+- [x] fictional 2028 structure (6 offices, 2 deliberately empty); no real data imported
+- [x] tests: 59 new web tests (pages, filters, canonical URLs, labels, repositories, domain rules, editorial forms and actions), ~40 new SQL checks, integration equality for election pages, smoke test covers election routes
+
+Open items:
+- [ ] apply `20261016090000_election_office_entity_type` and `20261016090100_election_foundation` to the hosted project (with the four earlier pending migrations, `docs/VERIFICATION_CHECKLIST.md` step 1), then re-run the seed and regenerate `database.types.ts` (hand-edited for now)
+- [ ] first CI run of the new migrations and integration checks (rehearsed locally on PostgreSQL 16 with a Supabase stand-in; PostgREST not run locally)
+- [ ] election and office metadata linked to sources (today only participations carry claims)
+
+Deferred:
+- ballot information and results; candidate status transitions beyond the succession check
+- slug redirect table (only needed if a published slug must change)
+- resolving filter slugs with a single lookup instead of the full option lists (needed at national data volume)
 
 ## Phase 2
 

@@ -5,7 +5,7 @@ import { publicColumnsFor } from '@/data/supabase/publicColumns';
 import { isUuid } from '@/domain/slug';
 
 /** uuid columns the repositories filter on. A value that is not a uuid cannot match a row. */
-const UUID_FILTER_COLUMNS = new Set(['id', 'person_id', 'subject_person_id', 'claim_id']);
+const UUID_FILTER_COLUMNS = new Set(['id', 'person_id', 'subject_person_id', 'claim_id', 'election_id', 'office_id']);
 
 export class BackendRequestError extends Error {
   override readonly name = 'BackendRequestError';

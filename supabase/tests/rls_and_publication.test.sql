@@ -80,7 +80,7 @@ declare
     'people', 'elections', 'offices', 'political_organizations', 'election_participations',
     'office_terms', 'affiliation_records', 'education_records', 'award_records',
     'policy_position_records', 'legal_case_records', 'asset_disclosure_records', 'sources',
-    'claims', 'claim_evidence'];
+    'claims', 'claim_evidence', 'election_offices'];
 begin
   insert into auth.users (id, aud, role, email) values
     (reviewer, 'authenticated', 'authenticated', 'reviewer-rls@example.org'),
@@ -611,6 +611,146 @@ begin
     perform pg_temp.check(
       pg_temp.scalar_as('anon', null, $q$select count(*) from jsonb_array_elements(public.search_directory('RlsTest') -> 'items') i where i ->> 'slug' = 'published-rlstest'$q$) = '1',
       'the directory returns the slug of each published person');
+  end;
+
+  -- ------------------------------------------------------------------
+  -- Milestone 5: election, office and organization slugs; election offices
+  -- ------------------------------------------------------------------
+  declare
+    e1 uuid; e2 uuid; e_past uuid; o1 uuid; o2 uuid; g1 uuid; eo1 uuid; eo_draft uuid; ep1 uuid; ep_draft uuid; pp uuid;
+  begin
+    -- Slugs: generated from the name, unique per table, URL-safe, frozen once published.
+    insert into public.elections (name, election_date, status) values ('Halalan RlsTest 2031 (fictional)', '2031-05-12', 'UPCOMING') returning id into e1;
+    insert into public.elections (name, election_date, status) values ('Halalan  RLSTEST 2031 (Fictional)', '2031-05-12', 'UPCOMING') returning id into e2;
+    perform pg_temp.check((select slug from public.elections where id = e1) = 'halalan-rlstest-2031-fictional',
+      'an election slug is generated lowercase and URL-safe from its name');
+    perform pg_temp.check((select slug from public.elections where id = e2) = 'halalan-rlstest-2031-fictional-2',
+      'a colliding election slug gets a numeric suffix');
+    perform pg_temp.expect_error(format($q$update public.elections set slug = 'Not A Slug' where id = %L$q$, e2),
+      'elections_slug_format', 'election slugs must be lowercase and URL-safe');
+    perform pg_temp.expect_error(format($q$update public.elections set slug = 'halalan-rlstest-2031-fictional' where id = %L$q$, e2),
+      'elections_slug_key', 'election slugs are unique');
+    update public.elections set slug = '2031-rlstest-election' where id = e2;
+    perform pg_temp.check((select slug from public.elections where id = e2) = '2031-rlstest-election',
+      'an unpublished election slug can be corrected');
+    update public.elections set slug = null where id = e2;
+    perform pg_temp.check((select slug from public.elections where id = e2) = '2031-rlstest-election',
+      'an empty slug in an update keeps the current slug');
+
+    insert into public.offices (name, level) values ('Gobernador RlsTest', 'PROVINCIAL') returning id into o1;
+    insert into public.offices (name, level, slug) values ('Senator RlsTest', 'NATIONAL', 'senator-rlstest') returning id into o2;
+    insert into public.political_organizations (name, organization_type) values ('Partido RlsTest', 'POLITICAL_PARTY') returning id into g1;
+    perform pg_temp.check((select slug from public.offices where id = o1) = 'gobernador-rlstest', 'an office slug is generated from its name');
+    perform pg_temp.check((select slug from public.offices where id = o2) = 'senator-rlstest', 'an office slug can be chosen by the editor');
+    perform pg_temp.check((select slug from public.political_organizations where id = g1) = 'partido-rlstest', 'an organization slug is generated from its name');
+
+    update public.elections set publication_status = 'PUBLISHED' where id = e1;
+    update public.offices set publication_status = 'PUBLISHED' where id in (o1, o2);
+    update public.political_organizations set publication_status = 'PUBLISHED' where id = g1;
+    perform pg_temp.expect_error(
+      format($q$select set_config('gnj.change_reason', 'test', true); update public.elections set slug = 'moved-rlstest' where id = %L$q$, e1),
+      'cannot be changed', 'the slug of a published election is frozen');
+    perform pg_temp.expect_error(
+      format($q$select set_config('gnj.change_reason', 'test', true); update public.offices set slug = 'moved-rlstest' where id = %L$q$, o1),
+      'cannot be changed', 'the slug of a published office is frozen');
+    perform pg_temp.expect_error(
+      format($q$select set_config('gnj.change_reason', 'test', true); update public.political_organizations set slug = 'moved-rlstest' where id = %L$q$, g1),
+      'cannot be changed', 'the slug of a published organization is frozen');
+    perform pg_temp.check(
+      pg_temp.scalar_as('anon', null, format('select slug from public.elections where id = %L', e1)) = 'halalan-rlstest-2031-fictional'
+      and pg_temp.scalar_as('anon', null, format('select slug from public.offices where id = %L', o1)) = 'gobernador-rlstest'
+      and pg_temp.scalar_as('anon', null, format('select slug from public.political_organizations where id = %L', g1)) = 'partido-rlstest',
+      'anon can read published election, office and organization slugs');
+    perform pg_temp.check(
+      pg_temp.scalar_as('anon', null, format('select count(*) from public.elections where slug = %L', '2031-rlstest-election')) = '0',
+      'anon cannot find an unpublished election by slug');
+
+    -- Election date and status must agree.
+    perform pg_temp.expect_error($q$insert into public.elections (name, election_date, status) values ('Future RlsTest', '2099-05-08', 'COMPLETED')$q$,
+      'cannot be COMPLETED', 'an election cannot be COMPLETED before its date');
+    perform pg_temp.expect_error(
+      $q$insert into public.elections (name, election_date, status) values ('Past RlsTest', '2001-05-14', 'UPCOMING')$q$,
+      'already taken place', 'an editor cannot record a past election as UPCOMING', reviewer, 'authenticated');
+    insert into public.elections (name, election_date, status) values ('Seeded past RlsTest', '2001-05-14', 'UPCOMING') returning id into e_past;
+    perform pg_temp.check(e_past is not null, 'a system write (seed, migration) may store a stale UPCOMING election');
+    perform pg_temp.check(
+      pg_temp.scalar_as('authenticated', reviewer, format($q$select (public.editorial_update('elections', %L, 1, '{"name": "Seeded past RlsTest, renamed"}'::jsonb) ->> 'name')$q$, e_past))
+        = 'Seeded past RlsTest, renamed',
+      'editing other fields of a stale election is not blocked by the date rule');
+
+    -- Election offices: a publishable record under the same workflow and RLS.
+    perform pg_temp.check('election_offices' = any (private.editorial_tables()), 'election offices are an editorial table');
+    perform pg_temp.check((select relrowsecurity from pg_class where oid = 'public.election_offices'::regclass), 'election_offices has RLS enabled');
+    eo1 := pg_temp.scalar_as('authenticated', reviewer,
+      format($q$insert into public.election_offices (election_id, office_id, sort_order) values (%L, %L, 50) returning id$q$, e1, o1))::uuid;
+    perform pg_temp.check((select publication_status from public.election_offices where id = eo1) = 'DRAFT'
+      and (select created_by from public.election_offices where id = eo1) = reviewer,
+      'a reviewer can create an election office; it starts as DRAFT with its creator recorded');
+    perform pg_temp.expect_error(format($q$insert into public.election_offices (election_id, office_id) values (%L, %L)$q$, e1, o1),
+      'election_offices_election_office_key', 'an office can be added to an election only once');
+    perform pg_temp.expect_error(format($q$insert into public.election_offices (election_id, office_id) values (%L, %L)$q$, e1, o2),
+      'permission denied', 'anon cannot create election offices', null, 'anon');
+    perform pg_temp.check(
+      pg_temp.scalar_as('anon', null, format('select count(*) from public.election_offices where id = %L', eo1)) = '0',
+      'anon cannot read a draft election office');
+    perform pg_temp.expect_error(format('select created_by from public.election_offices where id = %L', eo1),
+      'permission denied', 'anon cannot read editorial identity on election offices', null, 'anon');
+    perform pg_temp.check(exists (select 1 from public.revisions where entity_type = 'ELECTION_OFFICE' and entity_id = eo1::text),
+      'election office changes are written to the revision log');
+    perform pg_temp.check(
+      pg_temp.scalar_as('authenticated', reviewer, format($q$select label from public.editorial_queue where id = %L$q$, eo1))
+        = 'Halalan RlsTest 2031 (fictional) — Gobernador RlsTest',
+      'the work queue lists election offices with a readable label');
+
+    -- Participations need their election office, and are published after it.
+    insert into public.people (first_name, last_name) values ('Kandidato', 'RlsTest') returning id into pp;
+    update public.people set publication_status = 'PUBLISHED' where id = pp;
+    perform pg_temp.expect_error(
+      format($q$insert into public.election_participations (person_id, election_id, office_id, status, effective_from) values (%L, %L, %L, 'FILED_COC', '2030-10-01')$q$, pp, e1, o2),
+      'not recorded as contested', 'a participation needs its office to be an election office first');
+    insert into public.election_participations (person_id, election_id, office_id, status, effective_from)
+      values (pp, e1, o1, 'PUBLICLY_DECLARED_ASPIRANT', '2030-06-01') returning id into ep1;
+    perform pg_temp.expect_error(format($q$update public.election_participations set publication_status = 'PUBLISHED' where id = %L$q$, ep1),
+      'its election office is DRAFT', 'a participation cannot be published before its election office');
+    update public.election_offices set publication_status = 'PUBLISHED' where id = eo1;
+    update public.election_participations set publication_status = 'PUBLISHED' where id = ep1;
+    perform pg_temp.check(
+      pg_temp.scalar_as('anon', null, format('select sort_order from public.election_offices where id = %L', eo1)) = '50',
+      'anon can read a published election office');
+
+    perform pg_temp.expect_error(
+      format($q$select set_config('gnj.change_reason', 'test', true); update public.election_participations set status = 'OFFICIAL_CANDIDATE' where id = %L$q$, ep1),
+      'cannot be changed', 'the status of a published participation is frozen (a new status is a new record)');
+    perform pg_temp.expect_error(
+      format($q$select set_config('gnj.change_reason', 'test', true); update public.election_participations set office_id = %L where id = %L$q$, o2, ep1),
+      'cannot be changed', 'the office of a published participation is frozen');
+    perform set_config('gnj.change_reason', 'test: correct the date of a published participation', true);
+    update public.election_participations set effective_from = '2030-06-02' where id = ep1;
+    perform set_config('gnj.change_reason', '', true);
+    perform pg_temp.check((select effective_from from public.election_participations where id = ep1) = '2030-06-02',
+      'other fields of a published participation can still be corrected with a reason');
+
+    perform pg_temp.expect_error(
+      format($q$select set_config('gnj.change_reason', 'test', true); update public.election_offices set publication_status = 'RETRACTED' where id = %L$q$, eo1),
+      'published election participations still belong to it', 'an election office cannot be retracted while published participations belong to it');
+    perform pg_temp.expect_error(
+      format($q$select set_config('gnj.change_reason', 'test', true); update public.election_offices set office_id = %L where id = %L$q$, o2, eo1),
+      'cannot be changed', 'the election and office of a published election office are frozen');
+    perform pg_temp.expect_error(
+      format($q$select set_config('gnj.change_reason', 'test', true); update public.elections set publication_status = 'RETRACTED' where id = %L$q$, e1),
+      'cannot be unpublished', 'an election cannot be retracted while its published election offices remain');
+
+    -- An unpublished election office: its draft participations stay invisible.
+    eo_draft := pg_temp.scalar_as('authenticated', reviewer,
+      format($q$insert into public.election_offices (election_id, office_id, sort_order) values (%L, %L, 30) returning id$q$, e1, o2))::uuid;
+    insert into public.election_participations (person_id, election_id, office_id, status, effective_from)
+      values (pp, e1, o2, 'POTENTIAL_ASPIRANT', '2030-07-01') returning id into ep_draft;
+    perform pg_temp.check(
+      pg_temp.scalar_as('anon', null, format('select count(*) from public.election_offices where election_id = %L', e1)) = '1',
+      'anon sees only the published election office of an election');
+    perform pg_temp.check(
+      pg_temp.scalar_as('anon', null, format($q$select (public.search_directory(null, %L) ->> 'total')$q$, e1)) = '1',
+      'the directory still filters by election id (slugs are resolved by the app)');
   end;
 
   raise notice 'ALL DATABASE TESTS PASSED';

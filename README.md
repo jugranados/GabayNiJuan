@@ -27,13 +27,14 @@ See `docs/` and `AGENTS.md` before implementing features.
 
 ## What the site does today
 
-- **Home:** search, browse by election and office level, how verification works, neutrality statement.
-- **Directory** (`/politicians`): alphabetical, name search, combinable filters (election, office, office level, participation status, organization), page-based pagination. All state is in the URL. Never ranked.
+- **Home:** search, browse by election (links to election pages) and office level, how verification works, neutrality statement.
+- **Directory** (`/politicians`): alphabetical, name search, combinable filters (election, office, office level, participation status, organization), page-based pagination. All state is in the URL, with readable values (`?election=<slug>&status=filed-coc`); old UUID filter links redirect to the readable URL. Never ranked.
+- **Elections** (`/elections`, `/elections/<slug>`, `/elections/<slug>/<office slug>`): upcoming, ongoing and completed elections by date; each election's offices in ballot order; each office's participants grouped by their exact status (potential aspirant, publicly declared aspirant, filed certificate of candidacy, official candidate, …), every record linked to its evidence. See `docs/ELECTION_INFORMATION_MODEL.md`.
 - **Profile** (`/politicians/<slug>`): header with documented current context, election participation with exact candidacy state, office history and affiliations as timelines, education, policy positions, sources.
 - **Evidence** (`/claims/<id>`): every attested record links to its claim, supporting and conflicting sources, and the original document.
 - **Report an error** (`/corrections/report`): from a profile or a claim; sends a private request for editorial review that never changes the public record.
 - **Verification** and **Methodology** pages.
-- **Editorial area** (`/admin`): sign-in for invited staff, dashboard, work queue, editors for people, election participation, office terms, affiliations, education, policy positions, sources, claims, elections, offices and organizations, evidence with verification readiness, the publication workflow with reasons and retraction, revision history, the correction queue and role management. See `docs/EDITORIAL_WORKFLOW.md`.
+- **Editorial area** (`/admin`): sign-in for invited staff, dashboard, work queue, editors for people, election participation, office terms, affiliations, education, policy positions, sources, claims, elections (with slugs and date/status checks), offices, election offices and organizations, evidence with verification readiness, the publication workflow with reasons and retraction, revision history, the correction queue and role management. See `docs/EDITORIAL_WORKFLOW.md`.
 - All people in this repository are **fictional** development data, and the site is not indexable until that changes.
 
 ## Repository layout
@@ -77,7 +78,7 @@ Read from `web/.env.local` (git-ignored). See `web/.env.example`.
 
 `NEXT_PUBLIC_*` values are sent to every browser. **Never** put the Supabase service-role key or any `sb_secret_` key in them. The app refuses to start if it detects one, and it uses no service-role key at all.
 
-With `DATA_SOURCE=supabase` the database must contain every migration in `supabase/migrations` (including `person_slugs`), and the fictional seed if you want the demo profiles. In both modes the same repositories validate every row with Zod and map it to domain models.
+With `DATA_SOURCE=supabase` the database must contain every migration in `supabase/migrations` (including `person_slugs` and the Milestone 5 `election_foundation`; without them the directory and election pages fail validation), and the fictional seed if you want the demo profiles. In both modes the same repositories validate every row with Zod and map it to domain models.
 
 ### Supabase (database)
 
@@ -111,7 +112,7 @@ npm run smoke -- <url>     # read-only smoke test of a running site (public rout
 
 ### Verification status
 
-What is verified automatically, what needs a person, and what is blocked, with the exact steps to the first deployment: [`docs/VERIFICATION_CHECKLIST.md`](docs/VERIFICATION_CHECKLIST.md). In short: CI proves a clean database, the SQL rules and the web app; the hosted project is still missing four migrations, and the editorial area has not yet been exercised with real accounts.
+What is verified automatically, what needs a person, and what is blocked, with the exact steps to the first deployment: [`docs/VERIFICATION_CHECKLIST.md`](docs/VERIFICATION_CHECKLIST.md). In short: CI proves a clean database, the SQL rules and the web app; the hosted project is still missing six migrations, and the editorial area has not yet been exercised with real accounts.
 
 ## Editorial area (`/admin`)
 

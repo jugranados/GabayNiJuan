@@ -6,6 +6,7 @@ import { getAppConfig } from '@/server/config';
 
 const NAV = [
   ['/politicians', 'Politicians'],
+  ['/elections', 'Elections'],
   ['/verification', 'How verification works'],
   ['/methodology', 'Methodology'],
 ] as const;

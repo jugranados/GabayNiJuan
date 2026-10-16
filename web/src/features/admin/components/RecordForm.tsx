@@ -184,7 +184,16 @@ export function RecordForm({
               <input
                 {...shared}
                 defaultValue={value}
-                type={field.kind === 'date' ? 'date' : field.kind === 'url' ? 'url' : 'text'}
+                type={
+                  field.kind === 'date'
+                    ? 'date'
+                    : field.kind === 'url'
+                      ? 'url'
+                      : field.kind === 'integer'
+                        ? 'number'
+                        : 'text'
+                }
+                {...(field.kind === 'integer' ? { min: 0, max: 9999, step: 1 } : {})}
               />
             )}
           </Field>

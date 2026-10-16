@@ -57,6 +57,8 @@ function bind(client: SupabaseClient) {
     createRecord: withClient(api.createRecord),
     updateRecord: withClient(api.updateRecord),
     transitionRecord: withClient(api.transitionRecord),
+    contestParticipations: withClient(api.fetchContestParticipations),
+    electionOffices: withClient(api.fetchElectionOffices),
     evidence: withClient(api.fetchEvidence),
     setEvidence: withClient(api.setEvidence),
     removeEvidence: withClient(api.removeEvidence),

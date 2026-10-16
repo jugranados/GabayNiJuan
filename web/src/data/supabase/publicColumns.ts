@@ -5,7 +5,7 @@
  * (created_by, approved_by, reviewed_by, published_by) are not readable, so a
  * bare `select *` fails. The app therefore asks for exactly the columns its
  * Zod row contracts validate. See supabase/migrations/*_restrict_public_access.sql
- * (and *_person_slugs.sql for `people.slug`).
+ * (and *_person_slugs.sql and *_election_foundation.sql for the slugs and `election_offices`).
  *
  * schemaDrift.ts guarantees at compile time that every column listed here
  * exists in the database.
@@ -19,6 +19,7 @@ import {
   claimEvidenceRowSchema,
   claimRowSchema,
   educationRecordRowSchema,
+  electionOfficeRowSchema,
   electionParticipationRowSchema,
   electionRowSchema,
   legalCaseRecordRowSchema,
@@ -35,6 +36,7 @@ const ROW_SCHEMAS = {
   people: personRowSchema,
   elections: electionRowSchema,
   offices: officeRowSchema,
+  election_offices: electionOfficeRowSchema,
   election_participations: electionParticipationRowSchema,
   office_terms: officeTermRowSchema,
   political_organizations: politicalOrganizationRowSchema,

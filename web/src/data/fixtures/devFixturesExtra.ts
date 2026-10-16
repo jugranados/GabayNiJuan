@@ -171,6 +171,7 @@ export const extraPeople = [
 export const extraElections = [
   {
     id: 'election-pambansa-2028',
+    slug: 'national-and-district-election-2028-fictional',
     name: 'National and District Election 2028 (fictional)',
     election_date: '2028-05-08',
     country_code: 'PH',
@@ -178,6 +179,7 @@ export const extraElections = [
   },
   {
     id: 'election-local-2022',
+    slug: 'halimbawa-provincial-and-municipal-election-2022-fictional',
     name: 'Halimbawa Provincial and Municipal Election 2022 (fictional)',
     election_date: '2022-05-09',
     country_code: 'PH',
@@ -187,31 +189,50 @@ export const extraElections = [
 
 export const extraOffices = [
   {
+    id: 'office-president',
+    slug: 'president-fictional-seat',
+    name: 'President (fictional seat)',
+    level: 'NATIONAL',
+    jurisdiction_id: 'jurisdiction-philippines-fictional',
+  },
+  {
+    id: 'office-vice-president',
+    slug: 'vice-president-fictional-seat',
+    name: 'Vice President (fictional seat)',
+    level: 'NATIONAL',
+    jurisdiction_id: 'jurisdiction-philippines-fictional',
+  },
+  {
     id: 'office-senator',
+    slug: 'senator-fictional-seat',
     name: 'Senator (fictional seat)',
     level: 'NATIONAL',
     jurisdiction_id: 'jurisdiction-philippines-fictional',
   },
   {
     id: 'office-governor-kathang-isip',
+    slug: 'governor-province-of-kathang-isip-fictional',
     name: 'Governor, Province of Kathang-Isip (fictional)',
     level: 'PROVINCIAL',
     jurisdiction_id: 'jurisdiction-kathang-isip-province',
   },
   {
     id: 'office-rep-halimbawa-1',
+    slug: 'district-representative-halimbawa-1st-district-fictional',
     name: 'District Representative, Halimbawa 1st District (fictional)',
     level: 'DISTRICT',
     jurisdiction_id: 'jurisdiction-halimbawa-district-1',
   },
   {
     id: 'office-mayor-bayan-ejemplo',
+    slug: 'municipal-mayor-bayan-ng-ejemplo-fictional',
     name: 'Municipal Mayor, Bayan ng Ejemplo (fictional)',
     level: 'MUNICIPAL',
     jurisdiction_id: 'jurisdiction-bayan-ejemplo',
   },
   {
     id: 'office-barangay-dos-captain',
+    slug: 'punong-barangay-barangay-dos-halimbawa-fictional',
     name: 'Punong Barangay, Barangay Dos, Halimbawa (fictional)',
     level: 'BARANGAY',
     jurisdiction_id: 'jurisdiction-barangay-dos',
@@ -221,12 +242,14 @@ export const extraOffices = [
 export const extraOrganizations = [
   {
     id: 'org-partido-pag-asa',
+    slug: 'partido-pag-asa-ng-bayan-fictional',
     name: 'Partido Pag-asa ng Bayan (fictional)',
     abbreviation: 'PPB',
     organization_type: 'POLITICAL_PARTY',
   },
   {
     id: 'org-alyansang-bagong-umaga',
+    slug: 'alyansang-bagong-umaga-fictional',
     name: 'Alyansang Bagong-Umaga (fictional)',
     abbreviation: 'ABU',
     organization_type: 'COALITION',

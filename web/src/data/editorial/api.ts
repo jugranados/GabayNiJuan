@@ -13,6 +13,7 @@ import { z } from 'zod';
 
 import type { CorrectionStatus, EditorialRole, PublicationStatus } from '@/domain/enums';
 import type {
+  ContestParticipationRecord,
   CorrectionRequest,
   EditorialRecord,
   EvidenceLink,
@@ -26,7 +27,9 @@ import type { EditorialRecordType, RecordTypeDef } from '@/domain/editorial/reco
 
 import { toEditorialError } from './errors';
 import {
+  contestParticipationSchema,
   correctionSchema,
+  electionOfficeEditorialSchema,
   evidenceRowSchema,
   queueRowSchema,
   readinessSchema,
@@ -52,7 +55,8 @@ function toRecord(def: RecordTypeDef, raw: unknown): EditorialRecord {
   const values: Record<string, string> = {};
   for (const field of def.fields) {
     const value = row[field.name];
-    values[field.name] = typeof value === 'string' ? value : '';
+    values[field.name] =
+      typeof value === 'string' ? value : typeof value === 'number' ? String(value) : '';
   }
   return {
     id: row.id,
@@ -185,6 +189,56 @@ export async function transitionRecord(
     }),
   );
   return toRecord(def, data);
+}
+
+/**
+ * Every participation record of one person for one election and office, in any workflow
+ * state, for the succession check (domain/elections.ts).
+ */
+export async function fetchContestParticipations(
+  client: SupabaseClient,
+  args: { personId: string; electionId: string; officeId: string },
+): Promise<ContestParticipationRecord[]> {
+  const data = unwrap(
+    await client
+      .from('election_participations')
+      .select('id, status, effective_from, publication_status')
+      .eq('person_id', args.personId)
+      .eq('election_id', args.electionId)
+      .eq('office_id', args.officeId),
+  );
+  return z
+    .array(contestParticipationSchema)
+    .parse(data)
+    .map((row) => ({
+      id: row.id,
+      status: row.status,
+      effectiveFrom: row.effective_from,
+      publicationStatus: row.publication_status,
+    }));
+}
+
+/** Election offices of one election, for its editorial page. */
+export async function fetchElectionOffices(
+  client: SupabaseClient,
+  electionId: string,
+): Promise<{ id: string; officeId: string; sortOrder: number; status: PublicationStatus }[]> {
+  const data = unwrap(
+    await client
+      .from('election_offices')
+      .select('id, office_id, sort_order, publication_status')
+      .eq('election_id', electionId)
+      .order('sort_order'),
+  );
+  return z
+    .array(electionOfficeEditorialSchema)
+    .parse(data)
+    .map((row) => ({
+      id: row.id,
+      officeId: row.office_id,
+      sortOrder: row.sort_order,
+      status: row.publication_status,
+    }));
 }
 
 // ---- Evidence ------------------------------------------------------------------------------

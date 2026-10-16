@@ -5,7 +5,13 @@
  * Every method rejects with DataValidationError / DataIntegrityError when
  * backend data is invalid, rather than returning partial or coerced data.
  */
-import type { Election, ElectionParticipation, Person, Source } from '@/domain/models';
+import type { Election, ElectionParticipation, Office, Person, Source } from '@/domain/models';
+import type {
+  ElectionDetail,
+  ElectionOfficeDetail,
+  ElectionOfficePath,
+  ElectionSummary,
+} from '@/domain/models/election';
 import type {
   DirectoryEntry,
   DirectoryFilterOptions,
@@ -34,9 +40,22 @@ export interface PersonRepository {
   listPersonSlugs(): Promise<string[]>;
 }
 
+/**
+ * Elections, the offices contested in them, and the documented participants. Lists are in
+ * deterministic, neutral orders (see domain/elections.ts); nothing is ranked by popularity.
+ */
 export interface ElectionRepository {
   getElectionById(id: string): Promise<Election | null>;
+  getOfficeById(id: string): Promise<Office | null>;
   getElectionParticipation(personId: string): Promise<ElectionParticipation[]>;
+  /** Every publicly readable election with its number of published election offices. */
+  listElections(): Promise<ElectionSummary[]>;
+  /** Null when no published election has that slug. */
+  getElectionDetail(electionSlug: string): Promise<ElectionDetail | null>;
+  /** Null unless the election, the office and the election office are all published. */
+  getElectionOfficeDetail(electionSlug: string, officeSlug: string): Promise<ElectionOfficeDetail | null>;
+  /** Addresses of every public election office page. Used for the sitemap. */
+  listElectionOfficePaths(): Promise<ElectionOfficePath[]>;
 }
 
 export interface SourceRepository {

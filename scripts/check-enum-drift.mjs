@@ -51,7 +51,9 @@ const pairs = [
   ['POLICY_ATTRIBUTION_TYPES', 'policy_attribution_type', true],
   ['LEGAL_CASE_STATUSES', 'legal_case_status', true],
   ['CLAIM_SUBJECT_RECORD_TYPES', 'claim_subject_record_type', true],
-  ['REVISION_ENTITY_TYPES', 'revision_entity_type', true],
+  // Audit-log entity types are editorial only; the frozen mobile app never reads revisions, so its
+  // copy is not compared (it predates ELECTION_OFFICE, added in Milestone 5).
+  ['REVISION_ENTITY_TYPES', 'revision_entity_type', false],
   ['CORRECTION_STATUSES', 'correction_status', false],
   ['EDITORIAL_ROLES', 'editorial_role', false],
 ];

@@ -25,6 +25,7 @@ import type {
   DirectoryFilters,
 } from '@/domain/models/directory';
 import { formatPersonName } from '@/domain/models/person';
+import type { ElectionDetail, ElectionOfficeDetail, ElectionSummary } from '@/domain/models/election';
 import type { ClaimWithEvidence, PersonProfile } from '@/domain/models/personProfile';
 import type { Repositories } from '@/domain/repositories';
 
@@ -196,9 +197,9 @@ describe('Supabase (anon key) against the fictional seed', () => {
 
     it('lists reference data for the filter UI identically', async () => {
       const names = (o: DirectoryFilterOptions) => ({
-        elections: o.elections.map((e) => [e.name, e.electionDate]),
-        offices: o.offices.map((x) => [x.name, x.level, x.jurisdictionId]),
-        organizations: o.organizations.map((x) => [x.name, x.abbreviation]),
+        elections: o.elections.map((e) => [e.slug, e.name, e.electionDate]),
+        offices: o.offices.map((x) => [x.slug, x.name, x.level, x.jurisdictionId]),
+        organizations: o.organizations.map((x) => [x.slug, x.name, x.abbreviation]),
       });
       expect(names(remoteOptions)).toEqual(names(mockOptions));
     });
@@ -334,6 +335,68 @@ describe('Supabase (anon key) against the fictional seed', () => {
       for (const row of data ?? []) {
         expect(row.publication_status).toBe('PUBLISHED');
       }
+    });
+  });
+
+describe('elections: mock and Supabase behave identically', () => {
+    const electionOfficeView = (detail: ElectionOfficeDetail | null) =>
+      detail && {
+        election: detail.election.slug,
+        office: detail.office.slug,
+        sortOrder: detail.electionOffice.sortOrder,
+        count: detail.participantCount,
+        groups: detail.groups.map((group) => ({
+          status: group.status,
+          people: group.participants.map((p) => ({
+            slug: p.person.slug,
+            records: p.records.map((r) => ({
+              status: r.record.status,
+              from: r.record.effectiveFrom,
+              ballot: r.record.ballotNumber,
+              claims: claimView(r.claims),
+            })),
+          })),
+        })),
+      };
+
+    it('lists the same elections, in the same order, with the same office counts', async () => {
+      const view = (list: ElectionSummary[]) =>
+        list.map(({ election, officeCount }) => [election.slug, election.name, election.electionDate, election.status, officeCount]);
+      expect(view(await remote.elections.listElections())).toEqual(view(await mock.elections.listElections()));
+    });
+
+    it('shows the same offices and per-status counts on every election page', async () => {
+      for (const { election } of await mock.elections.listElections()) {
+        const view = (detail: ElectionDetail | null) =>
+          detail?.offices.map((o) => [o.office.slug, o.electionOffice.sortOrder, o.participantCount, o.statusCounts]);
+        expect(view(await remote.elections.getElectionDetail(election.slug))).toEqual(
+          view(await mock.elections.getElectionDetail(election.slug)),
+        );
+      }
+    });
+
+    it('shows the same participants, exact statuses and evidence on every office page', async () => {
+      const paths = await mock.elections.listElectionOfficePaths();
+      expect(await remote.elections.listElectionOfficePaths()).toEqual(paths);
+      for (const { electionSlug, officeSlug } of paths) {
+        expect(electionOfficeView(await remote.elections.getElectionOfficeDetail(electionSlug, officeSlug))).toEqual(
+          electionOfficeView(await mock.elections.getElectionOfficeDetail(electionSlug, officeSlug)),
+        );
+      }
+    });
+
+    it('answers unknown and malformed election addresses with "not found"', async () => {
+      expect(await remote.elections.getElectionDetail('no-such-election')).toBeNull();
+      expect(await remote.elections.getElectionDetail('Not A Slug')).toBeNull();
+      expect(await remote.elections.getElectionById('not-a-uuid')).toBeNull();
+      expect(await remote.elections.getOfficeById(NIL_UUID)).toBeNull();
+      const [first] = await mock.elections.listElectionOfficePaths();
+      expect(await remote.elections.getElectionOfficeDetail(first!.electionSlug, 'no-such-office')).toBeNull();
+    });
+
+    it('cannot read editorial identity of election offices', async () => {
+      const { error } = await client.from('election_offices').select('id,created_by').limit(1);
+      expect(error).not.toBeNull();
     });
   });
 

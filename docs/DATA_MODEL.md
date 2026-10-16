@@ -35,6 +35,7 @@ Age should normally be calculated from `birthDate`, not stored.
 ```ts
 type Election = {
   id: string;
+  slug: string; // public URL address, e.g. "2028-philippine-general-election"
   name: string;
   electionDate: string;
   countryCode: "PH";
@@ -42,20 +43,41 @@ type Election = {
 };
 ```
 
+An election cannot be `COMPLETED` before `electionDate`; editors cannot record it as `UPCOMING`
+after it.
+
 ### `Office`
 
 ```ts
 type Office = {
   id: string;
+  slug: string; // e.g. "senator", "governor-bataan"
   name: string;
   level: "NATIONAL" | "PROVINCIAL" | "CITY" | "MUNICIPAL" | "DISTRICT" | "BARANGAY";
   jurisdictionId?: string;
 };
 ```
 
+### `ElectionOffice` (Milestone 5)
+
+An office contested in an election. Election pages list these; every participation belongs to one.
+
+```ts
+type ElectionOffice = {
+  id: string;
+  electionId: string;
+  officeId: string;
+  sortOrder: number; // presentation order on the election page (ballot order); orders offices, never people
+};
+```
+
+Unique per `(electionId, officeId)`. Table `election_offices`, publishable, audited as
+`ELECTION_OFFICE`.
+
 ### `ElectionParticipation`
 
-Connects a person to an election and office.
+Connects a person to an election office (`electionId` + `officeId`, composite foreign key to
+`election_offices`).
 
 ```ts
 type ElectionParticipation = {
@@ -78,7 +100,9 @@ type ElectionParticipation = {
 };
 ```
 
-Status must be supported by evidence.
+Status must be supported by evidence. Each status is its own claim: a later status is a new,
+dated record, and once published the status, person, election and office of a record are frozen.
+See `docs/ELECTION_INFORMATION_MODEL.md`.
 
 ### `OfficeTerm`
 
@@ -100,6 +124,7 @@ Represents parties, party-list organizations, coalitions, and similar organizati
 ```ts
 type PoliticalOrganization = {
   id: string;
+  slug: string; // readable directory filter value (?organization=…); no public page
   name: string;
   abbreviation?: string;
   organizationType: "POLITICAL_PARTY" | "PARTY_LIST" | "COALITION" | "OTHER";
@@ -314,7 +339,7 @@ type Revision = {
     | "PERSON" | "ELECTION" | "OFFICE" | "POLITICAL_ORGANIZATION"
     | "ELECTION_PARTICIPATION" | "OFFICE_TERM" | "AFFILIATION" | "EDUCATION" | "AWARD"
     | "POLICY_POSITION" | "LEGAL_CASE" | "ASSET_DISCLOSURE"
-    | "SOURCE" | "CLAIM" | "CLAIM_EVIDENCE";
+    | "SOURCE" | "CLAIM" | "CLAIM_EVIDENCE" | "ELECTION_OFFICE";
   entityId: string; // record id, or "claimId:sourceId" for evidence
   oldValue?: JsonValue; // row snapshot before
   newValue?: JsonValue; // row snapshot after
@@ -391,3 +416,18 @@ Avoid automatically labeling a family as a "dynasty" unless a clearly defined, p
 
 - **`people.slug text not null unique`** with `people_slug_format` (lowercase words joined by hyphens, ≤ 120 chars). Readable by `anon`. Managed by the `05_person_slug` trigger (`private.manage_person_slug`): generated on insert, frozen after first publication.
 - **`search_directory`** returns `slug` on every card. Parameters, ordering and security are unchanged.
+
+## Milestone 5 additions (election information foundation)
+
+- **`elections.slug`, `offices.slug`, `political_organizations.slug`**: `text not null unique`,
+  same format check as `people.slug`, readable by `anon`. Managed by the `05_record_slug` trigger
+  (`private.manage_record_slug`): generated from `name` on insert when empty, never regenerated,
+  frozen after first publication. Backfilled for existing rows.
+- **`election_offices`**: `id`, `election_id`, `office_id`, `sort_order` (0–9999, default 100), plus
+  the standard workflow columns and `version`. `unique (election_id, office_id)`.
+- **`election_participations`**: composite foreign key `(election_id, office_id)` →
+  `election_offices`; trigger `26_guard_participation`.
+- **`elections`**: trigger `07_election_date_status`.
+- **`revision_entity_type`**: `ELECTION_OFFICE`.
+- Read models: `ElectionSummary`, `ElectionDetail`, `ElectionOfficeDetail` (participants grouped by
+  the exact status of each person's most recent record) in `web/src/domain/models/election.ts`.

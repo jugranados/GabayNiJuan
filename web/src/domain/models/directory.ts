@@ -78,9 +78,9 @@ export type DirectoryEntry = {
   affiliation?: DirectoryAffiliation;
 };
 
-export type ElectionOption = { id: string; name: string; electionDate: IsoDate };
-export type OfficeOption = Pick<Office, 'id' | 'name' | 'level' | 'jurisdictionId'>;
-export type OrganizationOption = { id: string; name: string; abbreviation?: string };
+export type ElectionOption = { id: string; slug: string; name: string; electionDate: IsoDate };
+export type OfficeOption = Pick<Office, 'id' | 'slug' | 'name' | 'level' | 'jurisdictionId'>;
+export type OrganizationOption = { id: string; slug: string; name: string; abbreviation?: string };
 
 /** Reference lists that populate the filter UI. */
 export type DirectoryFilterOptions = {

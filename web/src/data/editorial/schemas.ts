@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import {
   CORRECTION_STATUSES,
+  ELECTION_PARTICIPATION_STATUSES,
   EDITORIAL_ROLES,
   PUBLICATION_STATUSES,
   VERIFICATION_STATUSES,
@@ -107,4 +108,18 @@ export const roleEventSchema = z.object({
   new_role: z.enum(EDITORIAL_ROLES).nullable(),
   changed_by: nullableUuid,
   changed_at: z.string(),
+});
+
+export const contestParticipationSchema = z.object({
+  id: uuid,
+  status: z.enum(ELECTION_PARTICIPATION_STATUSES),
+  effective_from: z.string(),
+  publication_status: z.enum(PUBLICATION_STATUSES),
+});
+
+export const electionOfficeEditorialSchema = z.object({
+  id: uuid,
+  office_id: uuid,
+  sort_order: z.number().int(),
+  publication_status: z.enum(PUBLICATION_STATUSES),
 });

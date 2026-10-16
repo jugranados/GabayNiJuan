@@ -74,6 +74,7 @@ export const personRowSchema = z.object({
 
 export const electionRowSchema = z.object({
   id: idSchema,
+  slug: slugSchema,
   name: nonEmptyTextSchema,
   election_date: isoDateSchema,
   country_code: z.literal('PH'),
@@ -82,9 +83,17 @@ export const electionRowSchema = z.object({
 
 export const officeRowSchema = z.object({
   id: idSchema,
+  slug: slugSchema,
   name: nonEmptyTextSchema,
   level: z.enum(OFFICE_LEVELS),
   jurisdiction_id: optionalId,
+});
+
+export const electionOfficeRowSchema = z.object({
+  id: idSchema,
+  election_id: idSchema,
+  office_id: idSchema,
+  sort_order: z.number().int().min(0).max(9999),
 });
 
 export const electionParticipationRowSchema = z
@@ -113,6 +122,7 @@ export const officeTermRowSchema = z
 
 export const politicalOrganizationRowSchema = z.object({
   id: idSchema,
+  slug: slugSchema,
   name: nonEmptyTextSchema,
   abbreviation: optionalText,
   organization_type: z.enum(POLITICAL_ORGANIZATION_TYPES),
@@ -259,6 +269,7 @@ export const revisionRowSchema = z.object({
 export type PersonRow = z.infer<typeof personRowSchema>;
 export type ElectionRow = z.infer<typeof electionRowSchema>;
 export type OfficeRow = z.infer<typeof officeRowSchema>;
+export type ElectionOfficeRow = z.infer<typeof electionOfficeRowSchema>;
 export type ElectionParticipationRow = z.infer<typeof electionParticipationRowSchema>;
 export type OfficeTermRow = z.infer<typeof officeTermRowSchema>;
 export type PoliticalOrganizationRow = z.infer<typeof politicalOrganizationRowSchema>;

@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { DateText, MissingRecords, Section } from '@/components/ui';
 import { OFFICE_LEVELS } from '@/domain/enums';
+import { ELECTIONS_PATH, electionPath } from '@/features/elections/paths';
 import { OFFICE_LEVEL_LABELS } from '@/features/offices/officeLevelLabels';
 import { DIRECTORY_PATH, directoryHref } from '@/features/politicians/directoryParams';
 import { formatIsoDate } from '@/lib/dates';
@@ -26,6 +27,10 @@ export const metadata: Metadata = {
  */
 export default async function HomePage() {
   const { elections } = await getRepositories().people.getDirectoryFilterOptions();
+  // Soonest or most recent first, as on /elections; never by popularity.
+  const byDate = [...elections].sort(
+    (a, b) => (a.electionDate < b.electionDate ? 1 : a.electionDate > b.electionDate ? -1 : 0),
+  );
   return (
     <>
       <h1 className="text-4xl font-bold sm:text-5xl">{SITE_NAME}</h1>
@@ -61,14 +66,14 @@ export default async function HomePage() {
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
             <h3 className="font-bold">By election</h3>
-            {elections.length === 0 ? (
+            {byDate.length === 0 ? (
               <MissingRecords message="No elections have been added yet." />
             ) : (
               <ul>
-                {elections.map((election) => (
+                {byDate.map((election) => (
                   <li key={election.id}>
                     <Link
-                      href={directoryHref({ filters: { electionId: election.id } })}
+                      href={electionPath(election.slug)}
                       className="link inline-flex min-h-11 items-center"
                     >
                       {election.name}
@@ -80,6 +85,11 @@ export default async function HomePage() {
                     </span>
                   </li>
                 ))}
+                <li>
+                  <Link href={ELECTIONS_PATH} className="link inline-flex min-h-11 items-center">
+                    All elections and offices
+                  </Link>
+                </li>
               </ul>
             )}
           </div>

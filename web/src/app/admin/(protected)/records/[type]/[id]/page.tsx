@@ -42,7 +42,8 @@ export default async function RecordPage({ params }: PageProps<'/admin/records/[
 
   const isClaim = def.recordType === 'CLAIM';
   const isPerson = def.recordType === 'PERSON';
-  const [revisions, corrections, staff, refOptions, related, evidence, readiness, sources] =
+  const isElection = def.recordType === 'ELECTION';
+  const [revisions, corrections, staff, refOptions, related, evidence, readiness, sources, electionOffices, officeOptions] =
     await Promise.all([
       editorial.revisions({ entityType: def.recordType, entityId: id, limit: 50 }),
       editorial.correctionsFor(id),
@@ -52,6 +53,8 @@ export default async function RecordPage({ params }: PageProps<'/admin/records/[
       isClaim ? editorial.evidence(id) : undefined,
       isClaim ? editorial.readiness(id) : undefined,
       isClaim ? editorial.queue({ recordType: 'SOURCE' }, 500) : undefined,
+      isElection ? editorial.electionOffices(id) : undefined,
+      isElection ? editorial.queue({ recordType: 'OFFICE' }, 500) : undefined,
     ]);
 
   const { status } = record;
@@ -192,6 +195,39 @@ export default async function RecordPage({ params }: PageProps<'/admin/records/[
                       </li>
                     ) : null;
                   })}
+              </ul>
+            )}
+          </section>
+        ) : null}
+
+        {isElection ? (
+          <section aria-label="Offices in this election" className="card">
+            <h2 className="text-xl font-bold">Offices in this election</h2>
+            <p className="text-sm text-muted">
+              Each office contested in this election is an election office record with its own
+              review and publication. Participations can only be recorded for these offices.
+            </p>
+            <p className="mt-2 flex flex-wrap gap-x-5">
+              <Link href={adminPaths.newForElection('election-offices', id)} className="link text-sm">
+                Add an office to this election
+              </Link>
+              <Link href={adminPaths.newForElection('participations', id)} className="link text-sm">
+                New election participation in this election
+              </Link>
+            </p>
+            {(electionOffices ?? []).length === 0 ? (
+              <p className="mt-2 text-muted">No offices yet.</p>
+            ) : (
+              <ul className="mt-2 space-y-1">
+                {(electionOffices ?? []).map((item) => (
+                  <li key={item.id} className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-muted">{item.sortOrder}</span>
+                    <Link href={adminPaths.record('election-offices', item.id)} className="link">
+                      {officeOptions?.find((office) => office.id === item.officeId)?.label ?? item.officeId}
+                    </Link>
+                    <StatusBadge status={item.status} />
+                  </li>
+                ))}
               </ul>
             )}
           </section>

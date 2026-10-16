@@ -13,6 +13,7 @@ import type {
   ClaimEvidence,
   EducationRecord,
   Election,
+  ElectionOffice,
   ElectionParticipation,
   LegalCaseRecord,
   Office,
@@ -30,6 +31,7 @@ import type {
   ClaimEvidenceRow,
   ClaimRow,
   EducationRecordRow,
+  ElectionOfficeRow,
   ElectionParticipationRow,
   ElectionRow,
   LegalCaseRecordRow,
@@ -61,6 +63,7 @@ export function toPerson(row: PersonRow): Person {
 export function toElection(row: ElectionRow): Election {
   return {
     id: row.id,
+    slug: row.slug,
     name: row.name,
     electionDate: row.election_date,
     countryCode: row.country_code,
@@ -71,9 +74,19 @@ export function toElection(row: ElectionRow): Election {
 export function toOffice(row: OfficeRow): Office {
   return {
     id: row.id,
+    slug: row.slug,
     name: row.name,
     level: row.level,
     jurisdictionId: opt(row.jurisdiction_id),
+  };
+}
+
+export function toElectionOffice(row: ElectionOfficeRow): ElectionOffice {
+  return {
+    id: row.id,
+    electionId: row.election_id,
+    officeId: row.office_id,
+    sortOrder: row.sort_order,
   };
 }
 
@@ -104,6 +117,7 @@ export function toOfficeTerm(row: OfficeTermRow): OfficeTerm {
 export function toPoliticalOrganization(row: PoliticalOrganizationRow): PoliticalOrganization {
   return {
     id: row.id,
+    slug: row.slug,
     name: row.name,
     abbreviation: opt(row.abbreviation),
     organizationType: row.organization_type,

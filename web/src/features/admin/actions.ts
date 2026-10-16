@@ -13,13 +13,20 @@ import {
   type RecordTypeDef,
 } from '@/domain/editorial/records';
 import { reasonRequired } from '@/domain/editorial/workflow';
-import { CORRECTION_STATUSES, EDITORIAL_ROLES, PUBLICATION_STATUSES } from '@/domain/enums';
+import { participationSuccessionProblem } from '@/domain/elections';
+import {
+  CORRECTION_STATUSES,
+  EDITORIAL_ROLES,
+  ELECTION_PARTICIPATION_STATUSES,
+  PUBLICATION_STATUSES,
+} from '@/domain/enums';
 import type { ActionState } from '@/features/admin/actionState';
 import { adminPaths } from '@/features/admin/paths';
 import {
   EditorialAccessError,
   EditorialError,
   getEditorial,
+  type Editorial,
   signInEditor,
   signOutEditor,
 } from '@/server/editorial';
@@ -63,6 +70,31 @@ function readFields(def: RecordTypeDef, data: FormData) {
   return { raw, fieldErrors };
 }
 
+/**
+ * A participation record must fit the person's other records for the same election and office
+ * (domain/elections.ts). Returns a field error for the status, or undefined. The database also
+ * freezes the status of a published record; this check covers drafts and new records.
+ */
+async function participationFieldErrors(
+  editorial: Editorial,
+  values: Record<string, string | null>,
+  ownId?: string,
+): Promise<Record<string, string> | undefined> {
+  const { person_id: personId, election_id: electionId, office_id: officeId } = values;
+  if (!personId || !electionId || !officeId || !values.status || !values.effective_from) return undefined;
+  const others = (await editorial.contestParticipations({ personId, electionId, officeId })).filter(
+    (record) =>
+      record.id !== ownId &&
+      record.publicationStatus !== 'RETRACTED' &&
+      record.publicationStatus !== 'REJECTED',
+  );
+  const problem = participationSuccessionProblem(others, {
+    status: z.enum(ELECTION_PARTICIPATION_STATUSES).parse(values.status),
+    effectiveFrom: values.effective_from,
+  });
+  return problem ? { status: problem } : undefined;
+}
+
 // ---- Session -------------------------------------------------------------------------------
 
 /** There is no sign-up path anywhere in this app: accounts are created by an administrator. */
@@ -100,6 +132,10 @@ export async function createRecordAction(
   let id: string;
   try {
     const editorial = await getEditorial();
+    if (def.recordType === 'ELECTION_PARTICIPATION') {
+      const fieldErrors = await participationFieldErrors(editorial, fields.values);
+      if (fieldErrors) return { fieldErrors, values: fields.raw };
+    }
     id = (await editorial.createRecord(def, fields.values)).id;
   } catch (error) {
     return failure(error, fields.raw);
@@ -119,6 +155,10 @@ export async function saveRecordAction(
   if (!fields.values) return { fieldErrors: fields.fieldErrors, values: fields.raw };
   try {
     const editorial = await getEditorial();
+    if (def.recordType === 'ELECTION_PARTICIPATION') {
+      const fieldErrors = await participationFieldErrors(editorial, fields.values, id);
+      if (fieldErrors) return { fieldErrors, values: fields.raw };
+    }
     const saved = await editorial.updateRecord(def, {
       id: uuid.parse(id),
       expectedVersion: version.parse(data.get('version')),

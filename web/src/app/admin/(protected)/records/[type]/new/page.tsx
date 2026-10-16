@@ -19,9 +19,12 @@ export default async function NewRecordPage({
   const def = recordTypeBySlug((await params).type);
   if (!def) notFound();
 
-  // "New … for this person" links prefill the person.
-  const person = (await searchParams).person;
+  // "New … for this person" / "… for this election" links prefill the person or the election.
+  const { person, election } = await searchParams;
   const initial: Record<string, string> = {};
+  if (typeof election === 'string' && isUuid(election) && def.fields.some((field) => field.name === 'election_id')) {
+    initial.election_id = election;
+  }
   if (typeof person === 'string' && isUuid(person)) {
     if (def.fields.some((field) => field.name === 'person_id')) initial.person_id = person;
     if (def.recordType === 'CLAIM') initial.subject_person_id = person;

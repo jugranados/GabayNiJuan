@@ -167,6 +167,7 @@ export const REVISION_ENTITY_TYPES = [
   'SOURCE',
   'CLAIM',
   'CLAIM_EVIDENCE',
+  'ELECTION_OFFICE',
 ] as const;
 export type RevisionEntityType = (typeof REVISION_ENTITY_TYPES)[number];
 

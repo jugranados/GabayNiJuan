@@ -37,6 +37,7 @@ const INSERT_ORDER = [
   'elections',
   'offices',
   'political_organizations',
+  'election_offices',
   'sources',
   'election_participations',
   'office_terms',
@@ -64,7 +65,9 @@ function literal(column, value) {
   return `'${String(text).replace(/'/g, "''")}'`;
 }
 
-const CONFLICT_TARGET = { claim_evidence: '(claim_id, source_id)' };
+// election_offices: any conflict, including the (election_id, office_id) pair. A database
+// upgraded by 20261016090100_election_foundation already holds backfilled pairs under other ids.
+const CONFLICT_TARGET = { claim_evidence: ' (claim_id, source_id)', election_offices: '' };
 
 /**
  * Idempotent: rows that already exist are left untouched, so the seed can be
@@ -75,8 +78,8 @@ function insertStatement(table, rows) {
   const values = rows.map(
     (row) => `  (${columns.map((column) => literal(column, row[column])).join(', ')})`,
   );
-  const target = CONFLICT_TARGET[table] ?? '(id)';
-  return `insert into public.${table} (${columns.join(', ')}) values\n${values.join(',\n')}\non conflict ${target} do nothing;`;
+  const target = CONFLICT_TARGET[table] ?? ' (id)';
+  return `insert into public.${table} (${columns.join(', ')}) values\n${values.join(',\n')}\non conflict${target} do nothing;`;
 }
 
 const allFixtureIds = [];

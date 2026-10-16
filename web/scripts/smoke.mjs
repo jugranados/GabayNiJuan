@@ -74,10 +74,30 @@ try {
     check('source links open safely (noopener noreferrer)', external.every((a) => /rel="[^"]*noopener[^"]*noreferrer/.test(a)), `${external.length} links`);
   }
 
+  // Elections (Milestone 5): index -> election -> office, readable filter links.
+  const elections = await get('/elections');
+  const electionPaths = [...elections.body.matchAll(/href="(\/elections\/[a-z0-9-]+)"/g)].map((m) => m[1]);
+  check('elections index loads and lists elections', elections.status === 200 && electionPaths.length > 0, `status ${elections.status}, ${electionPaths.length} elections`);
+  check('elections index says order is not ranking', /Order does not imply importance or ranking/.test(text(elections.body)));
+  if (electionPaths[0]) {
+    const election = await get(electionPaths[0]);
+    check(`election ${electionPaths[0]} loads with a slug canonical URL`, election.status === 200 && new RegExp(`rel="canonical" href="[^"]*${electionPaths[0]}"`).test(election.body), `status ${election.status}`);
+    check('election page has Event structured data', /"@type":"Event"/.test(election.body));
+    const officePath = [...election.body.matchAll(/href="(\/elections\/[a-z0-9-]+\/[a-z0-9-]+)"/g)].map((m) => m[1])[0];
+    if (officePath) {
+      const officePage = await get(officePath);
+      check(`office page ${officePath} loads and explains candidacy`, officePage.status === 200 && /does not make someone an official candidate/.test(text(officePage.body)), `status ${officePage.status}`);
+    } else {
+      check('election page links to an office page', false);
+    }
+    const readable = await get(`/politicians?election=${electionPaths[0].split('/')[2]}`);
+    check('directory accepts a readable election filter', readable.status === 200 && /Election: /.test(text(readable.body)), `status ${readable.status}`);
+  }
+
   const report = await get('/corrections/report');
   check('report page without a target does not offer a form', report.status === 200 && /could not be started/.test(text(report.body)));
 
-  for (const path of ['/this-page-does-not-exist', '/politicians/nobody-here-at-all', '/claims/not-a-claim']) {
+  for (const path of ['/this-page-does-not-exist', '/politicians/nobody-here-at-all', '/claims/not-a-claim', '/elections/no-such-election']) {
     const missing = await get(path);
     check(`${path} is a 404`, missing.status === 404, `status ${missing.status}`);
   }

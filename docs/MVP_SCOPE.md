@@ -33,7 +33,21 @@ The voter MVP is delivered by the web app (`web/`). Screens below are web pages.
 | 8. About verification | `/verification`, `/methodology` | done |
 | 9. Report an error | `/corrections/report` | done (needs the `corrections_and_staff` migration on the database) |
 
-In scope for the web MVP and done: stable slugs, SEO metadata, `robots.txt`, `sitemap.xml`, and the `/admin` authentication boundary. Not in scope yet: `/elections` pages (Milestone 5), photos, readable filter URLs for elections/offices/organizations.
+In scope for the web MVP and done: stable slugs, SEO metadata, `robots.txt`, `sitemap.xml`, and the `/admin` authentication boundary. Not in scope yet: photos.
+
+## Status after Milestone 5 (election information foundation)
+
+| Capability | Route | State |
+|---|---|---|
+| Election index | `/elections` | done (Upcoming, Ongoing, Completed; by date) |
+| Election page | `/elections/<slug>` | done (header, offices in ballot order, participation summary, source note) |
+| Office within an election | `/elections/<slug>/<office slug>` | done (participants grouped by exact status, evidence per record) |
+| Readable directory filters | `/politicians?election=<slug>&office=<slug>&organization=<slug>` | done; legacy UUID links redirect |
+| 2028 structure | fixtures | fictional representative subset (President, Vice President, Senator, House district, Governor, Mayor) |
+| Election editing | `/admin` | slugs, election offices, date/status and participation succession checks |
+
+Not in scope yet: real election data (the real-data pilot), source-linked election metadata,
+ballot information, results, a location filter.
 
 ## Status after Milestone 2 (mobile, historical)
 

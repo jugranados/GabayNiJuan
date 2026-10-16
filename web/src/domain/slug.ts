@@ -1,5 +1,6 @@
 /**
- * Public URL slugs for people (`/politicians/<slug>`).
+ * Public URL slugs for people (`/politicians/<slug>`), elections and offices
+ * (`/elections/<slug>/<office slug>`) and political organizations (`?organization=<slug>`).
  *
  * The database is the authority: `private.slugify` and the `people` slug trigger in
  * supabase/migrations/*_person_slugs.sql generate and freeze slugs. This file mirrors the
@@ -41,4 +42,14 @@ export function personSlugBase(person: {
 }): string {
   const slug = slugify([person.firstName, person.lastName, person.suffix].filter(Boolean).join(' '));
   return slug === '' ? 'person' : slug.slice(0, 100).replace(/-+$/, '');
+}
+
+/**
+ * Base slug for an election, office or political organization: its name. Mirrors
+ * private.unique_record_slug (supabase/migrations/*_election_foundation.sql); collisions get
+ * `-2`, `-3`, … in the database. Editors may set a shorter slug before first publication.
+ */
+export function recordSlugBase(name: string, fallback: 'election' | 'office' | 'organization'): string {
+  const slug = slugify(name);
+  return (slug === '' ? fallback : slug).slice(0, 100).replace(/-+$/, '');
 }

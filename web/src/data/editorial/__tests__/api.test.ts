@@ -174,4 +174,34 @@ describe('editorial data access', () => {
     await api.setStaffRole(second.client, 'staff@example.org', null);
     expect(second.calls[0]).toEqual(['rpc', 'set_staff_role', { p_email: 'staff@example.org', p_role: null }]);
   });
+
+  it('reads one person\'s records for an election office for the succession check', async () => {
+    const { client, calls } = fakeClient({
+      data: [{ id: ID, status: 'FILED_COC', effective_from: '2027-10-01', publication_status: 'PUBLISHED' }],
+    });
+    const records = await api.fetchContestParticipations(client, { personId: USER, electionId: ID, officeId: ID });
+    expect(records).toEqual([{ id: ID, status: 'FILED_COC', effectiveFrom: '2027-10-01', publicationStatus: 'PUBLISHED' }]);
+    expect(calls).toContainEqual(['eq', 'person_id', USER]);
+    expect(calls).toContainEqual(['eq', 'election_id', ID]);
+    expect(calls).toContainEqual(['eq', 'office_id', ID]);
+  });
+
+  it('maps a numeric column into the form as text', async () => {
+    const def = recordTypeByType('ELECTION_OFFICE')!;
+    const { client } = fakeClient({ data: { ...row, election_id: ID, office_id: USER, sort_order: 30 } });
+    expect((await api.fetchRecord(client, def, ID))?.values).toEqual({ election_id: ID, office_id: USER, sort_order: '30' });
+  });
+
+  it('explains a taken slug or a duplicate election office in plain language', async () => {
+    const taken = fakeClient({ error: { code: '23505', message: 'duplicate key value violates unique constraint "offices_slug_key"' } });
+    await expect(api.createRecord(taken.client, recordTypeByType('OFFICE')!, { name: 'x' })).rejects.toThrow(
+      /slug is already used/,
+    );
+    const duplicate = fakeClient({
+      error: { code: '23505', message: 'duplicate key value violates unique constraint "election_offices_election_office_key"' },
+    });
+    await expect(api.createRecord(duplicate.client, recordTypeByType('ELECTION_OFFICE')!, {})).rejects.toThrow(
+      'This office is already part of this election.',
+    );
+  });
 });

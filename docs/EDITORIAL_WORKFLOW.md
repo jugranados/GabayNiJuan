@@ -31,7 +31,26 @@ The workflow was first built as a standalone Vite app (`admin/`, Milestone 3). I
 | `/admin/roles` | Administrators only: staff list, assign or remove a role, role change log |
 
 `<type>` is one of `people`, `participations`, `office-terms`, `affiliations`, `education`,
-`policy-positions`, `sources`, `claims`, `elections`, `offices`, `organizations`.
+`policy-positions`, `sources`, `claims`, `elections`, `offices`, `organizations`,
+`election-offices`.
+
+### Elections (Milestone 5)
+
+- Elections, offices and organizations have a **Public URL slug**: empty means "generate from the
+  name"; it can be corrected until the record is first published, then it is permanent. Preferred
+  forms: `2028-philippine-general-election`, `senator`, `governor-bataan`.
+- An **election office** says that an office is contested in an election, with its display order
+  (ballot order). An election's page lists its offices with links to add an office or a
+  participation for that election.
+- Order of work for a new election: election → offices → election offices → people →
+  participations → claims with sources. Each is reviewed and published in that order (the database
+  refuses a participation whose election office is not published).
+- A participation's status must be the exact state the evidence supports. A later state is a new
+  record with its own claim; once published, status, person, election and office are frozen.
+  Saving refuses a record that does not follow the person's other records for that office (for
+  example "potential aspirant" after "filed certificate of candidacy"), with the reason.
+- The election form refuses `COMPLETED` before the date and `UPCOMING` after it.
+- Model, rules and sources: `docs/ELECTION_INFORMATION_MODEL.md`, `docs/SOURCE_POLICY.md`.
 
 ## Roles
 
@@ -200,6 +219,9 @@ correction lifecycle, the record field definitions, the readiness checklist and 
 - A reviewer cannot edit a published record; they flag it (via correction/comment in the accepted
   request) and an approver edits it with a reason. There is no separate "proposed change" object yet.
 - Email/password only; no MFA yet (recommended before real data).
+- Election and office metadata (date, status, contested offices) is reviewed through the workflow
+  but is not yet attached to claims and sources the way participation records are. The source is
+  noted in the editor's review; linking election records to sources is part of the real-data pilot.
 - The port has unit and component tests for every action and screen rule, and the database rules
   behind it pass in CI, but it has not yet been exercised end to end with real editor accounts.
   The acceptance test for that, role by role, is `docs/VERIFICATION_CHECKLIST.md` (steps 4 and 5).

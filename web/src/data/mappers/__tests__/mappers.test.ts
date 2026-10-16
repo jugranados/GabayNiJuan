@@ -67,7 +67,7 @@ describe('assemblePersonProfile', () => {
     education: [],
     policyPositions: [],
     elections: [],
-    offices: [{ id: 'o-1', name: 'Fictional Councilor', level: 'CITY' }],
+    offices: [{ id: 'o-1', slug: 'fictional-councilor', name: 'Fictional Councilor', level: 'CITY' }],
     organizations: [],
     claims: [
       {

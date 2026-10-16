@@ -13,12 +13,13 @@ import {
   SOURCE_TYPES,
   VERIFICATION_STATUSES,
 } from '@/domain/enums';
+import { electionDateStatusProblem, philippineDate } from '@/domain/elections';
 import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@/domain/slug';
 import type { RevisionEntityType } from '@/domain/enums';
 
 import { findJudgmentWording } from './wording';
 
-export type FieldKind = 'text' | 'textarea' | 'date' | 'url' | 'select' | 'ref' | 'slug';
+export type FieldKind = 'text' | 'textarea' | 'date' | 'url' | 'select' | 'ref' | 'slug' | 'integer';
 
 export type FieldDef = {
   name: string;
@@ -44,6 +45,7 @@ export const EDITORIAL_RECORD_TYPES = [
   'ELECTION',
   'OFFICE',
   'POLITICAL_ORGANIZATION',
+  'ELECTION_OFFICE',
 ] as const satisfies readonly RevisionEntityType[];
 export type EditorialRecordType = (typeof EDITORIAL_RECORD_TYPES)[number];
 
@@ -82,8 +84,8 @@ export const RECORD_TYPES: readonly RecordTypeDef[] = [
     fields: [
       person(),
       { name: 'election_id', label: 'Election', kind: 'ref', refType: 'ELECTION', required: true },
-      { name: 'office_id', label: 'Office', kind: 'ref', refType: 'OFFICE', required: true },
-      { name: 'status', label: 'Participation status', kind: 'select', options: ELECTION_PARTICIPATION_STATUSES, required: true, help: 'Aspirant states are not candidacies. Choose the exact state the evidence supports.' },
+      { name: 'office_id', label: 'Office', kind: 'ref', refType: 'OFFICE', required: true, help: 'The office must already be recorded as contested in this election (an election office).' },
+      { name: 'status', label: 'Participation status', kind: 'select', options: ELECTION_PARTICIPATION_STATUSES, required: true, help: 'Choose the exact state the evidence supports. Aspirant states and a filed certificate are not official candidacies. A later state (for example a filing after a declaration) is a new record with its own evidence; once published, the status cannot be changed.' },
       { name: 'ballot_number', label: 'Ballot number', kind: 'text' },
       { name: 'effective_from', label: 'Effective from', kind: 'date', required: true },
       { name: 'effective_to', label: 'Effective to', kind: 'date' },
@@ -161,8 +163,17 @@ export const RECORD_TYPES: readonly RecordTypeDef[] = [
     recordType: 'ELECTION', table: 'elections', slug: 'elections', title: 'Elections', singular: 'election',
     fields: [
       { name: 'name', label: 'Name', kind: 'text', required: true },
-      { name: 'election_date', label: 'Election date', kind: 'date', required: true },
-      { name: 'status', label: 'Status', kind: 'select', options: ELECTION_STATUSES, required: true },
+      { name: 'election_date', label: 'Election date', kind: 'date', required: true, help: 'Philippine date, from an official election record (COMELEC calendar or resolution).' },
+      { name: 'status', label: 'Status', kind: 'select', options: ELECTION_STATUSES, required: true, help: 'Must agree with the date: an election cannot be completed before its date, or upcoming after it.' },
+      { name: 'slug', label: 'Public URL slug', kind: 'slug', help: 'Leave empty to generate it from the name. Prefer a short, stable form such as "2028-philippine-general-election". It becomes permanent once the election is published.' },
+    ],
+  },
+  {
+    recordType: 'ELECTION_OFFICE', table: 'election_offices', slug: 'election-offices', title: 'Election offices', singular: 'election office',
+    fields: [
+      { name: 'election_id', label: 'Election', kind: 'ref', refType: 'ELECTION', required: true },
+      { name: 'office_id', label: 'Office', kind: 'ref', refType: 'OFFICE', required: true, help: 'An office contested in this election. Each office can be added to an election once.' },
+      { name: 'sort_order', label: 'Display order', kind: 'integer', required: true, help: 'Order of offices on the election page, lower first (use the ballot order, e.g. 10 President, 20 Vice President, 30 Senator). It orders offices, never people.' },
     ],
   },
   {
@@ -171,6 +182,7 @@ export const RECORD_TYPES: readonly RecordTypeDef[] = [
       { name: 'name', label: 'Name', kind: 'text', required: true },
       { name: 'level', label: 'Level', kind: 'select', options: OFFICE_LEVELS, required: true },
       { name: 'jurisdiction_id', label: 'Jurisdiction identifier', kind: 'text' },
+      { name: 'slug', label: 'Public URL slug', kind: 'slug', help: 'Leave empty to generate it from the name. Prefer "<office>" for national offices and "<office>-<place>" for local ones, e.g. "senator", "governor-bataan", "mayor-quezon-city". It becomes permanent once the office is published.' },
     ],
   },
   {
@@ -179,6 +191,7 @@ export const RECORD_TYPES: readonly RecordTypeDef[] = [
       { name: 'name', label: 'Name', kind: 'text', required: true },
       { name: 'abbreviation', label: 'Abbreviation', kind: 'text' },
       { name: 'organization_type', label: 'Type', kind: 'select', options: POLITICAL_ORGANIZATION_TYPES, required: true },
+      { name: 'slug', label: 'Public URL slug', kind: 'slug', help: 'Used in directory filter links. Leave empty to generate it from the name. It becomes permanent once the organization is published.' },
     ],
   },
 ];
@@ -202,8 +215,11 @@ export function recordTypeByType(recordType: string): RecordTypeDef | undefined 
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Form schema derived from the field list: empty optional fields become null. */
-export function buildFormSchema(def: RecordTypeDef) {
+/**
+ * Form schema derived from the field list: empty optional fields become null. `today` (a
+ * Philippine date) decides the election date/status rule; it defaults to the current date.
+ */
+export function buildFormSchema(def: RecordTypeDef, today: string = philippineDate(new Date())) {
   const shape: Record<string, z.ZodType> = {};
   for (const f of def.fields) {
     let base: z.ZodType<string> = z.string().trim();
@@ -214,6 +230,7 @@ export function buildFormSchema(def: RecordTypeDef) {
         'Use lowercase letters, numbers and single hyphens',
       );
     }
+    if (f.kind === 'integer') base = base.refine((v) => v === '' || /^\d{1,4}$/.test(v), 'Use a whole number from 0 to 9999');
     if (f.kind === 'url') base = base.refine((v) => v === '' || /^https?:\/\/\S+$/i.test(v), 'Must start with http:// or https://');
     if (f.kind === 'select' && f.options) {
       const options = f.options;
@@ -232,6 +249,14 @@ export function buildFormSchema(def: RecordTypeDef) {
     };
     range('effective_from', 'effective_to');
     range('start_date', 'end_date');
+    if (def.recordType === 'ELECTION' && value.election_date && value.status) {
+      const problem = electionDateStatusProblem(
+        value.election_date,
+        value.status as (typeof ELECTION_STATUSES)[number],
+        today,
+      );
+      if (problem) ctx.addIssue({ code: 'custom', path: ['status'], message: problem });
+    }
     if (def.recordType === 'SOURCE' && !value.url && !value.document_identifier) {
       ctx.addIssue({ code: 'custom', path: ['url'], message: 'Provide a URL or a document identifier' });
     }

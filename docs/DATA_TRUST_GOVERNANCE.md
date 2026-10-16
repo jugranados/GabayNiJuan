@@ -137,6 +137,18 @@ For an early solo-maintained prototype, preserve the same workflow fields even i
 
 **Enforced since Milestone 3:** an approver cannot approve a record they created or submitted for review. A documented development switch (`private.editorial_settings.allow_self_approval`, default off) lets a solo administrator proceed; each use is stamped in the revision reason. See `docs/EDITORIAL_WORKFLOW.md`.
 
+## Election participation (Milestone 5)
+
+- Each participation status is a separate claim, backed by its own evidence. A later status is
+  recorded as a new, dated participation; the earlier one stays (rule 9). One status is never
+  inferred from another.
+- Once a participation has been published, its status, person, election and office cannot change
+  (database trigger). A wrong record is retracted, with a reason, and replaced.
+- New records must follow the person's existing records in a valid order (no step back, nothing
+  after a final result). The editorial area checks this before saving.
+- Only `OFFICIAL_CANDIDATE` is ever called an official candidate.
+- Details and the succession table: `docs/ELECTION_INFORMATION_MODEL.md`.
+
 ## Dates
 
 Store separately:

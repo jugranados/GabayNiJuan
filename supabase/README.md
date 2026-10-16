@@ -27,6 +27,8 @@ Database for Gabay ni Juan: schema, Row Level Security, editorial workflow, audi
 | `20261008150100` | `corrections_and_staff` | `correction_requests`, `submit_correction`, `review_correction`, `staff_directory`, `set_staff_role`, `editorial_role_events`; role rows become RPC-only |
 | `20261012070000` | `person_slugs` | `people.slug` (unique, URL-safe, generated on insert, frozen once published), anon column grant, `search_directory` re-created to return `slug` |
 | `20261012090000` | `grant_editorial_table_helpers` | Grants staff `EXECUTE` on the two table-whitelist helpers that `editorial_update` and `editorial_transition` call; without it every save and transition was refused |
+| `20261016090000` | `election_office_entity_type` | Adds `ELECTION_OFFICE` to `revision_entity_type`, alone so the value is committed before it is used |
+| `20261016090100` | `election_foundation` | Milestone 5: `slug` on elections, offices and organizations (generated from the name, unique, frozen once published, anon grant, backfilled); election date/status check; `election_offices` (publishable, full workflow, RLS, audit) backfilled from participations; composite FK from participations; participation guard (election office must exist and be published first; status, person, election and office frozen once published); `editorial_tables()` and `editorial_queue` include election offices. See `docs/ELECTION_INFORMATION_MODEL.md` |
 
 Never edit an applied migration; add a new one. Change a migration and `web/src/data/schemas/rows.ts` in the same commit.
 
@@ -54,7 +56,7 @@ npx supabase db push                    # applies pending files in migrations/
 
 `db push` records each file under its own version, so the repository and the hosted history stay identical. Avoid applying migrations through a tool that assigns its own timestamp (the Supabase MCP `apply_migration` does): the local file would then have to be renamed to match.
 
-Status on the hosted development project (2026-10-13): 10 of 14 applied. Pending: `20261008150050`, `20261008150100`, `20261012070000`, `20261012090000`. Procedure and checks: `docs/VERIFICATION_CHECKLIST.md`.
+Status on the hosted development project (2026-10-16): 10 of 16 applied. Pending: `20261008150050`, `20261008150100`, `20261012070000`, `20261012090000`, `20261016090000`, `20261016090100`. Procedure and checks: `docs/VERIFICATION_CHECKLIST.md`.
 
 ### Directory function
 
