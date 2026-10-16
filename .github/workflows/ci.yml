@@ -77,9 +77,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Pinned: `latest` makes an unauthenticated GitHub API lookup that fails when the runner's
+      # API rate limit is exhausted (run 38925535978). Same version as the hosted `db push`.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.121.0
       # Starts a local Supabase stack and applies supabase/migrations + seed.sql.
       - name: Start the local stack (applies migrations and seed)
         run: scripts/ci-run.sh "supabase start" supabase start
