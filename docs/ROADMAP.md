@@ -171,7 +171,7 @@ deploy it non-indexed, and only then archive `mobile/`. Procedure, evidence and 
 - [x] `database.types.ts` regenerated from hosted; no hand-made exception remains
 - [x] `npm run verify` (329 tests), `npm run test:integration` against hosted (50 of 50), `npm run build` against hosted
 - [x] Milestone 5 against hosted: election and office slug lookup, election → offices, office → participants, the eight statuses kept distinct, readable filters, 308 redirects from UUID URLs, canonical URLs
-- [x] `npm run smoke` against a production build reading hosted: 40 of 40, including election routes and indexing protection
+- [x] `npm run smoke` against a production build reading hosted: 43 of 43 (2026-10-19), including election routes, UUID → slug redirects and indexing protection
 - [x] hosted auth: sign-up disabled, anonymous sign-ins disabled, only the email provider; exposed schemas `public` and `graphql_public` only
 - [x] earlier: the repository copy of `editorial_rpcs_records` restored; the `grant_editorial_table_helpers` defect fixed
 

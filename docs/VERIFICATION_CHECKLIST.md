@@ -9,32 +9,33 @@ Status words used here and in `docs/ROADMAP.md`:
 - **MANUAL CHECK REQUIRED**: a person has to do it or look at it; it cannot be confirmed from code.
 - **BLOCKED**: cannot be done until an earlier step is finished.
 
-## Status (2026-10-16, after the hosted rollout)
+## Status (re-verified 2026-10-19; hosted rollout 2026-10-16)
 
 Status words: AUTOMATED VERIFIED (a command, CI job or API call ran and passed), MANUAL VERIFIED (a
 person observed it), MANUAL CHECK REQUIRED, BLOCKED, DEFERRED.
 
 | Item | Status | Evidence or reason |
 |---|---|---|
-| Clean database from `supabase/migrations` + `seed.sql` | AUTOMATED VERIFIED | CI `database` job (run 38922164879 on `51e4586`, all four jobs green) |
+| Clean database from `supabase/migrations` + `seed.sql` | AUTOMATED VERIFIED | CI `database` job; latest: run 38925833312 on `b259313`, all four jobs (web, mobile, drift, database) green |
 | SQL tests: RLS, publication, consistency, editorial functions, corrections, roles, slugs, Milestone 5 rules | AUTOMATED VERIFIED | CI `database` job, `supabase/tests/rls_and_publication.test.sql` |
 | Seed is idempotent and equals the fixtures | AUTOMATED VERIFIED | CI `database` and `web` jobs |
 | Enums and both state machines equal the SQL | AUTOMATED VERIFIED | CI `drift` job |
-| All 16 migrations applied to hosted | AUTOMATED VERIFIED | `supabase db push`: four on 2026-10-16, then the two Milestone 5 migrations the same day. `migration list`: 16 rows, each Local and Remote |
+| All 16 migrations applied to hosted | AUTOMATED VERIFIED | `supabase db push`: four on 2026-10-16, then the two Milestone 5 migrations the same day. Re-checked 2026-10-19: `migration list` 16 rows, each Local and Remote; `db push --dry-run` "Remote database is up to date" |
 | Hosted history equals the migration files | AUTOMATED VERIFIED | all 16 recorded statements equal the files (comments, whitespace and statement separators aside) |
 | Milestone 5 backfill on hosted | AUTOMATED VERIFIED | 5 election offices backfilled and published, each with its revision; then `db push --include-seed` added the new fictional offices and aligned the display order: 10 published election offices, same as a fresh seed |
-| `database.types.ts` regenerated | AUTOMATED VERIFIED | `npm run db:types` from the linked project; no hand-made exception remains |
-| Web typecheck (schema drift), lint, 329 tests | AUTOMATED VERIFIED | `npm run verify` with the regenerated types |
-| Integration test against the **hosted** project | AUTOMATED VERIFIED | `npm run test:integration`: 50 of 50, including election pages, office pages and exact statuses equal to the fixtures |
+| `database.types.ts` regenerated | AUTOMATED VERIFIED | `npm run db:types` from the linked project; no hand-made exception remains. Re-run 2026-10-19: no diff |
+| Web typecheck (schema drift), lint, 329 tests | AUTOMATED VERIFIED | `npm run verify` with the regenerated types (re-run 2026-10-19) |
+| Integration test against the **hosted** project | AUTOMATED VERIFIED | `npm run test:integration`: 50 of 50, including election pages, office pages and exact statuses equal to the fixtures (re-run 2026-10-19) |
 | Production build against hosted | AUTOMATED VERIFIED | `npm run build` with `DATA_SOURCE=supabase`; no privileged key in `.next/static` |
-| Smoke test (incl. `/elections`, an election, an office page, readable filters) | AUTOMATED VERIFIED | `npm run smoke` against that build: 40 of 40 |
+| Smoke test (incl. `/elections`, an election, an office page, readable filters, office-not-in-election 404, UUID → slug 308) | AUTOMATED VERIFIED | `npm run smoke` against a local production build reading hosted: 43 of 43 (2026-10-19). Not yet run against a deployment |
 | Milestone 5 routes on hosted data | AUTOMATED VERIFIED | `/elections`, the 2028 page (six offices in ballot order), office pages with every status group, 404 for an office not in the election, 308 from UUID election/office/filter URLs to slug URLs, readable filters, unknown slug shows "Not found" |
 | Indexing off (`SITE_INDEXABLE=false`) | AUTOMATED VERIFIED | `X-Robots-Tag: noindex, nofollow`, `robots.txt` `Disallow: /`, empty sitemap |
-| Public sign-up disabled; anonymous sign-ins disabled | AUTOMATED VERIFIED | hosted `GET /auth/v1/settings`: `disable_signup: true`, `anonymous_users: false`, only the email provider |
+| Public sign-up disabled; anonymous sign-ins disabled | AUTOMATED VERIFIED | hosted `GET /auth/v1/settings`: `disable_signup: true`, `anonymous_users: false`, only the email provider (re-checked 2026-10-19; an anonymous `POST /auth/v1/signup` is refused) |
 | Exposed API schemas are `public`, `graphql_public` | AUTOMATED VERIFIED | PostgREST refuses `Accept-Profile: private`: "Only the following schemas are exposed: public, graphql_public" |
-| Leaked-password protection | DEFERRED | unavailable on the current plan: Supabase offers it on Pro and above, and the project is on Free (`docs/FREE_TIER_PLAN.md`; owner to confirm). Compensating controls in step 3 |
+| Leaked-password protection | DEFERRED | the security advisor reports it disabled (2026-10-19). Unavailable on the current plan: Supabase offers it on Pro and above, and the project is on Free (`docs/FREE_TIER_PLAN.md`; owner to confirm). Compensating controls in step 3 |
 | MFA for editorial accounts | MANUAL CHECK REQUIRED | not enforced: the app has no MFA enrolment or challenge screen. Required before real political data; does not block the fictional deployment |
-| REVIEWER, APPROVER, ADMIN accounts | MANUAL CHECK REQUIRED | Step 4 |
+| `allow_self_approval` is `false` on hosted | AUTOMATED VERIFIED | read from `private.editorial_settings` (2026-10-19) |
+| REVIEWER, APPROVER, ADMIN accounts | MANUAL CHECK REQUIRED | Step 4. Hosted on 2026-10-19: one auth user, holding ADMIN; no REVIEWER or APPROVER account yet |
 | Editorial acceptance, election acceptance, corrections, published edit, retraction | MANUAL CHECK REQUIRED | Step 5 (no longer blocked) |
 | Vercel deployment | MANUAL CHECK REQUIRED | Step 6 (no longer blocked) |
 | Deployed smoke test | BLOCKED | needs step 6. Step 7 |
@@ -292,7 +293,10 @@ npm run smoke -- https://<production-url>
 ```
 
 It checks home, directory, an empty search, a filter, an out-of-range page, a profile, a claim,
-safe source links, the report page, three 404s, the `noindex` header and metadata, `robots.txt`,
+safe source links, `/elections`, an election, one of its offices, a readable election filter, a
+404 for an office that is not in the election, 308 redirects from the fictional 2028 election's UUID
+URL and UUID filter to its slug (only while that fictional election is published), the report page,
+four 404s, the `noindex` header and metadata, `robots.txt`,
 the empty sitemap, that five `/admin` routes redirect a signed-out visitor, and that the sign-in
 page is uncached, unindexed and has no sign-up. Vercel preview URLs may sit behind Vercel's own
 login; test the production URL.

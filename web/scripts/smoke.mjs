@@ -92,6 +92,17 @@ try {
     }
     const readable = await get(`/politicians?election=${electionPaths[0].split('/')[2]}`);
     check('directory accepts a readable election filter', readable.status === 200 && /Election: /.test(text(readable.body)), `status ${readable.status}`);
+    const strayOffice = await get(`${electionPaths[0]}/no-such-office`);
+    check('an office that is not in the election is a 404', strayOffice.status === 404, `status ${strayOffice.status}`);
+  }
+
+  // Legacy UUID links: checked with the fictional 2028 election's fixed id, only while it is published.
+  const fictional2028 = { id: '834551e9-b01b-aaad-629d-7ab177914203', slug: 'national-and-district-election-2028-fictional' };
+  if (electionPaths.includes(`/elections/${fictional2028.slug}`)) {
+    const legacy = await get(`/elections/${fictional2028.id}`);
+    check('a UUID election URL redirects permanently to its slug', legacy.status === 308 && legacy.location.endsWith(`/elections/${fictional2028.slug}`), `status ${legacy.status} -> ${legacy.location}`);
+    const legacyFilter = await get(`/politicians?election=${fictional2028.id}`);
+    check('a UUID election filter redirects permanently to its slug', legacyFilter.status === 308 && legacyFilter.location.endsWith(`/politicians?election=${fictional2028.slug}`), `status ${legacyFilter.status} -> ${legacyFilter.location}`);
   }
 
   const report = await get('/corrections/report');

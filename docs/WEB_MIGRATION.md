@@ -267,7 +267,7 @@ First deployment, step by step:
 The deployment must read a project with every migration in `supabase/migrations`: without the
 slug columns and `election_offices` the directory, profiles and election pages fail validation.
 The hosted development project has all 16 (2026-10-16), and a production build reading it passes
-`npm run smoke` (40 of 40). Deploy the committed `development` branch. The full order of
+`npm run smoke` (43 of 43). Deploy the committed `development` branch. The full order of
 operations is in `docs/VERIFICATION_CHECKLIST.md`.
 
 Readiness review (2026-10-13): the production build passes; the environment is validated at build
