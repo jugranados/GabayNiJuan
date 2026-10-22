@@ -13,7 +13,9 @@ import {
   VERIFICATION_STATUSES,
 } from '@/domain/enums';
 
-const uuid = z.uuid();
+// Any 8-4-4-4-12 hex id, as Postgres `uuid` accepts. z.uuid() also enforces RFC 9562
+// version/variant bits, which the seed ids do not carry.
+const uuid = z.guid();
 const nullableUuid = uuid.nullable();
 
 export const recordRowSchema = z.looseObject({

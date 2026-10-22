@@ -34,6 +34,20 @@ jobs:
       # Nothing sent to a browser may contain a privileged Supabase key.
       - name: No service-role key in the browser bundle
         run: "! grep -rIl -i -E 'service_role|sb_secret_' .next/static"
+      # Public browser tests (Playwright) against this build, with the fictional mock data:
+      # read-only, no account, no secret. Editorial acceptance runs in e2e.yml.
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Public browser tests (desktop, tablet, phone)
+        env:
+          E2E_WEB_SERVER_COMMAND: npm run start
+        run: ../scripts/ci-run.sh "public browser tests" npm run e2e:public
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-public-report
+          path: web/playwright-report
+          retention-days: 7
 
   # The React Native app is frozen (docs/WEB_MIGRATION.md). Its checks stay required until it is
   # archived, so the reference implementation keeps compiling and passing while web reaches parity.

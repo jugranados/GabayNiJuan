@@ -35,7 +35,9 @@ const text = (data: FormData, key: string): string => {
   const value = data.get(key);
   return typeof value === 'string' ? value.trim() : '';
 };
-const uuid = z.uuid();
+// Any 8-4-4-4-12 hex id, as Postgres `uuid` accepts. z.uuid() also enforces RFC 9562
+// version/variant bits, which the seed ids do not carry.
+const uuid = z.guid();
 const version = z.coerce.number().int().positive();
 
 /**

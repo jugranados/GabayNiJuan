@@ -22,7 +22,7 @@ workflow, claims, evidence, sources, revisions, verification rules and the neutr
 ## Stack
 
 Next.js 16 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS 4 · Zod · Supabase JS and
-`@supabase/ssr` · Vitest and Testing Library · npm.
+`@supabase/ssr` · Vitest and Testing Library · Playwright (browser acceptance) · npm.
 
 Deliberately not added:
 
@@ -261,7 +261,8 @@ First deployment, step by step:
    origin.
 4. Confirm indexing is off: `curl -sI https://<site>/ | grep -i x-robots-tag` prints
    `noindex, nofollow`, and `https://<site>/robots.txt` says `Disallow: /`.
-5. Run `npm run smoke -- https://<site>` from `web/`, then the manual part of the smoke test in
+5. Run `npm run smoke -- https://<site>` and `E2E_BASE_URL=https://<site> npm run e2e:production`
+   from `web/` (both read-only), then the manual part of the smoke test in
    `docs/VERIFICATION_CHECKLIST.md` (step 7).
 
 The deployment must read a project with every migration in `supabase/migrations`: without the
@@ -295,6 +296,27 @@ What remains reusable for a future mobile companion: everything under `web/src/d
 `web/src/data` is plain TypeScript with no web dependency, and the database contract
 (`search_directory`, `submit_correction`, column-level public reads) is client-agnostic.
 
+## Testing layers
+
+| Layer | Command | What it proves | Where it runs |
+|---|---|---|---|
+| Unit and component | `npm test` | domain rules, mappers, repositories, pages and editorial screens over the fixtures (jsdom) | every CI run |
+| Database | `supabase/tests/rls_and_publication.test.sql` | RLS, state machine, two-person rule, reasons, audit | CI `database` job |
+| Integration | `npm run test:integration` | the data layer against a real database through the anon key | CI `database` job; by hand against hosted |
+| HTTP smoke | `npm run smoke -- <url>` | about 40 read-only GET checks of a running site: routes, redirects, 404s, indexing, signed-out `/admin` | by hand; `e2e.yml` (production) |
+| Browser, public | `npm run e2e:public` | real pages at 375 px, 768 px and desktop: navigation, search, filters, pagination, claim → evidence → source, elections, neutral wording, keyboard paths, layout | CI `web` job (mock build); by hand |
+| Browser, editorial | `npm run e2e:editorial` | REVIEWER, APPROVER and ADMIN acceptance, publication lifecycle, election records, corrections, signed in as real editors under RLS | `e2e.yml`, by hand: `local` (throwaway stack) or `hosted` |
+| Browser, production | `npm run e2e:production` | the `@production-smoke` subset; read-only | `e2e.yml` (production) |
+
+The smoke script stays: it needs no browser, runs in seconds and checks status codes and headers
+exactly (`308`, `X-Robots-Tag`, `Cache-Control`), which is the fastest signal after a deployment.
+Playwright covers what needs a browser or an account. Neither uses a service-role key.
+
+Browser tests choose their projects by target (`E2E_TARGET_ENV`): `local` and `hosted` run
+everything; `production` defines only the read-only projects unless
+`E2E_ALLOW_PRODUCTION_MUTATIONS=true` (default off). Records written by the editorial projects are
+named "E2E Fictional …", and each flow ends by retracting what it published.
+
 ## Parity checklist (web vs. the React Native app)
 
 | Capability | Web | How it is verified |
@@ -326,5 +348,7 @@ is still missing migrations.
   display yet. When it is built: a public `profile-images` bucket; JPEG, PNG or WebP up to 1 MB;
   path `people/<person id>/<sha256>.<ext>`; uploads by staff only through storage RLS; public
   read; a source and licence recorded for every image; never scraped in bulk.
-- **Editorial end-to-end run** with a real account, and **MFA** for editorial accounts.
+- **Editorial end-to-end run** with real accounts: automated in Playwright (`web/e2e/editorial`,
+  2026-10-22) but not yet run against a database; run `e2e.yml` with target `local`.
+- **MFA** for editorial accounts.
 - **Stronger report-form protection** (CAPTCHA or edge rate limiting) if abuse appears.

@@ -18,6 +18,7 @@ Gabay ni Juan is **web-first**: a Next.js (App Router) + TypeScript application 
 - `@supabase/supabase-js` and `@supabase/ssr`
 - Zod for runtime validation
 - Vitest and Testing Library
+- Playwright for browser acceptance tests (`web/e2e`; Chromium; see `docs/VERIFICATION_CHECKLIST.md`)
 
 Not used, on purpose: TanStack Query and Zustand (pages read on the server and keep state in the URL), React Hook Form (forms post to server actions and are validated there with Zod) and shadcn/ui. See `docs/WEB_MIGRATION.md`.
 

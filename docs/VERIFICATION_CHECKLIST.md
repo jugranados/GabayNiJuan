@@ -9,10 +9,11 @@ Status words used here and in `docs/ROADMAP.md`:
 - **MANUAL CHECK REQUIRED**: a person has to do it or look at it; it cannot be confirmed from code.
 - **BLOCKED**: cannot be done until an earlier step is finished.
 
-## Status (re-verified 2026-10-19; hosted rollout 2026-10-16)
+## Status (re-verified 2026-10-19; hosted rollout 2026-10-16; browser tests added 2026-10-22)
 
-Status words: AUTOMATED VERIFIED (a command, CI job or API call ran and passed), MANUAL VERIFIED (a
-person observed it), MANUAL CHECK REQUIRED, BLOCKED, DEFERRED.
+Status words: AUTOMATED VERIFIED (a command, CI job or API call ran and passed), AUTOMATED, NOT YET
+RUN (a Playwright test exists but has not passed against that target yet; it is still open), MANUAL
+VERIFIED (a person observed it), MANUAL CHECK REQUIRED, BLOCKED, DEFERRED.
 
 | Item | Status | Evidence or reason |
 |---|---|---|
@@ -35,11 +36,13 @@ person observed it), MANUAL CHECK REQUIRED, BLOCKED, DEFERRED.
 | Leaked-password protection | DEFERRED | the security advisor reports it disabled (2026-10-19). Unavailable on the current plan: Supabase offers it on Pro and above, and the project is on Free (`docs/FREE_TIER_PLAN.md`; owner to confirm). Compensating controls in step 3 |
 | MFA for editorial accounts | MANUAL CHECK REQUIRED | not enforced: the app has no MFA enrolment or challenge screen. Required before real political data; does not block the fictional deployment |
 | `allow_self_approval` is `false` on hosted | AUTOMATED VERIFIED | read from `private.editorial_settings` (2026-10-19) |
-| REVIEWER, APPROVER, ADMIN accounts | MANUAL CHECK REQUIRED | Step 4. Hosted on 2026-10-19: one auth user, holding ADMIN; no REVIEWER or APPROVER account yet |
-| Editorial acceptance, election acceptance, corrections, published edit, retraction | MANUAL CHECK REQUIRED | Step 5 (no longer blocked) |
+| REVIEWER, APPROVER, ADMIN accounts | MANUAL CHECK REQUIRED | Step 4. Hosted on 2026-10-19: one auth user, holding ADMIN; no REVIEWER or APPROVER account yet. The `local` E2E target creates throwaway accounts on a CI stack instead |
+| Editorial acceptance, election acceptance, corrections, published edit, retraction | AUTOMATED, NOT YET RUN | Step 5 is automated in `web/e2e/editorial` (map below). Not yet run: this machine has no Docker for a local stack, and hosted has no REVIEWER/APPROVER account. Next: Actions → "Browser acceptance (Playwright)" → target `local` |
+| Public browser pass: phone (375 px), tablet (768 px), desktop; keyboard paths; neutrality; 404s; indexing; signed-out `/admin` | AUTOMATED VERIFIED | `npm run e2e:public` against a local production build reading hosted: 73 passed, 1 skipped (keyboard pagination: one page of people) (2026-10-22). Against a mock build, as CI's `web` job runs it: 70 passed, 4 skipped (no UUIDs, no sign-in, no report form, one page). Not yet against a deployment |
+| Production-smoke mode is read-only | AUTOMATED VERIFIED | with `E2E_TARGET_ENV=production` the run lists no `setup` and no writing project; `npm run e2e:production` against a local production build: 35 of 35 (2026-10-22) |
 | Vercel deployment | MANUAL CHECK REQUIRED | Step 6 (no longer blocked) |
-| Deployed smoke test | BLOCKED | needs step 6. Step 7 |
-| Browser pass: phone, tablet, desktop, keyboard | BLOCKED | needs step 6. Step 7 |
+| Deployed smoke test (`npm run smoke` and `npm run e2e:production`) | BLOCKED | needs step 6. Step 7 |
+| Browser pass on real devices, screen reader | BLOCKED | needs step 6; stays manual. Step 7 |
 | Archive `mobile/` | BLOCKED | needs steps 4 to 7. Step 8 |
 
 ## Step 1. Apply the pending migrations
@@ -149,8 +152,33 @@ cannot approve a record they created or submitted. Leave
 
 ## Step 5. Editorial acceptance test
 
-Run it locally (`cd web && npm run dev`, `DATA_SOURCE=supabase`) or on the deployment. Every
-record is fictional; put "(fictional)" in names so nothing can be mistaken for a real record.
+**Automated in Playwright** (`web/e2e/editorial`, README "Browser acceptance tests"). Tick a box
+below only after the run that covers it passed against the target you are accepting.
+
+| Checklist part | Spec | Project |
+|---|---|---|
+| As REVIEWER (all boxes) | `reviewer.spec.ts` | `reviewer` |
+| As APPROVER: two-person rule, invalid evidence, no role management | `approver.spec.ts` | `approver` |
+| As APPROVER: queue, approve, dependency order, publish, edit with reason, revision history, retract; Published-change test; Retraction workflow | `lifecycle.spec.ts` | `workflow` (REVIEWER + APPROVER + voter) |
+| As ADMIN: areas load, role change round trip and log, raw data, no-role account | `admin.spec.ts` | `admin` |
+| As ADMIN: last-admin protection | `admin.spec.ts`, only on `E2E_TARGET_ENV=local` with exactly one ADMIN | `admin` |
+| Correction request (all boxes but the last, which the integration test covers) | `correction.spec.ts` | `workflow` (voter + ADMIN) |
+| Election records (all boxes) | `election.spec.ts` | `workflow` (REVIEWER + APPROVER + voter) |
+
+How to run: `local` target in CI (throwaway stack, accounts and password; no secret), or
+`npm run e2e:editorial` with the `E2E_*` variables against an approved hosted test project.
+Differences from the manual script: the role changes use the optional role-less test account
+(never a real one), the published correction edits a claim's statement (an office term's dates
+work the same way), and last-admin protection is tested only on a throwaway local database. On
+hosted, last-admin protection stays a manual check.
+
+Record names start with "E2E Fictional" and end with "(fictional)"; links use `example.org`.
+Each flow retracts what it published and rejects what it left unpublished, so the public site
+returns to the fictional seed. The records stay in `/admin`, with their history.
+
+To run it by hand instead: locally (`cd web && npm run dev`, `DATA_SOURCE=supabase`) or on the
+deployment. Every record is fictional; put "(fictional)" in names so nothing can be mistaken for a
+real record.
 
 ### As REVIEWER
 
@@ -303,18 +331,47 @@ login; test the production URL.
 
 - [ ] `npm run smoke` reports 0 failed
 
-Manual part:
+Browser part (read-only, automated):
 
-- [ ] public pages at phone (about 375 px), tablet (about 768 px) and desktop widths: no sideways
-      scrolling, filters usable, tables in `/admin` scroll inside their card
+```bash
+cd web
+E2E_BASE_URL=https://<production-url> npm run e2e:production
+```
+
+or Actions → "Browser acceptance (Playwright)" → target `production`, `base_url`. It runs the
+`@production-smoke` tests: public pages, navigation, directory, profile → claim → source (links open
+in a new tab with `noopener noreferrer`), elections, 404s, `noindex` header and metadata,
+`robots.txt`, empty sitemap, no privileged key in the page, the signed-out `/admin` redirects, and
+the layout at desktop width. It signs in nowhere and submits nothing.
+
+- [ ] `npm run e2e:production` reports 0 failed
+
+Covered by `npm run e2e:public` (automated; run it against the deployment too, with
+`E2E_BASE_URL`, `E2E_TARGET_ENV=production`):
+
+- [ ] public pages at phone (375 px), tablet (768 px) and desktop widths: no sideways scrolling,
+      filters usable (`responsive.spec.ts`, `navigation.spec.ts`); `/admin` tables scroll inside
+      their card (`reviewer.spec.ts`)
 - [ ] keyboard only: Tab reaches "Skip to main content" first, every control shows a focus outline,
-      the filter form and pagination work without a mouse
-- [ ] a source link opens the original document in a new tab
-- [ ] submit one correction from the deployed site; it arrives in `/admin/corrections`
-- [ ] sign in to `/admin` on the deployment as each role; the role-less case shows "No editorial access"
-- [ ] publish one fictional record in `/admin`; it appears publicly straight away
-- [ ] retract it; it disappears publicly straight away
-- [ ] `curl -sI https://<production-url>/ | grep -i x-robots-tag` prints `noindex, nofollow`
+      the filter form and pagination work without a mouse (`keyboard.spec.ts`)
+- [ ] a source link opens in a new tab (`profile-claims.spec.ts` checks `target` and `rel`)
+- [ ] `X-Robots-Tag: noindex, nofollow` (`errors-indexing.spec.ts`)
+
+Covered by the editorial projects, which write; run them on the deployment only if writing
+fictional records to that database is approved (`E2E_ALLOW_PRODUCTION_MUTATIONS=true`):
+
+- [ ] submit one correction from the deployed site; it arrives in `/admin/corrections` (`correction.spec.ts`)
+- [ ] sign in to `/admin` on the deployment as each role; the role-less case shows "No editorial access" (`setup`, `admin.spec.ts`)
+- [ ] publish one fictional record in `/admin`; it appears publicly straight away (`lifecycle.spec.ts`)
+- [ ] retract it; it disappears publicly straight away (`lifecycle.spec.ts`)
+
+Manual, on purpose (Playwright does not replace these):
+
+- [ ] a real phone and a real tablet: look at the pages, tap the filters, open a source
+- [ ] a screen-reader spot check (VoiceOver or TalkBack, NVDA): home, directory with a filter, a
+      profile, a claim, the report form
+- [ ] subjective clarity: would a voter understand the verification states and the candidacy note?
+- [ ] the open source link really is the original document
 
 ## Step 8. Archive `mobile/`
 
@@ -326,6 +383,17 @@ deployment succeeded; 8. deployed public and admin smoke tests passed.
 
 Then: `git mv mobile archive/mobile-react-native`, remove the `mobile` CI job and the mobile half of
 `scripts/check-enum-drift.mjs`, and update `README.md`, `AGENTS.md` and `docs/WEB_MIGRATION.md`.
+
+## Manual checks that browser tests do not replace
+
+- Supabase dashboard security review (step 3): sign-up, providers, leaked-password protection, MFA,
+  Site URL, exposed schemas, advisors
+- Vercel project review (step 6): environment variables, no Supabase key other than the anon key,
+  preview protection
+- Supabase and Vercel plan limits (leaked-password protection is Pro and above)
+- MFA readiness: the app has no MFA enrolment or challenge screen
+- real-device inspection, a screen-reader pass, subjective UX clarity (step 7)
+- last-admin protection on any database other than a throwaway local one
 
 ## Before real data
 

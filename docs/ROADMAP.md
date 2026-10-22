@@ -134,8 +134,8 @@ Open items before this is called finished:
 - [x] apply the pending migrations to the hosted project (done 2026-10-16)
 - [x] first green CI run, including the `database` job (see "Verification and first deployment")
 - [x] regenerate `web/src/data/supabase/database.types.ts` (done 2026-10-16 from hosted)
-- [ ] run `web/` with `DATA_SOURCE=supabase` in a browser: phone, tablet, desktop; keyboard only; a screen reader pass
-- [ ] exercise `/admin` end to end with real accounts: signed out, no role, REVIEWER, APPROVER, ADMIN; create → sources → review → approve (second person) → publish → correct with a reason → retract; evidence; a correction request from the public form through to resolved; role changes
+- [ ] run `web/` with `DATA_SOURCE=supabase` in a browser: phone, tablet, desktop and keyboard paths are automated and pass (Playwright, 2026-10-22); a real-device look and a screen reader pass remain manual
+- [ ] exercise `/admin` end to end with real accounts (automated in Playwright, not yet run): signed out, no role, REVIEWER, APPROVER, ADMIN; create → sources → review → approve (second person) → publish → correct with a reason → retract; evidence; a correction request from the public form through to resolved; role changes
 - [x] hosted sign-up disabled, anonymous sign-ins disabled, exposed schemas checked (2026-10-16); leaked-password protection deferred (plan); MFA open (tracked under "Verification and first deployment")
 - [ ] deploy to Vercel with `SITE_INDEXABLE=false`
 
@@ -174,6 +174,12 @@ deploy it non-indexed, and only then archive `mobile/`. Procedure, evidence and 
 - [x] `npm run smoke` against a production build reading hosted: 43 of 43 (2026-10-19), including election routes, UUID → slug redirects and indexing protection
 - [x] hosted auth: sign-up disabled, anonymous sign-ins disabled, only the email provider; exposed schemas `public` and `graphql_public` only
 - [x] earlier: the repository copy of `editorial_rpcs_records` restored; the `grant_editorial_table_helpers` defect fixed
+- [x] Playwright browser tests (2026-10-22): public site at 375 px, 768 px and desktop, keyboard paths, neutral wording, elections, 404s, indexing, signed-out `/admin`: 73 passed, 1 skipped against a local production build reading hosted; 70 passed, 4 skipped against the mock build CI uses; read-only production mode 35 of 35. CI's `web` job runs the public set on every push
+- [x] `/admin` crash on hosted data fixed (2026-10-22): editorial Zod schemas used `z.uuid()`, which rejects the seed's ids (valid Postgres UUIDs without RFC 9562 version bits); now `z.guid()`
+
+### AUTOMATED, NOT YET RUN
+
+- [ ] editorial acceptance in Playwright (`web/e2e/editorial`): reviewer, approver (two-person rule, invalid evidence), publication lifecycle with a published edit and retraction, election records, correction request, admin roles, no-role boundary. Run Actions → "Browser acceptance (Playwright)" → `local`; then `hosted` once REVIEWER and APPROVER accounts exist
 
 ### DEFERRED
 
@@ -181,14 +187,15 @@ deploy it non-indexed, and only then archive `mobile/`. Procedure, evidence and 
 
 ### MANUAL CHECK REQUIRED
 
-- [ ] create REVIEWER, APPROVER and ADMIN accounts (step 4)
-- [ ] editorial acceptance: reviewer, approver, admin, election records, correction request, published edit, retraction (step 5)
+- [ ] create REVIEWER, APPROVER and ADMIN accounts on hosted (step 4); needed for the `hosted` E2E target
+- [ ] editorial acceptance (step 5): now automated (above); tick each item once its run passes
 - [ ] deploy to Vercel with `SITE_INDEXABLE=false`; set the Supabase Site URL (step 6)
 - [ ] MFA: not enforced (no MFA screen in the app). Required before real political data; does not block the fictional deployment
 
 ### BLOCKED (each waits for the item named)
 
-- [ ] deployed smoke test and browser/keyboard pass: needs the deployment (step 7)
+- [ ] deployed smoke test (`npm run smoke`, `npm run e2e:production`) and the browser/keyboard run against the deployment: needs the deployment (step 7)
+- [ ] real-device check and a screen-reader spot check: manual, after the deployment (step 7)
 - [ ] archive `mobile/`, remove its CI job and the mobile half of the drift check: needs every item above (step 8)
 
 ## Milestone 5 — Election Information Foundation (implemented 2026-10-16; on hosted 2026-10-16)

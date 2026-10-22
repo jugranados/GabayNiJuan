@@ -19,7 +19,7 @@ Its purpose is to help voters understand the documented public record of politic
 
 - **Web (the only active frontend):** Next.js 16 App Router, React 19, TypeScript (strict), Tailwind CSS 4, Zod
 - Supabase: Postgres, Row Level Security, Auth for reviewers/admins, Edge Functions only when needed
-- Vitest + Testing Library
+- Vitest + Testing Library (unit and component tests); Playwright (browser acceptance, `web/e2e`)
 
 Gabay ni Juan is **web-first**. The React Native app in `mobile/` is a frozen earlier frontend that is kept until it is archived; see `docs/WEB_MIGRATION.md`.
 
@@ -45,7 +45,7 @@ See `docs/` and `AGENTS.md` before implementing features.
 | `mobile/` | React Native / Expo app. **Frozen**; kept until archived |
 | `supabase/` | Database migrations, RLS, audit triggers, fictional seed (see `supabase/README.md`) |
 | `docs/` | Product, data model, governance, architecture, web migration |
-| `.github/workflows/` | CI: web (typecheck, lint, tests, seed check, build, bundle key scan), mobile (frozen: typecheck, lint, tests), domain/database drift, and database (migrations, seed, RLS and workflow tests, web integration test) |
+| `.github/workflows/` | CI: web (typecheck, lint, tests, seed check, build, bundle key scan, public browser tests), mobile (frozen: typecheck, lint, tests), domain/database drift, and database (migrations, seed, RLS and workflow tests, web integration test). `e2e.yml`: browser acceptance, started by hand (local, hosted or read-only production) |
 
 The original native Android (Kotlin/Compose) prototype is archived on the `archive/android-native` branch.
 
@@ -108,11 +108,63 @@ npm run verify             # typecheck + lint + test
 npm run test:integration   # the data layer against a real Supabase database (anon key; needs migrations + seed)
 npm run db:types           # regenerate database.types.ts from the linked Supabase project
 npm run smoke -- <url>     # read-only smoke test of a running site (public routes, indexing, /admin redirects)
+npm run e2e:public         # Playwright: public site at phone, tablet and desktop widths, keyboard paths (read-only)
+npm run e2e:editorial      # Playwright: REVIEWER / APPROVER / ADMIN acceptance (needs test accounts; writes fictional records)
+npm run e2e:production     # Playwright: read-only smoke of a deployment (E2E_BASE_URL=https://…)
 ```
+
+### Browser acceptance tests (Playwright)
+
+`npm run smoke` stays the fast HTTP-level check (GET requests only, about 40 checks, no browser).
+Playwright (`web/e2e`, `web/playwright.config.ts`) is the browser acceptance suite: it drives real
+pages and signs in through `/admin/login` as real editors, under RLS. It never uses a service-role
+key and never bypasses the workflow.
+
+```bash
+cd web
+npx playwright install chromium          # once (on macOS 13 use an installed Chrome: E2E_BROWSER_CHANNEL=chrome)
+npm run e2e:public                       # starts or reuses `npm run dev` on :3000
+E2E_BASE_URL=http://localhost:3200 npm run e2e:public   # against a server you started (e.g. `npm run build && npx next start -p 3200`)
+npm run e2e:report                       # open the last HTML report
+```
+
+| Variable | Purpose |
+|---|---|
+| `E2E_BASE_URL` | Site under test. Without it Playwright starts (or reuses) `npm run dev` on `http://localhost:3000` |
+| `E2E_TARGET_ENV` | `local` (default; local stack or a dedicated test project), `hosted` (an approved hosted test project), `production` (read-only) |
+| `E2E_REVIEWER_EMAIL` / `_PASSWORD`, `E2E_APPROVER_…`, `E2E_ADMIN_…` | One account per role, each holding exactly that role. Required for editorial projects; the setup fails with the names of missing variables |
+| `E2E_NOROLE_EMAIL` / `_PASSWORD` | Optional signed-in account without a role: no-role boundary and the role-change round trip |
+| `E2E_ALLOW_PRODUCTION_MUTATIONS` | Default off. Only `true` lets a `production` target run the projects that write |
+| `E2E_BROWSER_CHANNEL` | `chrome` to use an installed Google Chrome instead of the bundled Chromium |
+| `E2E_TRACE` | `off` disables traces (they carry session cookies); hosted and production CI runs set it |
+| `E2E_EXPECT_INDEXABLE` | `true` only once indexing is deliberately on; otherwise the tests require `noindex` |
+
+**Sessions.** The `setup` project signs in once per role and saves `web/playwright/.auth/<role>.json`
+(git-ignored, never commit). It records no trace, screenshot or video, and checks that each account
+holds exactly the expected role. Signing out is never automated: it would end the saved session.
+
+**Projects and tags.** `anonymous-desktop`, `anonymous-tablet` (768 px), `anonymous-mobile` (375 px)
+run the read-only public tests in parallel. `reviewer`, `approver`, `admin` (one role each) and
+`workflow` (multi-actor flows: lifecycle, elections, corrections) depend on `setup` and run one test
+at a time. `production-smoke` exists only when `E2E_TARGET_ENV=production`. Filter by tag with
+`--grep`: `@public`, `@editorial`, `@election`, `@correction`, `@accessibility`, `@responsive`,
+`@production-smoke`.
+
+**Safe targets.** The editorial projects create, publish and retract fictional records ("E2E
+Fictional …", `example.org` links). Run them against a local stack, a dedicated test project, or an
+explicitly approved hosted test project. Published rows cannot be deleted, so each flow ends by
+retracting what it published (unpublished drafts are rejected); E2E records stay in `/admin` with
+their history. Against `production` only the read-only tests exist unless
+`E2E_ALLOW_PRODUCTION_MUTATIONS=true`, and each writing spec checks again before it starts.
+
+**Running the editorial acceptance.** Locally: export the six `E2E_*` credential variables, then
+`npm run e2e:editorial`. In CI: Actions → "Browser acceptance (Playwright)" → target `local`
+(throwaway stack and accounts, no secret), `hosted` (environment `e2e-hosted`) or `production`
+(read-only, with `base_url`). What stays manual is listed in `docs/VERIFICATION_CHECKLIST.md`.
 
 ### Verification status
 
-What is verified automatically, what needs a person, and what is blocked, with the exact steps to the first deployment: [`docs/VERIFICATION_CHECKLIST.md`](docs/VERIFICATION_CHECKLIST.md). In short: CI proves a clean database, the SQL rules and the web app; the hosted project has all 16 migrations and passes the integration test (2026-10-16); the editorial area has not yet been exercised with real accounts, and the site is not deployed yet.
+What is verified automatically, what needs a person, and what is blocked, with the exact steps to the first deployment: [`docs/VERIFICATION_CHECKLIST.md`](docs/VERIFICATION_CHECKLIST.md). In short: CI proves a clean database, the SQL rules and the web app; the hosted project has all 16 migrations and passes the integration test (2026-10-16); the public site passes the Playwright browser tests at phone, tablet and desktop widths (2026-10-22); the editorial acceptance is automated in Playwright but has not run against a database yet; and the site is not deployed yet.
 
 ## Editorial area (`/admin`)
 
