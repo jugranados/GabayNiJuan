@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: [main, development]
+    paths: ['web/**', 'mobile/**', 'supabase/**', 'scripts/**', '.github/workflows/ci.yml']
+  pull_request:
+    paths: ['web/**', 'mobile/**', 'supabase/**', 'scripts/**', '.github/workflows/ci.yml']
+
+jobs:
+  web:
+    name: Web app (public site + editorial) typecheck, lint, tests, seed check, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # Also checks the generated database types against the Zod row contracts (schemaDrift.ts).
+      - run: npm run typecheck
+      - run: npm run lint
+      # Includes the verification-status vs evidence rules over the fictional fixtures.
+      - run: npm test
+      # supabase/seed.sql must be exactly what the web fixtures generate.
+      - run: npm run seed:check
+      # Builds with the default fictional mock data; no Supabase project is needed.
+      - run: npm run build
+      # Nothing sent to a browser may contain a privileged Supabase key.
+      - name: No service-role key in the browser bundle
+        run: "! grep -rIl -i -E 'service_role|sb_secret_' .next/static"
+      # Public browser tests (Playwright) against this build, with the fictional mock data:
+      # read-only, no account, no secret. Editorial acceptance runs in e2e.yml.
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Public browser tests (desktop, tablet, phone)
+        env:
+          E2E_WEB_SERVER_COMMAND: npm run start
+        run: ../scripts/ci-run.sh "public browser tests" npm run e2e:public
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-public-report
+          path: web/playwright-report
+          retention-days: 7
+
+  # The React Native app is frozen (docs/WEB_MIGRATION.md). Its checks stay required until it is
+  # archived, so the reference implementation keeps compiling and passing while web reaches parity.
+  mobile:
+    name: Mobile (frozen) typecheck, lint, tests, consistency
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - name: Tests
+        run: ../scripts/ci-run.sh "mobile tests" npm test -- --ci
+      # Verification-status vs evidence rules over the fictional fixtures.
+      - run: npm run test:consistency -- --ci
+      # The seed check moved to the web job: web/ owns the fixtures and supabase/seed.sql now.
+      # `npx expo-doctor` was removed from this job on 2026-10-13. It fails whenever Expo publishes a
+      # newer patch release than the one installed, which for a frozen app means on someone else's
+      # schedule and for no change of ours. Dependencies here are not upgraded; the app is archived next.
+
+  drift:
+    name: Domain enums and workflows in sync with the database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/check-enum-drift.mjs
+
+  database:
+    name: Migrations, seed, RLS tests, web integration test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pinned: `latest` makes an unauthenticated GitHub API lookup that fails when the runner's
+      # API rate limit is exhausted (run 38925535978). Same version as the hosted `db push`.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      # Starts a local Supabase stack and applies supabase/migrations + seed.sql.
+      - name: Start the local stack (applies migrations and seed)
+        run: scripts/ci-run.sh "supabase start" supabase start
+      # Rebuild from scratch: proves a clean database can be recreated from the repo.
+      - name: Rebuild from scratch (supabase db reset)
+        run: scripts/ci-run.sh "supabase db reset" supabase db reset
+      - name: RLS, publication, audit and consistency tests
+        run: |
+          scripts/ci-run.sh "database tests" psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 -q \
+            -f supabase/tests/rls_and_publication.test.sql
+      - name: Seed is idempotent (re-running it adds nothing and changes nothing)
+        run: |
+          scripts/ci-run.sh "seed re-run" psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
+      - name: Seed and directory work through the anon role
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -At <<'SQL'
+          set role anon;
+          do $$
+          begin
+            if (select count(distinct verification_status) from public.claims) <> 7 then
+              raise exception 'seed must demonstrate all 7 verification statuses';
+            end if;
+            if not exists (select 1 from public.claim_evidence where not supports) then
+              raise exception 'seed must include contradicting evidence';
+            end if;
+            if (public.search_directory() ->> 'total')::int <> (select count(*) from public.people) then
+              raise exception 'directory total must equal the number of published people';
+            end if;
+            if (public.search_directory(null, null, null, 'NATIONAL') ->> 'total')::int < 1 then
+              raise exception 'directory filters must work';
+            end if;
+          end
+          $$;
+          SQL
+      # The public site's data layer against a real database, through the anon key only:
+      # mock vs. database equality (directory, profiles, claims, evidence, slugs),
+      # published-only visibility, and rejection of every anonymous write.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Web integration test against the local stack
+        working-directory: web
+        run: |
+          npm ci
+          eval "$(supabase status -o env | grep -E '^(API_URL|ANON_KEY)=')"
+          export NEXT_PUBLIC_SUPABASE_URL="$API_URL" NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
+          ../scripts/ci-run.sh "web integration test" npm run test:integration
+      - if: always()
+        run: supabase stop --no-backup

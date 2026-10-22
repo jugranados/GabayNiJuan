@@ -1,0 +1,189 @@
+name: Browser acceptance (Playwright)
+
+# Started by hand (Actions → Browser acceptance → Run workflow). Three targets:
+#
+#   local       a throwaway Supabase stack in the runner, migrations + fictional seed, four
+#               throwaway accounts with a random password. Full acceptance: creates, publishes
+#               and retracts fictional records. Needs no secret.
+#   hosted      the approved hosted test project, through a production build in the runner.
+#               Full acceptance with real editorial accounts from the `e2e-hosted` environment.
+#   production  the deployed URL. Read-only: the @production-smoke browser tests plus
+#               `npm run smoke`. Never signs in, never writes.
+#
+# No job uses a Supabase service-role key. Hosted and production runs record no trace (traces
+# carry session cookies).
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Where to run
+        type: choice
+        options: [local, hosted, production]
+        default: local
+      base_url:
+        description: Deployed origin for target=production (https://…, no trailing slash)
+        type: string
+        required: false
+
+concurrency:
+  # One editorial run per target at a time: the tests move shared records through the workflow.
+  group: e2e-${{ inputs.target }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  local:
+    name: Full acceptance on a local Supabase stack
+    if: inputs.target == 'local'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      - name: Start the local stack (migrations and fictional seed)
+        working-directory: .
+        run: scripts/ci-run.sh "supabase start" supabase start
+      - name: Create throwaway editorial accounts (random password, this run only)
+        working-directory: .
+        run: |
+          password="$(openssl rand -hex 24)"
+          echo "::add-mask::$password"
+          echo "E2E_PASSWORD=$password" >> "$GITHUB_ENV"
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q \
+            -v password="$password" -f web/e2e/local/create-test-accounts.sql
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Point the app at the local stack (public URL and anon key only)
+        run: |
+          eval "$(supabase status -o env | grep -E '^(API_URL|ANON_KEY)=')"
+          {
+            echo "DATA_SOURCE=supabase"
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000"
+            echo "SITE_INDEXABLE=false"
+          } >> "$GITHUB_ENV"
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Public and editorial browser tests
+        env:
+          E2E_TARGET_ENV: local
+          E2E_WEB_SERVER_COMMAND: npm run start
+          E2E_REVIEWER_EMAIL: e2e-reviewer@example.test
+          E2E_REVIEWER_PASSWORD: ${{ env.E2E_PASSWORD }}
+          E2E_APPROVER_EMAIL: e2e-approver@example.test
+          E2E_APPROVER_PASSWORD: ${{ env.E2E_PASSWORD }}
+          E2E_ADMIN_EMAIL: e2e-admin@example.test
+          E2E_ADMIN_PASSWORD: ${{ env.E2E_PASSWORD }}
+          E2E_NOROLE_EMAIL: e2e-norole@example.test
+          E2E_NOROLE_PASSWORD: ${{ env.E2E_PASSWORD }}
+        run: ../scripts/ci-run.sh "browser acceptance (local)" npm run e2e
+      # Throwaway database and accounts: the report (with traces) is safe to keep.
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-local
+          path: web/playwright-report
+          retention-days: 14
+      - if: always()
+        working-directory: .
+        run: supabase stop --no-backup
+
+  hosted:
+    name: Full acceptance on the hosted test project
+    if: inputs.target == 'hosted'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Holds E2E_*_EMAIL / E2E_*_PASSWORD secrets and the project's public URL and anon key as
+    # variables. Add required reviewers to this environment so a run is approved by a person.
+    environment: e2e-hosted
+    defaults:
+      run:
+        working-directory: web
+    env:
+      DATA_SOURCE: supabase
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      SITE_INDEXABLE: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Public and editorial browser tests
+        env:
+          E2E_TARGET_ENV: hosted
+          E2E_TRACE: 'off'
+          E2E_WEB_SERVER_COMMAND: npm run start
+          E2E_REVIEWER_EMAIL: ${{ secrets.E2E_REVIEWER_EMAIL }}
+          E2E_REVIEWER_PASSWORD: ${{ secrets.E2E_REVIEWER_PASSWORD }}
+          E2E_APPROVER_EMAIL: ${{ secrets.E2E_APPROVER_EMAIL }}
+          E2E_APPROVER_PASSWORD: ${{ secrets.E2E_APPROVER_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_NOROLE_EMAIL: ${{ secrets.E2E_NOROLE_EMAIL }}
+          E2E_NOROLE_PASSWORD: ${{ secrets.E2E_NOROLE_PASSWORD }}
+        run: ../scripts/ci-run.sh "browser acceptance (hosted)" npm run e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-hosted
+          path: web/playwright-report
+          retention-days: 7
+
+  production:
+    name: Read-only production smoke
+    if: inputs.target == 'production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    env:
+      E2E_BASE_URL: ${{ inputs.base_url }}
+      E2E_TARGET_ENV: production
+      E2E_TRACE: 'off'
+    steps:
+      - name: A deployed https origin is required
+        working-directory: .
+        run: |
+          case "$E2E_BASE_URL" in
+            https://*) ;;
+            *) echo "::error::Set base_url to the deployed https origin"; exit 1 ;;
+          esac
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: HTTP smoke test (read-only)
+        run: npm run smoke -- "$E2E_BASE_URL"
+      - run: npx playwright install --with-deps chromium
+      - name: Browser smoke test (read-only)
+        run: ../scripts/ci-run.sh "production browser smoke" npm run e2e:production
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-production
+          path: web/playwright-report
+          retention-days: 7

@@ -1,0 +1,55 @@
+{
+  "name": "gabay-ni-juan-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "next typegen && tsc --noEmit",
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:consistency": "vitest run consistency",
+    "verify": "npm run typecheck && npm run lint && npm test",
+    "seed:generate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-seed.mjs",
+    "seed:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-seed.mjs --check",
+    "test:integration": "vitest run -c vitest.integration.config.mts",
+    "db:types": "node scripts/gen-types.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "e2e": "playwright test",
+    "e2e:public": "playwright test --project=anonymous-desktop --project=anonymous-tablet --project=anonymous-mobile",
+    "e2e:editorial": "playwright test --project=reviewer --project=approver --project=admin --project=workflow",
+    "e2e:production": "E2E_TARGET_ENV=production playwright test --project=production-smoke",
+    "e2e:report": "playwright show-report"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.3",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@tailwindcss/turbopack": "^4",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "jsdom": "^30.1.2",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": "^20.19.4 || ^22.18.0 || >=24.3.0"
+  }
+}

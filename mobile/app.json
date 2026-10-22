@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Gabay ni Juan",
+    "slug": "gabay-ni-juan",
+    "version": "0.1.0",
+    "scheme": "gabaynijuan",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.grantech.gabaynijuan"
+    },
+    "android": {
+      "package": "com.grantech.gabaynijuan",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,8 @@
+node_modules
+.expo
+dist
+coverage
+ios
+android
+package-lock.json
+src/data/supabase/database.types.ts
