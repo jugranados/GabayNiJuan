@@ -120,6 +120,7 @@ Supabase (anon key, RLS)  |  in-memory fixtures (DATA_SOURCE=mock)
 | `/claims/<id>` | The claim's UUID. Claims have no natural name, and a UUID never needs to change. |
 | `/politicians?q=&election=&office=&level=&status=&organization=&page=` | All directory state is in the URL, all of it readable: `election`, `office` and `organization` are slugs, `level` and `status` enum values (`national`, `filed-coc`). A legacy UUID value redirects permanently (308) to the slug URL, and the canonical URL always uses slugs. A slug that matches nothing shows "Not found" and no results. Malformed values are dropped. There is no `sort` parameter. |
 | `/elections`, `/elections/<slug>`, `/elections/<slug>/<office slug>` | Election index, election page, office page (Milestone 5; `docs/ELECTION_INFORMATION_MODEL.md`). A UUID in either position redirects permanently to the slug URL. Cached for 5 minutes (index) and 60 seconds (pages), revalidated on publish. |
+| any other address | 404 inside the normal site shell (header, main navigation, footer) with the one neutral not-found text, "The page you're looking for could not be found. … This says nothing about any person." `app/not-found.tsx` serves addresses that match no route; `app/(public)/not-found.tsx` serves a missing record inside a public route; both render `components/PublicShell.tsx`, so they cannot drift apart. Before 2026-10-23 an unmatched address showed Next.js' bare 404. |
 
 ### Slugs
 
@@ -267,8 +268,10 @@ First deployment, step by step:
 
 The deployment must read a project with every migration in `supabase/migrations`: without the
 slug columns and `election_offices` the directory, profiles and election pages fail validation.
-The hosted development project has all 16 (2026-10-16), and a production build reading it passes
-`npm run smoke` (43 of 43). Deploy the committed `development` branch. The full order of
+The hosted development project has the first 16 (2026-10-16), and a production build reading it
+passes `npm run smoke` (43 of 43). The 17th, `20261023090000_source_publication_date_editable`
+(2026-10-23), is not on hosted yet: without it no editor can save a change to a source, so apply
+it (`npx supabase db push`) before the hosted editorial acceptance and the deployment. Deploy the committed `development` branch. The full order of
 operations is in `docs/VERIFICATION_CHECKLIST.md`.
 
 Readiness review (2026-10-13): the production build passes; the environment is validated at build
@@ -285,8 +288,9 @@ but this has not been tried; verify ISR and the proxy there before relying on it
 `mobile/` is **frozen**: no new features, CI still runs its typecheck, lint and tests so the
 reference keeps working. Its last unique asset, the real-database integration test, has been ported
 to `web/` (`npm run test:integration`) and passes in CI. It is not archived yet because the remaining
-gates in `docs/ROADMAP.md` ("Verification and first deployment") are still open: the hosted project,
-the manual editorial pass, the browser pass and the deployed smoke test. When they are done:
+gates in `docs/ROADMAP.md` ("Verification and first deployment") are still open: the hosted
+editorial acceptance (the local one passed on 2026-10-23), the Vercel deployment, the deployed
+smoke test, and the manual real-device and screen-reader checks. When they are done:
 
 1. `git mv mobile archive/mobile-react-native`;
 2. remove the `mobile` CI job and the mobile half of the drift check, noting why in the commit;
@@ -305,7 +309,7 @@ What remains reusable for a future mobile companion: everything under `web/src/d
 | Integration | `npm run test:integration` | the data layer against a real database through the anon key | CI `database` job; by hand against hosted |
 | HTTP smoke | `npm run smoke -- <url>` | about 40 read-only GET checks of a running site: routes, redirects, 404s, indexing, signed-out `/admin` | by hand; `e2e.yml` (production) |
 | Browser, public | `npm run e2e:public` | real pages at 375 px, 768 px and desktop: navigation, search, filters, pagination, claim → evidence → source, elections, neutral wording, keyboard paths, layout | CI `web` job (mock build); by hand |
-| Browser, editorial | `npm run e2e:editorial` | REVIEWER, APPROVER and ADMIN acceptance, publication lifecycle, election records, corrections, signed in as real editors under RLS | `e2e.yml`, by hand: `local` (throwaway stack) or `hosted` |
+| Browser, editorial | `npm run e2e:editorial` | REVIEWER, APPROVER and ADMIN acceptance, publication lifecycle, election records, corrections, signed in as real editors under RLS | `e2e.yml`, by hand: `local` (throwaway stack; passed 2026-10-23) or `hosted` (not yet run) |
 | Browser, production | `npm run e2e:production` | the `@production-smoke` subset; read-only | `e2e.yml` (production) |
 
 The smoke script stays: it needs no browser, runs in seconds and checks status codes and headers
@@ -348,7 +352,9 @@ is still missing migrations.
   display yet. When it is built: a public `profile-images` bucket; JPEG, PNG or WebP up to 1 MB;
   path `people/<person id>/<sha256>.<ext>`; uploads by staff only through storage RLS; public
   read; a source and licence recorded for every image; never scraped in bulk.
-- **Editorial end-to-end run** with real accounts: automated in Playwright (`web/e2e/editorial`,
-  2026-10-22) but not yet run against a database; run `e2e.yml` with target `local`.
+- **Editorial end-to-end run on hosted** with real accounts: automated in Playwright
+  (`web/e2e/editorial`). The `local` target passed on 2026-10-23 (19 of 19, see
+  `docs/VERIFICATION_CHECKLIST.md`); the `hosted` target has not run: it needs the REVIEWER and
+  APPROVER accounts, the `e2e-hosted` secrets and migration `20261023090000` on hosted.
 - **MFA** for editorial accounts.
 - **Stronger report-form protection** (CAPTCHA or edge rate limiting) if abuse appears.

@@ -9,7 +9,7 @@ Status words used here and in `docs/ROADMAP.md`:
 - **MANUAL CHECK REQUIRED**: a person has to do it or look at it; it cannot be confirmed from code.
 - **BLOCKED**: cannot be done until an earlier step is finished.
 
-## Status (re-verified 2026-10-19; hosted rollout 2026-10-16; browser tests added 2026-10-22)
+## Status (re-verified 2026-10-19; hosted rollout 2026-10-16; browser tests added 2026-10-22; local editorial acceptance 2026-10-23)
 
 Status words: AUTOMATED VERIFIED (a command, CI job or API call ran and passed), AUTOMATED, NOT YET
 RUN (a Playwright test exists but has not passed against that target yet; it is still open), MANUAL
@@ -18,10 +18,11 @@ VERIFIED (a person observed it), MANUAL CHECK REQUIRED, BLOCKED, DEFERRED.
 | Item | Status | Evidence or reason |
 |---|---|---|
 | Clean database from `supabase/migrations` + `seed.sql` | AUTOMATED VERIFIED | CI `database` job; latest: run 38925833312 on `b259313`, all four jobs (web, mobile, drift, database) green |
-| SQL tests: RLS, publication, consistency, editorial functions, corrections, roles, slugs, Milestone 5 rules | AUTOMATED VERIFIED | CI `database` job, `supabase/tests/rls_and_publication.test.sql` |
+| SQL tests: RLS, publication, consistency, editorial functions, corrections, roles, slugs, Milestone 5 rules | AUTOMATED VERIFIED | CI `database` job, `supabase/tests/rls_and_publication.test.sql`. Re-run 2026-10-23 on a fresh `db reset` with the 17th migration: 195 checks, including the new source publication-date checks |
 | Seed is idempotent and equals the fixtures | AUTOMATED VERIFIED | CI `database` and `web` jobs |
 | Enums and both state machines equal the SQL | AUTOMATED VERIFIED | CI `drift` job |
 | All 16 migrations applied to hosted | AUTOMATED VERIFIED | `supabase db push`: four on 2026-10-16, then the two Milestone 5 migrations the same day. Re-checked 2026-10-19: `migration list` 16 rows, each Local and Remote; `db push --dry-run` "Remote database is up to date" |
+| Migration 17, `20261023090000_source_publication_date_editable`, on hosted | MANUAL CHECK REQUIRED | Added 2026-10-23 (fixes source editing, below). Applies cleanly on a fresh local stack; not yet pushed to hosted. `npx supabase db push --dry-run` must list exactly this file, then `db push`. Required before the hosted editorial run and the deployment. Generated types do not change (function body only; checked with `db:types --local`) |
 | Hosted history equals the migration files | AUTOMATED VERIFIED | all 16 recorded statements equal the files (comments, whitespace and statement separators aside) |
 | Milestone 5 backfill on hosted | AUTOMATED VERIFIED | 5 election offices backfilled and published, each with its revision; then `db push --include-seed` added the new fictional offices and aligned the display order: 10 published election offices, same as a fresh seed |
 | `database.types.ts` regenerated | AUTOMATED VERIFIED | `npm run db:types` from the linked project; no hand-made exception remains. Re-run 2026-10-19: no diff |
@@ -37,13 +38,16 @@ VERIFIED (a person observed it), MANUAL CHECK REQUIRED, BLOCKED, DEFERRED.
 | MFA for editorial accounts | MANUAL CHECK REQUIRED | not enforced: the app has no MFA enrolment or challenge screen. Required before real political data; does not block the fictional deployment |
 | `allow_self_approval` is `false` on hosted | AUTOMATED VERIFIED | read from `private.editorial_settings` (2026-10-19) |
 | REVIEWER, APPROVER, ADMIN accounts | MANUAL CHECK REQUIRED | Step 4. Hosted on 2026-10-19: one auth user, holding ADMIN; no REVIEWER or APPROVER account yet. The `local` E2E target creates throwaway accounts on a CI stack instead |
-| Editorial acceptance, election acceptance, corrections, published edit, retraction | AUTOMATED, NOT YET RUN | Step 5 is automated in `web/e2e/editorial` (map below). Not yet run: this machine has no Docker for a local stack, and hosted has no REVIEWER/APPROVER account. Next: Actions → "Browser acceptance (Playwright)" → target `local` |
-| Public browser pass: phone (375 px), tablet (768 px), desktop; keyboard paths; neutrality; 404s; indexing; signed-out `/admin` | AUTOMATED VERIFIED | `npm run e2e:public` against a local production build reading hosted: 73 passed, 1 skipped (keyboard pagination: one page of people) (2026-10-22). Against a mock build, as CI's `web` job runs it: 70 passed, 4 skipped (no UUIDs, no sign-in, no report form, one page). Not yet against a deployment |
-| Production-smoke mode is read-only | AUTOMATED VERIFIED | with `E2E_TARGET_ENV=production` the run lists no `setup` and no writing project; `npm run e2e:production` against a local production build: 35 of 35 (2026-10-22) |
+| `e2e-hosted` GitHub environment (secrets and variables) | MANUAL CHECK REQUIRED | Not created by this repository. Exact list in "Hosted acceptance setup" below |
+| Editorial acceptance on the **local** target: two-person rule, REVIEWER/APPROVER/ADMIN boundaries, no-role account, publication lifecycle with published edit and retraction, election records, corrections, last-admin protection | AUTOMATED VERIFIED | 2026-10-23, the steps of `e2e.yml` → `local` reproduced in a Linux container with Docker: Supabase CLI 2.121.0 `supabase start` (17 migrations + fictional seed), `create-test-accounts.sql` with a random password, `npm run build` with `DATA_SOURCE=supabase`, `npm run e2e` with `CI=1`, `E2E_TARGET_ENV=local`, retries off. Editorial projects: **19 passed, 0 failed, 0 skipped** (4 sign-ins, 15 tests); again 19 of 19 on the same, reused database. Whole run: 93 passed, 1 skipped. The GitHub Actions run itself has not been started. Failures found on the way and their fixes: "First editorial run" below |
+| Editorial acceptance on the **hosted** target | AUTOMATED, NOT YET RUN | needs migration 17 on hosted, REVIEWER and APPROVER accounts (step 4), and the `e2e-hosted` environment ("Hosted acceptance setup" below) |
+| Public browser pass: phone (375 px), tablet (768 px), desktop; keyboard paths; neutrality; 404s; indexing; signed-out `/admin` | AUTOMATED VERIFIED | 2026-10-23: against a local production build reading the local stack, 74 passed, 1 skipped (keyboard pagination: one page of people); against a mock build, as CI's `web` job runs it, 71 passed, 4 skipped (no UUIDs, no sign-in, no report form, one page). 2026-10-22 against a build reading hosted: 73 passed, 1 skipped (before the new 404 case). Not yet against a deployment |
+| Custom 404 for every unknown address (site shell, navigation, neutral wording) | AUTOMATED VERIFIED | fixed 2026-10-23: an address that matched no route showed Next.js' bare 404. `errors-indexing.spec.ts` now checks an unknown top-level address, an unmatched nested address and four missing records for the heading, the neutral text, the main navigation and the way back (also `@production-smoke`) |
+| Production-smoke mode is read-only | AUTOMATED VERIFIED | with `E2E_TARGET_ENV=production` the run lists no `setup` and no writing project; `npm run e2e:production` against a local production build: 36 of 36 (2026-10-23; 35 of 35 on 2026-10-22, one 404 case added since) |
 | Vercel deployment | MANUAL CHECK REQUIRED | Step 6 (no longer blocked) |
 | Deployed smoke test (`npm run smoke` and `npm run e2e:production`) | BLOCKED | needs step 6. Step 7 |
 | Browser pass on real devices, screen reader | BLOCKED | needs step 6; stays manual. Step 7 |
-| Archive `mobile/` | BLOCKED | needs steps 4 to 7. Step 8 |
+| Archive `mobile/` | BLOCKED | needs the hosted editorial acceptance, the Vercel deployment, the deployed smoke tests and the manual device and screen-reader checks (steps 4 to 7). Step 8 |
 
 ## Step 1. Apply the pending migrations
 
@@ -175,6 +179,56 @@ hosted, last-admin protection stays a manual check.
 Record names start with "E2E Fictional" and end with "(fictional)"; links use `example.org`.
 Each flow retracts what it published and rejects what it left unpublished, so the public site
 returns to the fictional seed. The records stay in `/admin`, with their history.
+
+**Status by target.** `local`: every spec above passed on 2026-10-23 (19 of 19, retries off, then
+19 of 19 again on the same database). `hosted`: not yet run. The boxes below stay unticked until
+the target being accepted (hosted, then the deployment) has passed.
+
+### First editorial run (2026-10-23, `local` target)
+
+The first run against a real database. Each failure, its class and its fix; no assertion was
+loosened, no rule relaxed, no service-role key added.
+
+| Failure | Class | Root cause and fix |
+|---|---|---|
+| All four sign-ins failed: "Sign-in failed" | AUTH SETUP ISSUE (local stack config) | `supabase/config.toml` set `[auth.email] enable_signup = false`, which the CLI maps to `GOTRUE_EXTERNAL_EMAIL_ENABLED=false`: it disables the email provider, so no one could sign in on a local or CI stack ("Email logins are disabled"). Now `true`; public sign-up stays off through `[auth] enable_signup = false` (`GOTRUE_DISABLE_SIGNUP`), checked: `POST /auth/v1/signup` → "Signups not allowed". Hosted was not affected |
+| Election office page: "strict mode violation", three links matched the person's name | TEST BUG | the person link and two "View evidence and sources for: <name> …" links all contain the name. The locator now matches the person link exactly |
+| Work queue at 375 px: page 388 px wide | APP BUG | the status badge's screen-reader text (`sr-only`, absolutely positioned) escaped the table's horizontal scroll box, whose position was static, and widened the page. The table scroll boxes in the queue, corrections, roles and revisions are now `relative` |
+| Editing any source draft: "Field "published_at" cannot be edited" | APP BUG (database) | on `sources`, `published_at` is the document's own date (a form field); the workflow timestamp is `record_published_at`. `editorial_update` refused `published_at` on every table, and the form always sends it, so no source could be edited at all; `content_of` likewise ignored a source's date when freezing reviewed content. Migration `20261023090000_source_publication_date_editable` treats `record_published_at` as the workflow column of `sources`; SQL tests cover the edit, the still-refused workflow columns and the frozen reviewed source. Found while checking the "Saved." confirmation; `reviewer.spec.ts` now edits a draft source |
+| "Saved." not shown after a successful save | APP BUG (UX feedback) | the page keyed the record form by version, so a save (which bumps the version) remounted the form and discarded the action result before it could be shown. The form now keeps its result and status region across the remount, keys only its fields by version, and shows a result only while the version it belongs to is on screen. `saveRecord` in the browser tests now also expects "Saved."; the primary proof of a save is still the new version and the stored values |
+| Unknown address showed Next.js' bare 404 | APP BUG | `not-found.tsx` existed only inside the `(public)` route group, which unmatched addresses never reach. `app/not-found.tsx` now renders the same site shell and neutral text |
+| Missing `chrome-headless-shell`/`ffmpeg` of the pinned Playwright build | ENVIRONMENT ISSUE | the container's pre-installed browsers were one build older; resolved in the container only (CI runs `npx playwright install --with-deps chromium`). No repository change |
+
+No timing or race problem appeared: the specs wait on locators, `expect.poll` and URLs, and the
+writing projects already run with one worker each.
+
+### Hosted acceptance setup
+
+What the owner must configure before Actions → "Browser acceptance (Playwright)" → `hosted` can
+run. Names are those `.github/workflows/e2e.yml` reads; do not invent others. Nothing here belongs
+in the repository.
+
+1. Apply migration 17 to the hosted project (`npx supabase db push --dry-run`, then `db push`).
+2. Accounts (step 4), each holding exactly one role, created in the Supabase dashboard with "Auto
+   Confirm User": one **REVIEWER**, one **APPROVER**, one **ADMIN**, all different people or
+   addresses. Optional fourth account with **no role** (enables the no-role boundary test and the
+   role change round trip; without it those two tests are skipped). Do not use the real
+   administrator's account for E2E if that person also does real editorial work: the role test
+   changes only the no-role account, but every test writes fictional records as the signed-in user.
+3. GitHub → Settings → Environments → **New environment `e2e-hosted`**, ideally with required
+   reviewers so a person approves each run.
+   - Environment **secrets** (required): `E2E_REVIEWER_EMAIL`, `E2E_REVIEWER_PASSWORD`,
+     `E2E_APPROVER_EMAIL`, `E2E_APPROVER_PASSWORD`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`.
+   - Environment **secrets** (optional): `E2E_NOROLE_EMAIL`, `E2E_NOROLE_PASSWORD`.
+   - Environment **variables** (public values): `NEXT_PUBLIC_SUPABASE_URL`,
+     `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the anon / publishable key, never a service-role or
+     `sb_secret_` key).
+4. Leave `private.editorial_settings.allow_self_approval` at `false`.
+
+On hosted, last-admin protection is skipped by design (it runs only on a throwaway local
+database); it stays a manual check. A hosted run leaves its fictional records in `/admin` as
+REJECTED or RETRACTED (published rows cannot be deleted); a run that fails midway can leave some
+fictional records in an earlier state, which an approver retracts or rejects by hand.
 
 To run it by hand instead: locally (`cd web && npm run dev`, `DATA_SOURCE=supabase`) or on the
 deployment. Every record is fictional; put "(fictional)" in names so nothing can be mistaken for a

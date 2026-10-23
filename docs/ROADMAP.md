@@ -135,7 +135,7 @@ Open items before this is called finished:
 - [x] first green CI run, including the `database` job (see "Verification and first deployment")
 - [x] regenerate `web/src/data/supabase/database.types.ts` (done 2026-10-16 from hosted)
 - [ ] run `web/` with `DATA_SOURCE=supabase` in a browser: phone, tablet, desktop and keyboard paths are automated and pass (Playwright, 2026-10-22); a real-device look and a screen reader pass remain manual
-- [ ] exercise `/admin` end to end with real accounts (automated in Playwright, not yet run): signed out, no role, REVIEWER, APPROVER, ADMIN; create → sources → review → approve (second person) → publish → correct with a reason → retract; evidence; a correction request from the public form through to resolved; role changes
+- [ ] exercise `/admin` end to end with real accounts: signed out, no role, REVIEWER, APPROVER, ADMIN; create → sources → review → approve (second person) → publish → correct with a reason → retract; evidence; a correction request from the public form through to resolved; role changes. Automated in Playwright and passing on the `local` target (2026-10-23, 19 of 19); still to run on `hosted`
 - [x] hosted sign-up disabled, anonymous sign-ins disabled, exposed schemas checked (2026-10-16); leaked-password protection deferred (plan); MFA open (tracked under "Verification and first deployment")
 - [ ] deploy to Vercel with `SITE_INDEXABLE=false`
 
@@ -161,7 +161,7 @@ Only after workflow is stable:
 
 No new voter-facing features. The purpose is to prove the web app against the real backend,
 deploy it non-indexed, and only then archive `mobile/`. Procedure, evidence and tick boxes:
-`docs/VERIFICATION_CHECKLIST.md`. Status as of 2026-10-16:
+`docs/VERIFICATION_CHECKLIST.md`. Status as of 2026-10-23:
 
 ### AUTOMATED VERIFIED
 
@@ -176,10 +176,14 @@ deploy it non-indexed, and only then archive `mobile/`. Procedure, evidence and 
 - [x] earlier: the repository copy of `editorial_rpcs_records` restored; the `grant_editorial_table_helpers` defect fixed
 - [x] Playwright browser tests (2026-10-22): public site at 375 px, 768 px and desktop, keyboard paths, neutral wording, elections, 404s, indexing, signed-out `/admin`: 73 passed, 1 skipped against a local production build reading hosted; 70 passed, 4 skipped against the mock build CI uses; read-only production mode 35 of 35. CI's `web` job runs the public set on every push
 - [x] `/admin` crash on hosted data fixed (2026-10-22): editorial Zod schemas used `z.uuid()`, which rejects the seed's ids (valid Postgres UUIDs without RFC 9562 version bits); now `z.guid()`
+- [x] editorial acceptance in Playwright, **`local` target** (2026-10-23): the steps of Actions → "Browser acceptance (Playwright)" → `local` reproduced on a fresh local stack (Supabase CLI 2.121.0, 17 migrations, fictional seed, four throwaway accounts, production build): 19 of 19 passed with retries off (4 sign-ins + 15 tests: reviewer, approver incl. two-person rule and invalid evidence, admin incl. role round trip and last-admin protection, no-role boundary, publication lifecycle with published edit and retraction, election records, correction request), and 19 of 19 again on the reused database. The whole suite in the same run: 93 passed, 1 skipped (keyboard pagination: one page of people). The GitHub Actions run itself has not been started
+- [x] defects found by that first run and fixed (2026-10-23): local auth config disabled email sign-in (`[auth.email] enable_signup`); every save of a source was refused by `editorial_update` ("Field "published_at" cannot be edited"; migration `20261023090000`); the work queue scrolled sideways at 375 px; unmatched addresses showed Next.js' bare 404; the record form's "Saved." was lost when the form remounted after a save. Details in `docs/VERIFICATION_CHECKLIST.md`
+- [x] `npm run verify` (332 tests), SQL/RLS tests on a fresh `db reset` (195 checks), seed re-run, `npm run test:integration` against the local stack (50 of 50), `npm run build`; public browser tests 71 passed, 4 skipped on the mock build; read-only production mode 36 of 36 (2026-10-23)
 
 ### AUTOMATED, NOT YET RUN
 
-- [ ] editorial acceptance in Playwright (`web/e2e/editorial`): reviewer, approver (two-person rule, invalid evidence), publication lifecycle with a published edit and retraction, election records, correction request, admin roles, no-role boundary. Run Actions → "Browser acceptance (Playwright)" → `local`; then `hosted` once REVIEWER and APPROVER accounts exist
+- [ ] editorial acceptance in Playwright, **`hosted` target**: Actions → "Browser acceptance (Playwright)" → `hosted`, once migration `20261023090000` is on hosted, the REVIEWER and APPROVER accounts exist and the `e2e-hosted` environment holds the secrets listed in `docs/VERIFICATION_CHECKLIST.md` ("Hosted acceptance setup")
+- [ ] the same `local` target as a GitHub Actions run (optional confirmation of the local reproduction above)
 
 ### DEFERRED
 
@@ -187,8 +191,10 @@ deploy it non-indexed, and only then archive `mobile/`. Procedure, evidence and 
 
 ### MANUAL CHECK REQUIRED
 
+- [ ] apply migration `20261023090000_source_publication_date_editable` to hosted (`npx supabase db push`, dry run first); without it no source can be edited there
 - [ ] create REVIEWER, APPROVER and ADMIN accounts on hosted (step 4); needed for the `hosted` E2E target
-- [ ] editorial acceptance (step 5): now automated (above); tick each item once its run passes
+- [ ] create the GitHub environment `e2e-hosted` with its secrets and variables ("Hosted acceptance setup" in the checklist)
+- [ ] editorial acceptance (step 5): automated and green on `local`; tick each item once the `hosted` run passes
 - [ ] deploy to Vercel with `SITE_INDEXABLE=false`; set the Supabase Site URL (step 6)
 - [ ] MFA: not enforced (no MFA screen in the app). Required before real political data; does not block the fictional deployment
 
@@ -217,7 +223,7 @@ Structure for elections, not claims about them. Model and rules: `docs/ELECTION_
 Open items:
 - [x] both migrations applied to hosted, seed re-run, `database.types.ts` regenerated (2026-10-16)
 - [x] CI green with the new migrations and integration checks (run 38922164879); hosted integration test 50 of 50
-- [ ] election editorial acceptance with real accounts (`docs/VERIFICATION_CHECKLIST.md`, step 5, "Election records")
+- [ ] election editorial acceptance with real accounts (`docs/VERIFICATION_CHECKLIST.md`, step 5, "Election records"): passing in Playwright on the `local` target (2026-10-23); `hosted` not yet run
 - [ ] election and office metadata linked to sources (today only participations carry claims)
 
 Deferred:
