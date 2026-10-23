@@ -43,5 +43,9 @@ enable_signup = false
 enable_anonymous_sign_ins = false
 
 [auth.email]
-enable_signup = false
+# This switch enables the email provider itself (GOTRUE_EXTERNAL_EMAIL_ENABLED), not sign-up:
+# `false` here refuses every email/password sign-in, so no editor could log in locally. Public
+# sign-up stays off through `[auth] enable_signup = false` (GOTRUE_DISABLE_SIGNUP), which is
+# what the hosted project mirrors ("only the email provider", `disable_signup: true`).
+enable_signup = true
 enable_confirmations = true

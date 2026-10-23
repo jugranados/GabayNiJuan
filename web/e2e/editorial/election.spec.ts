@@ -206,7 +206,7 @@ test.describe('election editorial workflow', { tag: ['@editorial', '@election'] 
       await pollPublicText(voter, `/elections/${electionSlug}`, names.office);
       await voter.goto(`/elections/${electionSlug}/${names.officeSlug}`);
       const official = voter.getByRole('region', { name: `${info.OFFICIAL_CANDIDATE.groupHeading} (1)` });
-      await expect(official.getByRole('link', { name: names.personLabel })).toBeVisible();
+      await expect(official.getByRole('link', { name: names.personLabel, exact: true })).toBeVisible();
       await expect(official).toContainText(`Earlier record: ${info.FILED_COC.label}.`);
       await expect(voter.getByRole('region', { name: new RegExp(`^${info.FILED_COC.groupHeading}`) })).toHaveCount(0);
     });
