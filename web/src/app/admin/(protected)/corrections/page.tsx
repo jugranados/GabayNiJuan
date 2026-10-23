@@ -41,7 +41,7 @@ export default async function CorrectionsPage({ searchParams }: PageProps<'/admi
       {requests.length === 0 ? (
         <p className="card mt-4 text-muted">No correction requests.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto">
+        <div className="relative mt-4 overflow-x-auto">
           <table aria-label="Correction requests" className="data-table">
             <thead>
               <tr>

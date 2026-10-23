@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 import { correctionNoteRequired } from '@/domain/editorial/correctionReview';
-import type { RefOption } from '@/domain/editorial/models';
+import type { EditorialRecord, RefOption } from '@/domain/editorial/models';
 import {
   buildFormSchema,
   EDITORIAL_RECORD_TYPES,
@@ -153,15 +153,17 @@ export async function saveRecordAction(
 ): Promise<ActionState> {
   const def = recordTypeBySlug(slug);
   if (!def) return { error: 'Unknown record type.' };
+  const submitted = version.safeParse(data.get('version')).data;
   const fields = readFields(def, data);
-  if (!fields.values) return { fieldErrors: fields.fieldErrors, values: fields.raw };
+  if (!fields.values) return { fieldErrors: fields.fieldErrors, values: fields.raw, version: submitted };
+  let saved: EditorialRecord;
   try {
     const editorial = await getEditorial();
     if (def.recordType === 'ELECTION_PARTICIPATION') {
       const fieldErrors = await participationFieldErrors(editorial, fields.values, id);
-      if (fieldErrors) return { fieldErrors, values: fields.raw };
+      if (fieldErrors) return { fieldErrors, values: fields.raw, version: submitted };
     }
-    const saved = await editorial.updateRecord(def, {
+    saved = await editorial.updateRecord(def, {
       id: uuid.parse(id),
       expectedVersion: version.parse(data.get('version')),
       changes: fields.values,
@@ -169,10 +171,10 @@ export async function saveRecordAction(
     });
     if (saved.status === 'PUBLISHED') revalidatePublicSite();
   } catch (error) {
-    return failure(error, fields.raw);
+    return { ...failure(error, fields.raw), version: submitted };
   }
   revalidatePath(adminPaths.record(def.slug, id));
-  return { ok: true };
+  return { ok: true, version: saved.version };
 }
 
 export async function transitionAction(

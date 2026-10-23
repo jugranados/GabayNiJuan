@@ -1,8 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock('@/features/admin/actions', () => ({ loadRefOptions: vi.fn(async () => []) }));
 
 import type { RevisionEntry } from '@/domain/editorial/models';
+import { recordTypeBySlug } from '@/domain/editorial/records';
+import type { ActionState } from '@/features/admin/actionState';
+import { RecordForm } from '@/features/admin/components/RecordForm';
 import { RevisionList, staffLabeler } from '@/features/admin/components/RevisionList';
 import { WorkflowBar } from '@/features/admin/components/WorkflowBar';
 
@@ -39,6 +44,50 @@ describe('WorkflowBar', () => {
     render(<WorkflowBar status="RETRACTED" role="ADMIN" version={1} action={action} />);
     expect(screen.queryAllByRole('button', { hidden: true })).toHaveLength(0);
     expect(screen.getByText(/this is final/)).toBeInTheDocument();
+  });
+});
+
+describe('RecordForm', () => {
+  const def = recordTypeBySlug('sources')!;
+  const source = (title: string) => ({
+    title,
+    publisher: 'Fictional Records Office (fictional)',
+    source_type: 'NEWS',
+    url: 'https://example.org/fictional',
+    retrieved_at: '2026-10-20',
+  });
+  const props = { def, refOptions: {}, submitLabel: 'Save draft' };
+
+  it('keeps "Saved." after the saved version reloads the form, and drops it when the record moves on', async () => {
+    let finish: (state: ActionState) => void = () => {};
+    const save = vi.fn(() => new Promise<ActionState>((resolve) => (finish = resolve)));
+    const { rerender } = render(<RecordForm {...props} action={save} initial={source('Old title (fictional)')} version={1} />);
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent('');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    expect(save).toHaveBeenCalledTimes(1);
+    // The action returns, and the page re-renders the form with the new version and stored values.
+    await act(async () => finish({ ok: true, version: 2 }));
+    rerender(<RecordForm {...props} action={save} initial={source('New title (fictional)')} version={2} />);
+    expect(screen.getByRole('status')).toBe(status);
+    expect(status).toHaveTextContent('Saved.');
+    expect(screen.getByLabelText(/^Title/)).toHaveValue('New title (fictional)');
+
+    // A workflow step bumps the version: the confirmation belonged to version 2.
+    rerender(<RecordForm {...props} action={save} initial={source('New title (fictional)')} version={3} />);
+    expect(status).toHaveTextContent('');
+  });
+
+  it('keeps what was typed and the error while the refused version is on screen', async () => {
+    const refuse = vi.fn(async () => ({ error: 'This record is locked.', values: source('Typed title (fictional)'), version: 4 }));
+    const { rerender } = render(<RecordForm {...props} action={refuse} initial={source('Stored title (fictional)')} version={4} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('This record is locked.');
+    expect(screen.getByLabelText(/^Title/)).toHaveValue('Typed title (fictional)');
+    rerender(<RecordForm {...props} action={refuse} initial={source('Stored title (fictional)')} version={5} />);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByLabelText(/^Title/)).toHaveValue('Stored title (fictional)');
   });
 });
 

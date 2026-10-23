@@ -54,7 +54,7 @@ export function RevisionList({
             ) : changes.length === 0 ? (
               <p className="text-sm text-muted">No field changes.</p>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <table aria-label="Changed fields" className="data-table">
                   <thead>
                     <tr>

@@ -96,10 +96,12 @@ export default async function QueuePage({ searchParams }: PageProps<'/admin/queu
         {rows.length} {rows.length === 1 ? 'record' : 'records'} · most recently changed first
         {rows.length === 200 ? ' · showing the first 200; narrow the filters to see others' : ''}
       </p>
+      {/* `relative` on the scroll box keeps the status badges' absolutely positioned screen-reader
+          text inside it, so the page itself never scrolls sideways on a phone. */}
       {rows.length === 0 ? (
         <p className="card mt-2 text-muted">No records match.</p>
       ) : (
-        <div className="mt-2 overflow-x-auto">
+        <div className="relative mt-2 overflow-x-auto">
           <table aria-label="Work queue" className="data-table">
             <thead>
               <tr>
