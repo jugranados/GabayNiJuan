@@ -30,7 +30,7 @@ export default async function RolesPage() {
         then assign a role here. Each user has one role. The last administrator cannot be removed.
       </p>
 
-      <div className="card mt-4 overflow-x-auto">
+      <div className="card relative mt-4 overflow-x-auto">
         <table aria-label="Staff" className="data-table">
           <thead>
             <tr>

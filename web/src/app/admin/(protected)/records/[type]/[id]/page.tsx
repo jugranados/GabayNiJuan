@@ -139,7 +139,7 @@ export default async function RecordPage({ params }: PageProps<'/admin/records/[
             </p>
           ) : null}
           <RecordForm
-            key={`${record.id}:${record.version}`}
+            key={record.id}
             def={def}
             action={saveRecordAction.bind(null, def.slug, id)}
             initial={record.values}

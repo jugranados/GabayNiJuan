@@ -1,14 +1,11 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('not found', { tag: ['@public', '@production-smoke'] }, () => {
-  test('an unknown address is a 404', async ({ page }) => {
-    const response = await page.goto('/this-page-does-not-exist');
-    expect(response?.status()).toBe(404);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  });
-
-  // Inside a public route the 404 keeps the site's shell and its neutral wording.
+  // Every 404 keeps the site's shell and its neutral wording: an address that matches no route
+  // (not Next.js' bare 404) as well as a missing record inside a public route.
   for (const path of [
+    '/this-page-does-not-exist',
+    '/politicians/nobody-here-at-all/extra/segments',
     '/politicians/nobody-here-at-all',
     '/claims/not-a-claim',
     '/claims/00000000-0000-4000-8000-000000000000',
@@ -18,8 +15,10 @@ test.describe('not found', { tag: ['@public', '@production-smoke'] }, () => {
       const response = await page.goto(path);
       expect(response?.status()).toBe(404);
       await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
-      await expect(page.getByText('This says nothing about any person.')).toBeVisible();
+      await expect(page.getByText("The page you're looking for could not be found.", { exact: false })).toBeVisible();
+      await expect(page.getByText('This says nothing about any person.', { exact: false })).toBeVisible();
       await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Browse all politicians' })).toBeVisible();
     });
   }
 

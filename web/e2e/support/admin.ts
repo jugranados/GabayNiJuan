@@ -83,7 +83,8 @@ async function recordVersion(page: Page): Promise<number> {
 
 /**
  * Submits the form of the record currently open and waits until the saved version is shown.
- * (Every content change increments `version`; the form then reloads with the saved values.)
+ * (Every content change increments `version`; the form then reloads with the saved values and
+ * keeps its "Saved." confirmation.)
  */
 export async function saveRecord(
   page: Page,
@@ -98,6 +99,8 @@ export async function saveRecord(
   await form.getByRole('button', { name: /^Save (draft|change)$/ }).click();
   await expect(page.getByText(new RegExp(`^Version ${before + 1} · Created by`))).toBeVisible();
   await expect(form.getByRole('alert')).toHaveCount(0);
+  // The confirmation outlives the form's reload with the saved values (it is announced, too).
+  await expect(form.getByRole('status')).toHaveText('Saved.');
 }
 
 /** Submits the form and expects it to be refused with `message` (a field error or the form error). */

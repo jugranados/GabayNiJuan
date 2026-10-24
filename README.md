@@ -158,13 +158,16 @@ their history. Against `production` only the read-only tests exist unless
 `E2E_ALLOW_PRODUCTION_MUTATIONS=true`, and each writing spec checks again before it starts.
 
 **Running the editorial acceptance.** Locally: export the six `E2E_*` credential variables, then
-`npm run e2e:editorial`. In CI: Actions → "Browser acceptance (Playwright)" → target `local`
+`npm run e2e:editorial`. To reproduce the CI `local` target on your machine: `supabase start`, run
+`web/e2e/local/create-test-accounts.sql` with a random password (see the file), build with
+`DATA_SOURCE=supabase` and the stack's URL and anon key, then `npm run e2e` with
+`E2E_TARGET_ENV=local`, `E2E_WEB_SERVER_COMMAND="npm run start"` and the four accounts. In CI: Actions → "Browser acceptance (Playwright)" → target `local`
 (throwaway stack and accounts, no secret), `hosted` (environment `e2e-hosted`) or `production`
 (read-only, with `base_url`). What stays manual is listed in `docs/VERIFICATION_CHECKLIST.md`.
 
 ### Verification status
 
-What is verified automatically, what needs a person, and what is blocked, with the exact steps to the first deployment: [`docs/VERIFICATION_CHECKLIST.md`](docs/VERIFICATION_CHECKLIST.md). In short: CI proves a clean database, the SQL rules and the web app; the hosted project has all 16 migrations and passes the integration test (2026-10-16); the public site passes the Playwright browser tests at phone, tablet and desktop widths (2026-10-22); the editorial acceptance is automated in Playwright but has not run against a database yet; and the site is not deployed yet.
+What is verified automatically, what needs a person, and what is blocked, with the exact steps to the first deployment: [`docs/VERIFICATION_CHECKLIST.md`](docs/VERIFICATION_CHECKLIST.md). In short: CI proves a clean database, the SQL rules and the web app; the hosted project has the first 16 migrations and passes the integration test (2026-10-16), and still needs the 17th (2026-10-23); the public site passes the Playwright browser tests at phone, tablet and desktop widths; the editorial acceptance passes on a local stack (2026-10-23) and has not run on hosted yet (it needs REVIEWER and APPROVER accounts and the `e2e-hosted` secrets); and the site is not deployed yet.
 
 ## Editorial area (`/admin`)
 

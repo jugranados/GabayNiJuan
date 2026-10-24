@@ -12,8 +12,10 @@ import {
   createSource,
   expectState,
   field,
+  openRecord,
   readiness,
   recordForm,
+  saveRecord,
   saveRecordRefused,
   submitForApproval,
   transitionWithReason,
@@ -41,6 +43,7 @@ test.describe('reviewer', { tag: '@editorial' }, () => {
     requireMutations();
     test.setTimeout(6 * 60_000);
     const names = fictionalNames(uniqueSuffix());
+    const editedSourceTitle = names.sourceTitle.replace(/ \(fictional\)$/, ' edited (fictional)');
     const ids: Record<string, string> = {};
 
     await test.step('create a source, a person and an office term', async () => {
@@ -63,6 +66,17 @@ test.describe('reviewer', { tag: '@editorial' }, () => {
         { Office: { first: true }, 'Term status': enumLabel('HELD'), 'Start date': manilaDate(-365) },
         `?person=${ids.person}`,
       );
+    });
+
+    await test.step('a draft source can be edited, including its own publication date; the save sticks', async () => {
+      await openRecord(page, 'sources', ids.source);
+      await saveRecord(page, 'sources', { Title: editedSourceTitle, 'Source published on': manilaDate(-30) });
+      await openRecord(page, 'sources', ids.source);
+      const form = recordForm(page, 'sources');
+      await expect(field(form, 'Title')).toHaveValue(editedSourceTitle);
+      await expect(field(form, 'Source published on')).toHaveValue(manilaDate(-30));
+      // A fresh visit is not a save: no stale confirmation.
+      await expect(form.getByRole('status')).toHaveText('');
     });
 
     await test.step('a judgment in a claim statement is refused', async () => {
@@ -89,7 +103,7 @@ test.describe('reviewer', { tag: '@editorial' }, () => {
         verification: enumLabel('PRIMARY_SOURCE'),
       });
       await expect(readiness(page)).toContainText('Not ready');
-      await attachEvidence(page, ids.source, names.sourceTitle);
+      await attachEvidence(page, ids.source, editedSourceTitle);
       await expect(readiness(page)).toContainText('Ready for review.');
     });
 

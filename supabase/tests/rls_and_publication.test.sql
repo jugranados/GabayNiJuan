@@ -366,6 +366,27 @@ begin
     perform pg_temp.expect_error(
       format($q$select public.editorial_update('people', %L, 2, '{"created_by":null}'::jsonb)$q$, pw),
       'cannot be edited', 'editorial_update refuses identity columns', reviewer, 'authenticated');
+    perform pg_temp.expect_error(
+      format($q$select public.editorial_update('people', %L, 2, '{"published_at":"2026-01-01T00:00:00Z"}'::jsonb)$q$, pw),
+      'cannot be edited', 'editorial_update refuses the workflow timestamp published_at', reviewer, 'authenticated');
+    -- On sources, published_at is the document's own date (content); record_published_at is workflow.
+    cid := pg_temp.scalar_as('authenticated', reviewer,
+      $q$insert into public.sources (title, publisher, url, source_type, retrieved_at)
+         values ('RlsTest dated source', 'RlsTest Office', 'https://example.org/rlstest-dated', 'OFFICIAL_GOVERNMENT', current_date) returning id$q$)::uuid;
+    ver := pg_temp.scalar_as('authenticated', reviewer,
+      format($q$select (public.editorial_update('sources', %L, 1, '{"title":"RlsTest dated source, edited","published_at":"2026-01-15"}'::jsonb)) ->> 'version'$q$, cid));
+    perform pg_temp.check(ver = '2', 'a source''s own publication date can be edited with the rest of its fields');
+    perform pg_temp.check(
+      (select published_at from public.sources where id = cid) = date '2026-01-15',
+      'the source publication date was saved');
+    perform pg_temp.expect_error(
+      format($q$select public.editorial_update('sources', %L, 2, '{"record_published_at":"2026-01-01T00:00:00Z"}'::jsonb)$q$, cid),
+      'cannot be edited', 'editorial_update refuses a source''s workflow timestamp', reviewer, 'authenticated');
+    perform pg_temp.scalar_as('authenticated', reviewer, format($q$select public.editorial_transition('sources', %L, 'SOURCE_ATTACHED', 2)::text$q$, cid));
+    perform pg_temp.scalar_as('authenticated', reviewer, format($q$select public.editorial_transition('sources', %L, 'REVIEWED', 3)::text$q$, cid));
+    perform pg_temp.expect_error(
+      format($q$select public.editorial_update('sources', %L, 4, '{"published_at":"2026-02-01"}'::jsonb)$q$, cid),
+      'under review', 'a reviewed source''s publication date is frozen content', reviewer, 'authenticated');
     perform pg_temp.expect_error($q$select public.editorial_update('revisions', gen_random_uuid(), 1, '{"reason":"x"}'::jsonb)$q$,
       'Unknown record type', 'editorial_update only works on editorial tables', reviewer, 'authenticated');
     perform pg_temp.expect_error(format($q$select public.editorial_update('people', %L, 2, '{"middle_name":"x"}'::jsonb)$q$, pw),

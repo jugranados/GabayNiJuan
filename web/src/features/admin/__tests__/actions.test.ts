@@ -172,7 +172,13 @@ describe('records', () => {
     expect(await saveRecordAction('people', ID, {}, form({ ...person, version: '2' }))).toMatchObject({
       stale: true,
       values: expect.objectContaining({ first_name: 'Juan' }),
+      version: 2,
     });
+  });
+
+  it('tags a successful save with the new version, so the form can confirm it after reloading', async () => {
+    editorial.updateRecord.mockResolvedValue({ status: 'DRAFT', version: 3 });
+    expect(await saveRecordAction('people', ID, {}, form({ ...person, version: '2' }))).toEqual({ ok: true, version: 3 });
   });
 });
 
@@ -208,10 +214,10 @@ describe('election records', () => {
       { ...existing[0], publicationStatus: 'RETRACTED' },
       { id: SOURCE, status: 'ELECTED', effectiveFrom: '2027-01-01', publicationStatus: 'DRAFT' },
     ]);
-    editorial.updateRecord.mockResolvedValue({ status: 'DRAFT' });
+    editorial.updateRecord.mockResolvedValue({ status: 'DRAFT', version: 2 });
     const data = participation('POTENTIAL_ASPIRANT', '2027-12-01');
     data.set('version', '1');
-    expect(await saveRecordAction('participations', SOURCE, {}, data)).toEqual({ ok: true });
+    expect(await saveRecordAction('participations', SOURCE, {}, data)).toEqual({ ok: true, version: 2 });
   });
 
   it('refuses an election marked completed before its date', async () => {

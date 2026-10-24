@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState, useTransition } from 'react';
+import { Fragment, useActionState, useState, useTransition } from 'react';
 
 import type { RefOption } from '@/domain/editorial/models';
 import type { FieldDef, RecordTypeDef } from '@/domain/editorial/records';
@@ -70,8 +70,11 @@ export function RecordForm({
   submitLabel,
 }: Props) {
   const [state, formAction] = useActionState(action, INITIAL_ACTION_STATE);
-  const values = state.values ?? initial;
-  const errors = state.fieldErrors ?? {};
+  // A result belongs to the version it was produced for. Once the record moves on (a workflow
+  // step, a reload), the form shows the stored values again and drops the old message.
+  const current = state.version === version ? state : INITIAL_ACTION_STATE;
+  const values = current.values ?? initial;
+  const errors = current.fieldErrors ?? {};
 
   // A claim's "subject record" choices depend on the chosen subject record type.
   const [subjectType, setSubjectType] = useState(values.subject_record_type ?? '');
@@ -92,113 +95,116 @@ export function RecordForm({
 
   return (
     <form action={formAction} aria-label={`${def.singular} form`} className="space-y-4">
-      <ActionError state={state} />
-      {state.ok ? (
-        <p role="status" className="font-semibold">
-          Saved.
-        </p>
-      ) : null}
-      {version !== undefined ? <input type="hidden" name="version" value={version} /> : null}
+      <ActionError state={current} />
+      {/* Outside the per-version fields below, so the confirmation survives their remount after
+          a save, and the live region exists before its text changes. */}
+      <p role="status" className="font-semibold">
+        {current.ok ? 'Saved.' : ''}
+      </p>
+      {/* Keyed by version: after a save the fields remount with the stored values. */}
+      <Fragment key={version}>
+        {version !== undefined ? <input type="hidden" name="version" value={version} /> : null}
 
-      {def.recordType === 'CLAIM' ? (
-        <p className="text-sm text-muted">
-          A claim is a precise factual proposition that Gabay ni Juan displays or relies upon.
-          Example (fictional): “Juan Halimbawa served as Mayor of Sample City from 2022 to 2025.”
-          Claims never judge a person’s character or fitness.
-        </p>
-      ) : null}
+        {def.recordType === 'CLAIM' ? (
+          <p className="text-sm text-muted">
+            A claim is a precise factual proposition that Gabay ni Juan displays or relies upon.
+            Example (fictional): “Juan Halimbawa served as Mayor of Sample City from 2022 to 2025.”
+            Claims never judge a person’s character or fitness.
+          </p>
+        ) : null}
 
-      {reasonRequired ? (
-        <div>
-          <label htmlFor="reason" className="mb-1 block font-semibold">
-            Reason for change *
-          </label>
-          <textarea
-            id="reason"
-            name="reason"
-            required
-            rows={2}
-            disabled={disabled}
-            className="field"
-            placeholder="e.g. Corrected office end date based on official source"
-          />
-          <p className="mt-1 text-sm text-muted">Kept permanently in the revision history.</p>
-        </div>
-      ) : null}
+        {reasonRequired ? (
+          <div>
+            <label htmlFor="reason" className="mb-1 block font-semibold">
+              Reason for change *
+            </label>
+            <textarea
+              id="reason"
+              name="reason"
+              required
+              rows={2}
+              disabled={disabled}
+              className="field"
+              placeholder="e.g. Corrected office end date based on official source"
+            />
+            <p className="mt-1 text-sm text-muted">Kept permanently in the revision history.</p>
+          </div>
+        ) : null}
 
-      {def.fields.map((field) => {
-        const shared = {
-          id: field.name,
-          name: field.name,
-          disabled,
-          className: 'field',
-          'aria-describedby': describedBy(field),
-          'aria-invalid': errors[field.name] ? (true as const) : undefined,
-        };
-        const value = values[field.name] ?? '';
-        const isSubjectRecord = field.refType === '@subject';
-        const options = isSubjectRecord ? subjectOptions : (refOptions[field.name] ?? []);
-        return (
-          <Field key={field.name} field={field} error={errors[field.name]}>
-            {field.kind === 'select' ? (
-              <select
-                {...shared}
-                key={value}
-                defaultValue={value}
-                onChange={
-                  field.name === 'subject_record_type'
-                    ? (event) => changeSubjectType(event.target.value)
-                    : undefined
-                }
-              >
-                <option value="">{field.required ? 'Select…' : '—'}</option>
-                {field.options?.map((option) => (
-                  <option key={option} value={option}>
-                    {enumLabel(option)}
+        {def.fields.map((field) => {
+          const shared = {
+            id: field.name,
+            name: field.name,
+            disabled,
+            className: 'field',
+            'aria-describedby': describedBy(field),
+            'aria-invalid': errors[field.name] ? (true as const) : undefined,
+          };
+          const value = values[field.name] ?? '';
+          const isSubjectRecord = field.refType === '@subject';
+          const options = isSubjectRecord ? subjectOptions : (refOptions[field.name] ?? []);
+          return (
+            <Field key={field.name} field={field} error={errors[field.name]}>
+              {field.kind === 'select' ? (
+                <select
+                  {...shared}
+                  key={value}
+                  defaultValue={value}
+                  onChange={
+                    field.name === 'subject_record_type'
+                      ? (event) => changeSubjectType(event.target.value)
+                      : undefined
+                  }
+                >
+                  <option value="">{field.required ? 'Select…' : '—'}</option>
+                  {field.options?.map((option) => (
+                    <option key={option} value={option}>
+                      {enumLabel(option)}
+                    </option>
+                  ))}
+                </select>
+              ) : field.kind === 'ref' ? (
+                <select
+                  {...shared}
+                  key={`${value}:${options.length}`}
+                  defaultValue={value}
+                  disabled={disabled || (isSubjectRecord && !subjectType)}
+                >
+                  <option value="">
+                    {isSubjectRecord && !subjectType
+                      ? 'Choose a subject record type first'
+                      : loadingSubjects && isSubjectRecord
+                        ? 'Loading…'
+                        : 'Select…'}
                   </option>
-                ))}
-              </select>
-            ) : field.kind === 'ref' ? (
-              <select
-                {...shared}
-                key={`${value}:${options.length}`}
-                defaultValue={value}
-                disabled={disabled || (isSubjectRecord && !subjectType)}
-              >
-                <option value="">
-                  {isSubjectRecord && !subjectType
-                    ? 'Choose a subject record type first'
-                    : loadingSubjects && isSubjectRecord
-                      ? 'Loading…'
-                      : 'Select…'}
-                </option>
-                {options.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            ) : field.kind === 'textarea' ? (
-              <textarea {...shared} defaultValue={value} rows={4} />
-            ) : (
-              <input
-                {...shared}
-                defaultValue={value}
-                type={
-                  field.kind === 'date'
-                    ? 'date'
-                    : field.kind === 'url'
-                      ? 'url'
-                      : field.kind === 'integer'
-                        ? 'number'
-                        : 'text'
-                }
-                {...(field.kind === 'integer' ? { min: 0, max: 9999, step: 1 } : {})}
-              />
-            )}
-          </Field>
-        );
-      })}
+                  {options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : field.kind === 'textarea' ? (
+                <textarea {...shared} defaultValue={value} rows={4} />
+              ) : (
+                <input
+                  {...shared}
+                  defaultValue={value}
+                  type={
+                    field.kind === 'date'
+                      ? 'date'
+                      : field.kind === 'url'
+                        ? 'url'
+                        : field.kind === 'integer'
+                          ? 'number'
+                          : 'text'
+                  }
+                  {...(field.kind === 'integer' ? { min: 0, max: 9999, step: 1 } : {})}
+                />
+              )}
+            </Field>
+          );
+        })}
+      </Fragment>
       <SubmitButton primary disabled={disabled}>
         {submitLabel}
       </SubmitButton>
